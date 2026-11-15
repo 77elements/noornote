@@ -177,7 +177,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Hide self-reposts')}</span>
             <div class="setting__control" id="hide-self-reposts-switch-container"></div>
             <p class="setting__desc">
-              ${_("When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.")}
+              ${_("Hides reposts of users' own notes from your timeline.")}
             </p>
             <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" id="self-repost-gap-selector">
               <span class="setting__label">${_('Disable self-reposts younger than:')}</span>
@@ -220,7 +220,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Show reactions')}</span>
             <div class="setting__control" id="show-reactions-switch-container"></div>
             <p class="setting__desc">
-              ${_('Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.')}
+              ${_('Shows reactions (likes) from people you follow as entries in your timeline.')}
             </p>
           </div>
         </section>
@@ -230,7 +230,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Hide highlights')}</span>
             <div class="setting__control" id="hide-highlights-switch-container"></div>
             <p class="setting__desc">
-              ${_('When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.')}
+              ${_("Hides other users' highlight posts that quote an external website, including pure reposts of them.")}
             </p>
           </div>
         </section>
@@ -240,7 +240,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Show expiry notice')}</span>
             <div class="setting__control" id="show-expiry-notice-switch-container"></div>
             <p class="setting__desc">
-              ${_('Show a small "Post expires on …" line under notes that carry an expiration time (NIP-40). Off by default.')}
+              ${_('Shows a "Post expires on …" line under notes with an expiration time (NIP-40).')}
               ${_('Check that all of your write relays support NIP-40. Note: even if they do, someone could repost your note to relays without NIP-40 support, and the expiration no longer applies there.')}
             </p>
           </div>
@@ -251,7 +251,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Disable post truncation')}</span>
             <div class="setting__control" id="post-truncation-switch-container"></div>
             <p class="setting__desc">
-              ${_('When enabled, long posts will always be displayed in full without "Show More" buttons.')}
+              ${_('Long posts are always displayed in full, without "Show More" buttons.')}
             </p>
           </div>
         </section>
@@ -290,7 +290,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Memory optimization (experimental)')}</span>
             <div class="setting__control" id="content-visibility-switch-container"></div>
             <p class="setting__desc">
-              ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast, disable if it bothers you.')}
+              ${_('Saves memory by skipping rendering of off-screen notes. May cause minor scrollbar jumps when scrolling fast.')}
             </p>
           </div>
         </section>

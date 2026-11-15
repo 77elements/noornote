@@ -621,6 +621,8 @@ $focus-tab-overlap: 1px;
     // Settings lists grow per object — the panel body scrolls internally,
     // the tab stays at the screen edge (it sits outside the panel box).
     overflow-y: auto;
+    // Same chrome as the timeline's scrollers (thin, themed thumb).
+    @include custom-scrollbar;
   }
 
   // Top surface: top + bottom line, no side borders.
@@ -650,6 +652,10 @@ $focus-tab-overlap: 1px;
 
   @include desktop {
     grid-template-columns: repeat(3, 1fr);
+    // Same total width as the FV layout behind the drawer: 230px stack +
+    // 2rem grid gap + 646px active column (600px surface + $gap + 30px
+    // actions) + 2rem grid gap + 230px stack = 1170px.
+    max-width: calc(230px + 2rem + 600px + #{$gap} + 30px + 2rem + 230px);
   }
 
   // Grid gap takes over spacing — the sections' own margin would double it.

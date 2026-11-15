@@ -258,7 +258,7 @@ msgstr "Konten und Threads, die du stummgeschaltet hast."
 #: src/addons/analytics/AnalyticsAddonView.ts:237
 #: src/components/layout/MainLayout.ts:2112
 #: src/components/settings/NotificationPrioritySection.ts:85
-#: src/components/views/ArticleTimelineView.ts:65
+#: src/components/views/ArticleTimelineView.ts:37
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
 #: src/shell/focusDomains.ts:156
@@ -284,7 +284,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Kuratierte öffentliche Follower-Listen, die du abonniert hast."
 
-#: src/components/views/TimelineView.ts:168
+#: src/components/views/TimelineView.ts:171
 msgid "Edit tribes"
 msgstr "Tribes bearbeiten"
 
@@ -315,7 +315,7 @@ msgstr "Follows"
 msgid "Key Signer"
 msgstr "Key-Signer"
 
-#: src/components/views/TimelineView.ts:216
+#: src/components/views/TimelineView.ts:219
 msgid "Last notes per follow"
 msgstr "Neueste Notizen pro Follow"
 
@@ -323,18 +323,6 @@ msgstr "Neueste Notizen pro Follow"
 #: src/components/views/ListsOverviewView.ts:106
 msgid "Lists"
 msgstr "Listen"
-
-#: src/components/views/ArticleTimelineView.ts:27
-msgid "Long-form content from your 1st and 2nd-degree follows"
-msgstr "Langtexte von deinen Follows 1. und 2. Grades"
-
-#: src/components/views/ArticleTimelineView.ts:29
-msgid "Long-form content from your 1st, 2nd and 3rd-degree follows"
-msgstr "Langtexte von deinen Follows 1., 2. und 3. Grades"
-
-#: src/components/views/ArticleTimelineView.ts:31
-msgid "Long-form content from your follows"
-msgstr "Langtexte von deinen Follows"
 
 #: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
@@ -351,10 +339,6 @@ msgstr "Stummgeschaltet"
 #: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
 msgstr "Noch keine Benachrichtigungen"
-
-#: src/components/views/TimelineView.ts:132
-msgid "Notes - Timeline"
-msgstr "Notizen – Timeline"
 
 #: src/components/views/SettingsView.ts:37
 msgid "Notification Priorities"
@@ -378,7 +362,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:236
+#: src/shell/focusStage.ts:379
+#: src/shell/focusStage.ts:528
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -391,7 +376,7 @@ msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
 #: src/components/layout/MainLayout.ts:2091
-#: src/components/views/TimelineView.ts:208
+#: src/components/views/TimelineView.ts:211
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -417,10 +402,10 @@ msgstr ""
 "Deine Listen werden lokal gespeichert und mit deinen Relays synchronisiert. "
 "Wähle eine aus, um sie zu öffnen."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:835
-#: src/addons/calendar/BookingManager.ts:311
+#: src/addons/bulk-delete/BulkDeleteView.ts:834
+#: src/addons/calendar/BookingManager.ts:312
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
-#: src/addons/feedback-board/FeedbackBoardView.ts:633
+#: src/addons/feedback-board/FeedbackBoardView.ts:634
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:244
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -999,17 +984,17 @@ msgid "Confirm booking"
 msgstr "Buchung bestätigen"
 
 #: src/addons/badges/BadgesView.ts:378
-#: src/addons/bulk-delete/BulkDeleteView.ts:909
+#: src/addons/bulk-delete/BulkDeleteView.ts:908
 #: src/addons/calendar/CalendarCollectionsModal.ts:61
 #: src/addons/calendar/CalendarCollectionsModal.ts:93
 #: src/addons/calendar/CalendarEventEditor.ts:162
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/calendar/CalendarEventModal.ts:548
-#: src/addons/feedback-board/FeedbackBoardView.ts:302
-#: src/addons/feedback-board/FeedbackBoardView.ts:812
-#: src/addons/feedback-board/FeedbackBoardView.ts:895
-#: src/addons/feedback-board/FeedbackBoardView.ts:937
+#: src/addons/feedback-board/FeedbackBoardView.ts:303
+#: src/addons/feedback-board/FeedbackBoardView.ts:813
+#: src/addons/feedback-board/FeedbackBoardView.ts:896
+#: src/addons/feedback-board/FeedbackBoardView.ts:938
 #: src/addons/marketplace/MyListingsView.ts:242
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
@@ -1207,9 +1192,9 @@ msgid "Describe your video..."
 msgstr "Beschreibe dein Video…"
 
 #: src/addons/badges/BadgesView.ts:51
-#: src/addons/calendar/BookingManager.ts:350
+#: src/addons/calendar/BookingManager.ts:351
 #: src/addons/calendar/CalendarEventEditor.ts:149
-#: src/addons/feedback-board/FeedbackBoardView.ts:628
+#: src/addons/feedback-board/FeedbackBoardView.ts:629
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
@@ -1262,7 +1247,7 @@ msgstr "Die Dauer darf höchstens 1 Jahr betragen."
 msgid "Failed to load messages"
 msgstr "Nachrichten konnten nicht geladen werden"
 
-#: src/components/ui/NoteMenu.ts:676
+#: src/components/ui/NoteMenu.ts:679
 #: src/components/views/ConversationView.ts:1151
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
@@ -1336,17 +1321,17 @@ msgstr ""
 "Nachrichten verschwinden nach dieser Zeit. Minimum: 1 Minute, Maximum: 1 "
 "Jahr."
 
-#: src/components/ui/NoteMenu.ts:216
+#: src/components/ui/NoteMenu.ts:217
 #: src/components/views/ConversationView.ts:1100
 msgid "Mute user"
 msgstr "Nutzer stummschalten"
 
-#: src/components/ui/NoteMenu.ts:206
+#: src/components/ui/NoteMenu.ts:207
 #: src/components/views/ConversationView.ts:1098
 msgid "Mute user privately"
 msgstr "Nutzer privat stummschalten"
 
-#: src/components/ui/NoteMenu.ts:210
+#: src/components/ui/NoteMenu.ts:211
 #: src/components/views/ConversationView.ts:1100
 msgid "Mute user publicly"
 msgstr "Nutzer öffentlich stummschalten"
@@ -1410,7 +1395,7 @@ msgstr "Video entfernen"
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1447
 #: src/components/views/MessagesView.ts:952
-#: src/services/ViewMountingService.ts:113
+#: src/services/ViewMountingService.ts:133
 msgid "Retry"
 msgstr "Erneut versuchen"
 
@@ -1441,7 +1426,7 @@ msgid "Time unit"
 msgstr "Zeiteinheit"
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
-#: src/addons/feedback-board/FeedbackBoardView.ts:620
+#: src/addons/feedback-board/FeedbackBoardView.ts:621
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
@@ -1449,7 +1434,7 @@ msgstr "Zeiteinheit"
 msgid "Title"
 msgstr "Titel"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:463
+#: src/addons/feedback-board/FeedbackBoardView.ts:464
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
@@ -1516,8 +1501,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:312
-#: src/shell/focusStage.ts:225
-#: src/shell/focusSurfaceFrame.ts:42
+#: src/shell/focusStage.ts:368
+#: src/shell/focusStage.ts:525
 msgid "Back"
 msgstr "Zurück"
 
@@ -1638,7 +1623,7 @@ msgstr ""
 "parsen können."
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:183
-#: src/addons/bulk-delete/BulkDeleteView.ts:690
+#: src/addons/bulk-delete/BulkDeleteView.ts:689
 #: src/addons/calendar/CalendarImportExport.ts:118
 #: src/addons/calendar/CalendarImportExport.ts:131
 #: src/components/views/ArticleEditorView.ts:465
@@ -1912,11 +1897,11 @@ msgid "Websites"
 msgstr "Websites"
 
 #: src/components/ui/InteractionStatusLine.ts:529
-#: src/components/ui/NoteMenu.ts:794
+#: src/components/ui/NoteMenu.ts:797
 msgid "Added to bookmarks"
 msgstr "Zu Lesezeichen hinzugefügt"
 
-#: src/components/ui/NoteMenu.ts:794
+#: src/components/ui/NoteMenu.ts:797
 msgid "Added to private bookmarks"
 msgstr "Zu privaten Lesezeichen hinzugefügt"
 
@@ -1930,43 +1915,44 @@ msgstr "Zu privaten Lesezeichen hinzugefügt"
 msgid "Analytics"
 msgstr "Statistik"
 
-#: src/components/ui/NoteMenu.ts:734
+#: src/components/ui/NoteMenu.ts:737
 msgid "Article notifications disabled"
 msgstr "Artikel-Benachrichtigungen deaktiviert"
 
 #: src/components/ui/InteractionStatusLine.ts:298
-#: src/components/ui/NoteMenu.ts:165
+#: src/components/ui/NoteMenu.ts:166
 #: src/lists/bookmarks.ts:4512
 msgid "Bookmark"
 msgstr "Lesezeichen"
 
 #: src/components/ui/ImageViewer.ts:221
-#: src/components/ui/NoteMenu.ts:548
+#: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:221
+#: src/shell/focusStage.ts:364
+#: src/shell/focusStage.ts:524
 msgid "Close"
 msgstr "Schließen"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:295
-#: src/components/ui/NoteMenu.ts:223
+#: src/addons/feedback-board/FeedbackBoardView.ts:296
+#: src/components/ui/NoteMenu.ts:224
 msgid "Copy event ID"
 msgstr "Event-ID kopieren"
 
-#: src/addons/calendar/BookingManager.ts:337
-#: src/components/ui/NoteMenu.ts:541
+#: src/addons/calendar/BookingManager.ts:338
+#: src/components/ui/NoteMenu.ts:544
 msgid "Copy link"
 msgstr "Link kopieren"
 
-#: src/components/ui/NoteMenu.ts:228
+#: src/components/ui/NoteMenu.ts:229
 msgid "Copy user ID"
 msgstr "Nutzer-ID kopieren"
 
-#: src/components/ui/NoteMenu.ts:265
+#: src/components/ui/NoteMenu.ts:266
 msgid "Delete note"
 msgstr "Notiz löschen"
 
-#: src/components/ui/NoteMenu.ts:887
+#: src/components/ui/NoteMenu.ts:890
 msgid "Failed to add author to tribe"
 msgstr "Hinzufügen des Autors zum Tribe fehlgeschlagen"
 
@@ -1976,12 +1962,12 @@ msgstr "Editor konnte nicht geöffnet werden"
 
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
-#: src/components/ui/NoteMenu.ts:804
+#: src/components/ui/NoteMenu.ts:807
 #: src/lists/bookmarks.ts:4879
 msgid "Failed to update bookmark"
 msgstr "Lesezeichen konnte nicht aktualisiert werden"
 
-#: src/components/ui/NoteMenu.ts:710
+#: src/components/ui/NoteMenu.ts:713
 msgid "Failed to update thread mute"
 msgstr "Thread-Stummschaltung konnte nicht aktualisiert werden"
 
@@ -1993,15 +1979,15 @@ msgstr "Ungültiges Event"
 msgid "Like"
 msgstr "Gefällt mir"
 
-#: src/components/ui/NoteMenu.ts:574
+#: src/components/ui/NoteMenu.ts:577
 msgid "Link"
 msgstr "Link"
 
-#: src/components/ui/NoteMenu.ts:283
+#: src/components/ui/NoteMenu.ts:284
 msgid "Mute thread"
 msgstr "Thread stummschalten"
 
-#: src/components/ui/NoteMenu.ts:821
+#: src/components/ui/NoteMenu.ts:824
 msgid "No tribes found. Create a tribe first."
 msgstr "Keine Tribes gefunden. Erstelle zuerst einen Tribe."
 
@@ -2015,19 +2001,19 @@ msgstr "Keine Schreib-Relays konfiguriert"
 msgid "Note not found"
 msgstr "Notiz nicht gefunden"
 
-#: src/components/ui/NoteMenu.ts:86
+#: src/components/ui/NoteMenu.ts:87
 msgid "Note options"
 msgstr "Notiz-Optionen"
 
-#: src/components/ui/NoteMenu.ts:290
+#: src/components/ui/NoteMenu.ts:291
 msgid "Notify on new articles"
 msgstr "Bei neuen Artikeln benachrichtigen"
 
-#: src/components/ui/NoteMenu.ts:159
+#: src/components/ui/NoteMenu.ts:160
 msgid "Private Bookmark"
 msgstr "Privates Lesezeichen"
 
-#: src/components/ui/NoteMenu.ts:155
+#: src/components/ui/NoteMenu.ts:156
 msgid "Public Bookmark"
 msgstr "Öffentliches Lesezeichen"
 
@@ -2035,28 +2021,28 @@ msgstr "Öffentliches Lesezeichen"
 msgid "Quoted Repost"
 msgstr "Zitierter Repost"
 
-#: src/components/ui/NoteMenu.ts:589
+#: src/components/ui/NoteMenu.ts:592
 msgid "Raw event data not available"
 msgstr "Raw-Event-Daten nicht verfügbar"
 
-#: src/components/ui/NoteMenu.ts:165
+#: src/components/ui/NoteMenu.ts:166
 msgid "Remove Bookmark"
 msgstr "Lesezeichen entfernen"
 
-#: src/components/ui/NoteMenu.ts:159
+#: src/components/ui/NoteMenu.ts:160
 msgid "Remove Private Bookmark"
 msgstr "Privates Lesezeichen entfernen"
 
-#: src/components/ui/NoteMenu.ts:155
+#: src/components/ui/NoteMenu.ts:156
 msgid "Remove Public Bookmark"
 msgstr "Öffentliches Lesezeichen entfernen"
 
 #: src/components/ui/InteractionStatusLine.ts:526
-#: src/components/ui/NoteMenu.ts:787
+#: src/components/ui/NoteMenu.ts:790
 msgid "Removed from bookmarks"
 msgstr "Aus Lesezeichen entfernt"
 
-#: src/components/ui/NoteMenu.ts:786
+#: src/components/ui/NoteMenu.ts:789
 msgid "Removed from private bookmarks"
 msgstr "Aus privaten Lesezeichen entfernt"
 
@@ -2074,7 +2060,7 @@ msgstr "Aus privaten Lesezeichen entfernt"
 msgid "Reply"
 msgstr "Antworten"
 
-#: src/components/ui/NoteMenu.ts:274
+#: src/components/ui/NoteMenu.ts:275
 msgid "Report"
 msgstr "Melden"
 
@@ -2087,21 +2073,21 @@ msgstr "Melden"
 msgid "Repost"
 msgstr "Repost"
 
-#: src/components/ui/NoteMenu.ts:838
+#: src/components/ui/NoteMenu.ts:841
 msgid "Select a tribe to add this author to:"
 msgstr "Wähle einen Tribe, zu dem dieser Autor hinzugefügt werden soll:"
 
-#: src/components/ui/NoteMenu.ts:255
-#: src/components/ui/NoteMenu.ts:527
+#: src/components/ui/NoteMenu.ts:256
+#: src/components/ui/NoteMenu.ts:530
 msgid "Share article"
 msgstr "Artikel teilen"
 
-#: src/components/ui/NoteMenu.ts:255
-#: src/components/ui/NoteMenu.ts:527
+#: src/components/ui/NoteMenu.ts:256
+#: src/components/ui/NoteMenu.ts:530
 msgid "Share Note"
 msgstr "Notiz teilen"
 
-#: src/components/ui/NoteMenu.ts:290
+#: src/components/ui/NoteMenu.ts:291
 msgid "Stop article notifications"
 msgstr "Artikel-Benachrichtigungen stoppen"
 
@@ -2110,29 +2096,29 @@ msgstr "Artikel-Benachrichtigungen stoppen"
 msgid "This user has no Lightning wallet configured"
 msgstr "Dieser Nutzer hat kein Lightning-Wallet konfiguriert"
 
-#: src/components/ui/NoteMenu.ts:702
+#: src/components/ui/NoteMenu.ts:705
 msgid "Thread muted"
 msgstr "Thread stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:699
+#: src/components/ui/NoteMenu.ts:702
 #: src/lists/mutes.ts:1710
 #: src/lists/mutes.ts:2214
 msgid "Thread unmuted"
 msgstr "Thread-Stummschaltung aufgehoben"
 
-#: src/components/ui/NoteMenu.ts:283
+#: src/components/ui/NoteMenu.ts:284
 msgid "Unmute thread"
 msgstr "Thread-Stummschaltung aufheben"
 
-#: src/components/ui/NoteMenu.ts:657
+#: src/components/ui/NoteMenu.ts:660
 msgid "User muted privately"
 msgstr "Nutzer privat stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:657
+#: src/components/ui/NoteMenu.ts:660
 msgid "User muted publicly"
 msgstr "Nutzer öffentlich stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:248
+#: src/components/ui/NoteMenu.ts:249
 msgid "View raw event"
 msgstr "Raw-Event anzeigen"
 
@@ -2141,7 +2127,7 @@ msgstr "Raw-Event anzeigen"
 msgid "You cannot zap your own notes"
 msgstr "Du kannst deine eigenen Notizen nicht zappen"
 
-#: src/components/ui/NoteMenu.ts:730
+#: src/components/ui/NoteMenu.ts:733
 msgid "You will be notified about new articles"
 msgstr "Du wirst über neue Artikel benachrichtigt"
 
@@ -2380,7 +2366,7 @@ msgstr "Marktplatz"
 msgid "Missing secret"
 msgstr "Secret fehlt"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:724
+#: src/addons/feedback-board/FeedbackBoardView.ts:725
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr "Verschieben nach"
@@ -2462,13 +2448,13 @@ msgstr "Aus deinem Kalender entfernt"
 msgid "Send a message…"
 msgstr "Nachricht senden…"
 
-#: src/components/ui/note-features/CollapsibleManager.ts:144
+#: src/components/ui/note-features/CollapsibleManager.ts:149
 msgid "Show Less"
 msgstr "Weniger anzeigen"
 
-#: src/components/ui/note-features/CollapsibleManager.ts:131
-#: src/components/ui/note-features/CollapsibleManager.ts:144
-#: src/components/ui/note-features/CollapsibleManager.ts:189
+#: src/components/ui/note-features/CollapsibleManager.ts:133
+#: src/components/ui/note-features/CollapsibleManager.ts:148
+#: src/components/ui/note-features/CollapsibleManager.ts:194
 msgid "Show More"
 msgstr "Mehr anzeigen"
 
@@ -3394,8 +3380,8 @@ msgstr "Relay-Status"
 msgid "Relay URL must start with wss:// or ws://"
 msgstr "Relay-URL muss mit wss:// oder ws:// beginnen"
 
-#: src/addons/calendar/BookingManager.ts:327
-#: src/addons/calendar/BookingManager.ts:599
+#: src/addons/calendar/BookingManager.ts:328
+#: src/addons/calendar/BookingManager.ts:600
 #: src/addons/calendar/CalendarEventModal.ts:126
 #: src/addons/calendar/CalendarEventModal.ts:476
 #: src/addons/calendar/CalendarEventModal.ts:493
@@ -3770,7 +3756,7 @@ msgstr "sofort, ohne Mittelsmann"
 msgid "Keys: Your Identity"
 msgstr "Keys: Deine Identität"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:655
+#: src/addons/bulk-delete/BulkDeleteView.ts:654
 #: src/components/onboarding/PublicTimelineComponent.ts:78
 #: src/components/relay-browser/RelayBrowser.ts:56
 #: src/components/timeline/Timeline.ts:170
@@ -4566,7 +4552,7 @@ msgstr "Artikel erfolgreich veröffentlicht!"
 msgid "Authentication failed. Please log in again."
 msgstr "Authentifizierung fehlgeschlagen. Bitte melde dich erneut an."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:748
+#: src/addons/feedback-board/FeedbackBoardView.ts:749
 #: src/services/PostService.ts:540
 msgid "Comment"
 msgstr "Kommentar"
@@ -4968,11 +4954,12 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2099
 #: src/components/layout/MainLayout.ts:2110
 #: src/components/layout/MainLayout.ts:2113
-#: src/shell/focusStage.ts:229
+#: src/shell/focusStage.ts:372
+#: src/shell/focusStage.ts:526
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:836
+#: src/addons/bulk-delete/BulkDeleteView.ts:835
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
 #: src/components/layout/MainLayout.ts:2046
 #: src/components/layout/MainLayout.ts:2047
@@ -5039,11 +5026,11 @@ msgstr "„%s“ wird bereits verfolgt."
 msgid "\"%s\" is already in the filter list"
 msgstr "„%s“ ist bereits in der Filterliste"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:786
+#: src/addons/bulk-delete/BulkDeleteView.ts:785
 msgid "(Article)"
 msgstr "(Artikel)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:782
+#: src/addons/bulk-delete/BulkDeleteView.ts:781
 msgid "(Audio)"
 msgstr "(Audio)"
 
@@ -5052,7 +5039,7 @@ msgstr "(Audio)"
 msgid "(empty)"
 msgstr "(leer)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:783
+#: src/addons/bulk-delete/BulkDeleteView.ts:782
 msgid "(Image)"
 msgstr "(Bild)"
 
@@ -5060,15 +5047,15 @@ msgstr "(Bild)"
 msgid "(no text content)"
 msgstr "(kein Textinhalt)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:787
+#: src/addons/bulk-delete/BulkDeleteView.ts:786
 msgid "(no text)"
 msgstr "(kein Text)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:763
+#: src/addons/bulk-delete/BulkDeleteView.ts:762
 msgid "(Repost)"
 msgstr "(Repost)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:780
+#: src/addons/bulk-delete/BulkDeleteView.ts:779
 msgid "(Video)"
 msgstr "(Video)"
 
@@ -5088,7 +5075,7 @@ msgid_plural "%s days before"
 msgstr[0] "%s Tag vorher"
 msgstr[1] "%s Tage vorher"
 
-#: src/addons/calendar/BookingManager.ts:515
+#: src/addons/calendar/BookingManager.ts:516
 msgid "%s days"
 msgstr "%s Tage"
 
@@ -5172,7 +5159,7 @@ msgid_plural "%s events published to your relays"
 msgstr[0] "%s Ereignis an deine Relays veröffentlicht"
 msgstr[1] "%s Ereignisse an deine Relays veröffentlicht"
 
-#: src/addons/calendar/BookingManager.ts:504
+#: src/addons/calendar/BookingManager.ts:505
 msgid "%s hours"
 msgstr "%s Stunden"
 
@@ -5188,8 +5175,8 @@ msgstr[1] "%s Einträge sind"
 msgid "%s members"
 msgstr "%s Mitglieder"
 
-#: src/addons/calendar/BookingManager.ts:482
-#: src/addons/calendar/BookingManager.ts:493
+#: src/addons/calendar/BookingManager.ts:483
+#: src/addons/calendar/BookingManager.ts:494
 msgid "%s minutes"
 msgstr "%s Minuten"
 
@@ -5201,8 +5188,8 @@ msgstr "%s neue Nachrichten in %s"
 msgid "%s people added to your follows"
 msgstr "%s Personen zu deinen Folgenden hinzugefügt"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1019
-#: src/addons/bulk-delete/BulkDeleteView.ts:907
+#: src/addons/bulk-delete/BulkDeleteView.ts:1018
+#: src/addons/bulk-delete/BulkDeleteView.ts:906
 msgid "%s post"
 msgid_plural "%s posts"
 msgstr[0] "%s Beitrag"
@@ -5262,7 +5249,7 @@ msgstr "ein Gast"
 msgid "a Nostrord group"
 msgstr "einer Nostrord-Gruppe"
 
-#: src/addons/calendar/BookingManager.ts:376
+#: src/addons/calendar/BookingManager.ts:377
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:87
 #: src/addons/follow-packs/FollowPackManager.ts:598
 #: src/addons/group-chats/GroupChatsSettings.ts:277
@@ -5345,13 +5332,13 @@ msgstr "Alle eigenen Reposts (jedes Alter)"
 msgid "an Armada community"
 msgstr "einer Armada-Community"
 
-#: src/addons/calendar/BookingManager.ts:346
+#: src/addons/calendar/BookingManager.ts:347
 msgid "Appointment title"
 msgstr "Termin-Titel"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:420
-#: src/addons/feedback-board/FeedbackBoardView.ts:461
-#: src/addons/feedback-board/FeedbackBoardView.ts:557
+#: src/addons/feedback-board/FeedbackBoardView.ts:421
+#: src/addons/feedback-board/FeedbackBoardView.ts:462
+#: src/addons/feedback-board/FeedbackBoardView.ts:558
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -5436,7 +5423,7 @@ msgstr "blossom.band (Blossom, gratis: 20 MiB)"
 msgid "booked"
 msgstr "gebucht"
 
-#: src/addons/calendar/BookingManager.ts:296
+#: src/addons/calendar/BookingManager.ts:297
 msgid "Booked by %s"
 msgstr "Gebucht von %s"
 
@@ -5446,15 +5433,15 @@ msgstr "Gebucht von %s"
 msgid "Booking cancelled"
 msgstr "Buchung storniert"
 
-#: src/addons/calendar/BookingManager.ts:218
+#: src/addons/calendar/BookingManager.ts:219
 msgid "Booking config failed: %s"
 msgstr "Buchungs-Konfiguration fehlgeschlagen: %s"
 
-#: src/addons/calendar/BookingManager.ts:334
+#: src/addons/calendar/BookingManager.ts:335
 msgid "Booking page"
 msgstr "Buchungsseite"
 
-#: src/addons/calendar/BookingManager.ts:551
+#: src/addons/calendar/BookingManager.ts:552
 msgid "Booking page link copied"
 msgstr "Buchungsseiten-Link kopiert"
 
@@ -5495,7 +5482,7 @@ msgstr "Beide Kalender nebeneinander"
 msgid "BTC Price"
 msgstr "BTC-Kurs"
 
-#: src/addons/calendar/BookingManager.ts:358
+#: src/addons/calendar/BookingManager.ts:359
 msgid "Buffer between slots"
 msgstr "Puffer zwischen Slots"
 
@@ -5539,8 +5526,8 @@ msgstr "Kalendername"
 msgid "Calibrating baseline (%s followers)…"
 msgstr "Basislinie wird kalibriert (%s Folgende) …"
 
-#: src/addons/calendar/BookingManager.ts:397
-#: src/addons/calendar/BookingManager.ts:402
+#: src/addons/calendar/BookingManager.ts:398
+#: src/addons/calendar/BookingManager.ts:403
 #: src/addons/calendar/CalendarEventModal.ts:510
 #: src/addons/calendar/CalendarEventModal.ts:517
 msgid "Cancel booking"
@@ -5554,7 +5541,7 @@ msgstr "Beitrag abbrechen"
 msgid "Cancel Scheduled Post"
 msgstr "Geplanten Beitrag abbrechen"
 
-#: src/addons/calendar/BookingManager.ts:294
+#: src/addons/calendar/BookingManager.ts:295
 msgid "Cancelling…"
 msgstr "Wird storniert …"
 
@@ -5820,13 +5807,13 @@ msgid "Delete many of your notes at once via NIP-09 requests."
 msgstr "Lösche viele deiner Notizen auf einmal via NIP-09-Anfragen."
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
-#: src/addons/bulk-delete/BulkDeleteView.ts:889
+#: src/addons/bulk-delete/BulkDeleteView.ts:888
 #: src/components/views/MessagesView.ts:202
 #: src/components/views/MessagesView.ts:805
 msgid "Delete selected (%s)"
 msgstr "Auswahl löschen (%s)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:904
+#: src/addons/bulk-delete/BulkDeleteView.ts:903
 msgid "Delete selected posts"
 msgstr "Ausgewählte Beiträge löschen"
 
@@ -5846,7 +5833,7 @@ msgstr "Diese Notiz löschen? Sie wird von diesem Gerät entfernt."
 msgid "Deleted %s items from your relays"
 msgstr "%s Elemente von deinen Relays gelöscht"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1019
+#: src/addons/bulk-delete/BulkDeleteView.ts:1018
 msgid "Deleting %s…"
 msgstr "%s wird gelöscht …"
 
@@ -5859,11 +5846,11 @@ msgstr ""
 "Relays <strong>physisch</strong>. Es ist keine Löschanfrage, die sie "
 "ignorieren könnten."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1039
+#: src/addons/bulk-delete/BulkDeleteView.ts:1038
 msgid "Deletion broadcast complete."
 msgstr "Löschungs-Übertragung abgeschlossen."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1034
+#: src/addons/bulk-delete/BulkDeleteView.ts:1033
 msgid "Deletion broadcast sent."
 msgstr "Löschungs-Übertragung gesendet."
 
@@ -6014,7 +6001,7 @@ msgstr "Armada aktivieren"
 msgid "Enable Badges"
 msgstr "Badges aktivieren"
 
-#: src/addons/calendar/BookingManager.ts:342
+#: src/addons/calendar/BookingManager.ts:343
 msgid "Enable booking page"
 msgstr "Buchungsseite aktivieren"
 
@@ -6231,7 +6218,7 @@ msgstr "Geplante Beiträge konnten nicht geladen werden"
 msgid "Failed to load transactions"
 msgstr "Transaktionen konnten nicht geladen werden"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:582
+#: src/addons/bulk-delete/BulkDeleteView.ts:581
 msgid "Failed to load your notes"
 msgstr "Deine Notizen konnten nicht geladen werden"
 
@@ -6321,7 +6308,7 @@ msgstr "Follower-Benachrichtigung"
 msgid "for everyone"
 msgstr "für alle"
 
-#: src/addons/calendar/BookingManager.ts:312
+#: src/addons/calendar/BookingManager.ts:313
 msgid "Free"
 msgstr "Frei"
 
@@ -6374,7 +6361,7 @@ msgstr "Gruppen-Chats: eigene Beiträge ausgeschlossen"
 msgid "GroupChats: your own posts included"
 msgstr "Gruppen-Chats: eigene Beiträge eingeschlossen"
 
-#: src/addons/calendar/BookingManager.ts:301
+#: src/addons/calendar/BookingManager.ts:302
 msgid "guest"
 msgstr "Gast"
 
@@ -6497,7 +6484,7 @@ msgstr "inaktiv"
 msgid "Insert emoji"
 msgstr "Emoji einfügen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:910
+#: src/addons/bulk-delete/BulkDeleteView.ts:909
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:228
 #: src/components/views/ProfileBookingView.ts:321
 msgid "Keep"
@@ -6592,7 +6579,7 @@ msgstr "Rezensionen werden geladen …"
 msgid "Loading scheduled posts..."
 msgstr "Geplante Beiträge werden geladen …"
 
-#: src/addons/calendar/BookingManager.ts:276
+#: src/addons/calendar/BookingManager.ts:277
 msgid "Loading slots…"
 msgstr "Slots werden geladen …"
 
@@ -6610,7 +6597,7 @@ msgstr "Transaktionen werden geladen …"
 msgid "Loading your listings..."
 msgstr "Deine Listings werden geladen …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:706
+#: src/addons/bulk-delete/BulkDeleteView.ts:705
 msgid "Loading your notes..."
 msgstr "Deine Notizen werden geladen …"
 
@@ -6774,15 +6761,15 @@ msgstr "Noch keine Notizen"
 msgid "No own posts found yet."
 msgstr "Noch keine eigenen Beiträge gefunden."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:716
+#: src/addons/bulk-delete/BulkDeleteView.ts:715
 msgid "No posts found in this range."
 msgstr "Keine Beiträge in diesem Zeitraum gefunden."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:717
+#: src/addons/bulk-delete/BulkDeleteView.ts:716
 msgid "No posts found."
 msgstr "Keine Beiträge gefunden."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:714
+#: src/addons/bulk-delete/BulkDeleteView.ts:713
 msgid "No posts match your search."
 msgstr "Keine Beiträge entsprechen deiner Suche."
 
@@ -6794,7 +6781,7 @@ msgstr "Noch keine zitierten Reposts"
 msgid "No replies yet"
 msgstr "Noch keine Antworten"
 
-#: src/addons/calendar/BookingManager.ts:278
+#: src/addons/calendar/BookingManager.ts:279
 msgid "No slots published yet. Save the config to generate them."
 msgstr ""
 "Noch keine Slots veröffentlicht. Speichere die Konfiguration, um sie zu "
@@ -6816,8 +6803,8 @@ msgstr ""
 msgid "No transactions yet"
 msgstr "Noch keine Transaktionen"
 
-#: src/addons/calendar/BookingManager.ts:331
-#: src/addons/calendar/BookingManager.ts:603
+#: src/addons/calendar/BookingManager.ts:332
+#: src/addons/calendar/BookingManager.ts:604
 msgid "No vacation ranges."
 msgstr "Keine Urlaubszeiträume."
 
@@ -7113,7 +7100,7 @@ msgstr ""
 msgid "Publishing the deletions failed: %s"
 msgstr "Veröffentlichen der Löschungen fehlgeschlagen: %s"
 
-#: src/addons/calendar/BookingManager.ts:193
+#: src/addons/calendar/BookingManager.ts:194
 #: src/addons/calendar/CalendarImportExport.ts:127
 #: src/addons/calendar/CalendarImportExport.ts:99
 msgid "Publishing…"
@@ -7145,7 +7132,7 @@ msgstr "Wieder einschließen"
 msgid "reacted to your %s"
 msgstr "hat auf %s reagiert"
 
-#: src/addons/calendar/BookingManager.ts:399
+#: src/addons/calendar/BookingManager.ts:400
 #: src/addons/calendar/CalendarEventModal.ts:514
 #: src/components/views/ProfileBookingView.ts:318
 msgid "Reason (optional)"
@@ -7166,7 +7153,7 @@ msgstr "Letzte Änderungen (%s)"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:396
 #: src/addons/analytics/AnalyticsAddonView.ts:776
-#: src/components/timeline/LastNotesPerFollow.ts:135
+#: src/components/timeline/LastNotesPerFollow.ts:133
 #: src/components/timeline/Timeline.ts:413
 msgid "Refresh"
 msgstr "Aktualisieren"
@@ -7276,7 +7263,7 @@ msgstr "Kalender zurücksetzen?"
 msgid "Reset failed: %s"
 msgstr "Zurücksetzen fehlgeschlagen: %s"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:690
+#: src/addons/bulk-delete/BulkDeleteView.ts:689
 msgid "Reset filters"
 msgstr "Filter zurücksetzen"
 
@@ -7324,8 +7311,8 @@ msgstr "Entziehen"
 msgid "Right Pane"
 msgstr "Rechter Bereich"
 
-#: src/addons/calendar/BookingManager.ts:223
-#: src/addons/calendar/BookingManager.ts:379
+#: src/addons/calendar/BookingManager.ts:224
+#: src/addons/calendar/BookingManager.ts:380
 msgid "Save & publish slots"
 msgstr "Slots speichern & veröffentlichen"
 
@@ -7384,15 +7371,15 @@ msgstr "Geplante Zeit darf höchstens 30 Tage in der Zukunft liegen"
 msgid "Scheduled time must be at least 1 minute in the future"
 msgstr "Geplante Zeit muss mindestens 1 Minute in der Zukunft liegen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:680
+#: src/addons/bulk-delete/BulkDeleteView.ts:679
 msgid "Search “%s”"
 msgstr "„%s“ suchen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:500
+#: src/addons/bulk-delete/BulkDeleteView.ts:499
 msgid "Search failed"
 msgstr "Suche fehlgeschlagen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:469
+#: src/addons/bulk-delete/BulkDeleteView.ts:468
 msgid "Search is not available right now"
 msgstr "Suche ist gerade nicht verfügbar"
 
@@ -7408,11 +7395,11 @@ msgstr "Notizen durchsuchen …"
 msgid "Search source…"
 msgstr "Quelle durchsuchen …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:832
+#: src/addons/bulk-delete/BulkDeleteView.ts:831
 msgid "Search terms..."
 msgstr "Suchbegriffe …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:841
+#: src/addons/bulk-delete/BulkDeleteView.ts:840
 msgid "Search your posts"
 msgstr "Deine Beiträge durchsuchen"
 
@@ -7420,7 +7407,7 @@ msgstr "Deine Beiträge durchsuchen"
 msgid "Search…"
 msgstr "Suchen …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:705
+#: src/addons/bulk-delete/BulkDeleteView.ts:704
 msgid "Searching your posts…"
 msgstr "Deine Beiträge werden durchsucht …"
 
@@ -7450,7 +7437,7 @@ msgstr "Land wählen …"
 msgid "Select district…"
 msgstr "Bezirk wählen …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:754
+#: src/addons/bulk-delete/BulkDeleteView.ts:753
 msgid "Select for deletion"
 msgstr "Zum Löschen auswählen"
 
@@ -7466,7 +7453,7 @@ msgstr "Region wählen …"
 msgid "Select time range"
 msgstr "Zeitraum wählen"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:429
+#: src/addons/bulk-delete/BulkDeleteView.ts:428
 #: src/helpers/datePickerModal.ts:162
 msgid "Select Time Range"
 msgstr "Zeitraum wählen"
@@ -7489,7 +7476,7 @@ msgstr "Eigene Reposts aus der Timeline ausgeblendet"
 msgid "Send DM"
 msgstr "DM senden"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1026
+#: src/addons/bulk-delete/BulkDeleteView.ts:1025
 msgid "Sending request to %s (%s/%s)"
 msgstr "Anfrage an %s wird gesendet (%s/%s)"
 
@@ -7547,7 +7534,7 @@ msgstr "Weniger anzeigen"
 msgid "Show me the Custom Emojis of this user…"
 msgstr "Zeig mir die eigenen Emojis dieses Benutzers …"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:430
+#: src/addons/bulk-delete/BulkDeleteView.ts:429
 #: src/helpers/datePickerModal.ts:163
 msgid "Show Notes"
 msgstr "Beiträge anzeigen"
@@ -7569,17 +7556,6 @@ msgid ""
 msgstr ""
 "Zeige die eigenen Emojis eines anderen Benutzers und importiere beliebige "
 "in dein persönliches Pack."
-
-#: src/components/settings/UISettingsSection.ts:223
-#: src/shell/focusSettings.ts:133
-msgid ""
-"Show the reactions (likes) of people you follow as entries in your "
-"timeline. Off by default. Individual users can be enabled from their "
-"profile."
-msgstr ""
-"Zeige die Reaktionen (Likes) von Menschen, denen du folgst, als Einträge in "
-"deiner Timeline. Standardmäßig aus. Einzelne Benutzer kannst du über deren "
-"Profil aktivieren."
 
 #: src/addons/addonI18n.ts:82
 msgid "Show your NIP-60 Lightning wallet balance in the sidebar."
@@ -7677,7 +7653,7 @@ msgid ""
 "DM."
 msgstr "Gast und alle Teilnehmer werden per DM über die Stornierung informiert."
 
-#: src/addons/calendar/BookingManager.ts:398
+#: src/addons/calendar/BookingManager.ts:399
 msgid "The guest and all participants will be informed by DM."
 msgstr "Gast und alle Teilnehmer werden per DM informiert."
 
@@ -7689,7 +7665,7 @@ msgstr "Der Gastgeber hat die Buchung „%s“ storniert"
 msgid "the Nostrord group \"%s\""
 msgstr "der Nostrord-Gruppe „%s“"
 
-#: src/addons/calendar/BookingManager.ts:243
+#: src/addons/calendar/BookingManager.ts:244
 msgid "The vacation end must be after the start"
 msgstr "Das Urlaubs-Ende muss nach dem Start liegen"
 
@@ -7781,7 +7757,7 @@ msgstr ""
 msgid "Ultra (near-zero quality loss)"
 msgstr "Ultra (nahezu kein Qualitätsverlust)"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:816
+#: src/addons/bulk-delete/BulkDeleteView.ts:815
 #: src/components/views/MessagesView.ts:816
 msgid "Unselect all visible"
 msgstr "Alle sichtbaren abwählen"
@@ -7834,15 +7810,15 @@ msgstr "Medien hochladen"
 msgid "User is already in this pack"
 msgstr "Benutzer ist bereits in diesem Pack"
 
-#: src/addons/calendar/BookingManager.ts:371
+#: src/addons/calendar/BookingManager.ts:372
 msgid "Vacation"
 msgstr "Urlaub"
 
-#: src/addons/calendar/BookingManager.ts:374
+#: src/addons/calendar/BookingManager.ts:375
 msgid "Vacation from"
 msgstr "Urlaub von"
 
-#: src/addons/calendar/BookingManager.ts:375
+#: src/addons/calendar/BookingManager.ts:376
 msgid "Vacation to"
 msgstr "Urlaub bis"
 
@@ -7858,7 +7834,7 @@ msgstr "Beobachte %s Folgende auf Änderungen."
 msgid "Week"
 msgstr "Woche"
 
-#: src/addons/calendar/BookingManager.ts:369
+#: src/addons/calendar/BookingManager.ts:370
 msgid "Weekly availability"
 msgstr "Wöchentliche Verfügbarkeit"
 
@@ -7881,7 +7857,6 @@ msgid "When:"
 msgstr "Wann:"
 
 #: src/components/settings/UISettingsSection.ts:276
-#: src/shell/focusSettings.ts:323
 msgid ""
 "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden "
 "the feed beyond your direct follows but take longer to build and include "
@@ -7920,11 +7895,11 @@ msgstr "Dein Dhikr wurde übermittelt"
 msgid "Your event calendars"
 msgstr "Deine Ereigniskalender"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:682
+#: src/addons/bulk-delete/BulkDeleteView.ts:681
 msgid "Your posts from %s to %s"
 msgstr "Deine Beiträge von %s bis %s"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:670
+#: src/addons/bulk-delete/BulkDeleteView.ts:669
 msgid "Your recent posts"
 msgstr "Deine aktuellen Beiträge"
 
@@ -7932,7 +7907,7 @@ msgstr "Deine aktuellen Beiträge"
 msgid "Your scheduled posts"
 msgstr "Deine geplanten Beiträge"
 
-#: src/addons/calendar/BookingManager.ts:381
+#: src/addons/calendar/BookingManager.ts:382
 msgid "Your slots"
 msgstr "Deine Slots"
 
@@ -8040,8 +8015,8 @@ msgstr ""
 "sie als Reaktionen oder in deinen Beiträgen via <code>:shortcode:</code>. "
 "Andere Nostr-Clients mit NIP-30-Unterstützung zeigen sie ebenfalls."
 
-#: src/components/ui/NoteMenu.ts:240
-#: src/components/ui/NoteMenu.ts:835
+#: src/components/ui/NoteMenu.ts:241
+#: src/components/ui/NoteMenu.ts:838
 msgid "Add author to Tribe"
 msgstr "Autor zum Tribe hinzufügen"
 
@@ -8202,7 +8177,7 @@ msgstr "blossom.nostr.build (Blossom, gratis: 20 MiB)"
 msgid "blossom.primal.net (Blossom, free: 20 MiB)"
 msgstr "blossom.primal.net (Blossom, gratis: 20 MiB)"
 
-#: src/addons/calendar/BookingManager.ts:366
+#: src/addons/calendar/BookingManager.ts:367
 msgid "Bookable window"
 msgstr "Buchbares Zeitfenster"
 
@@ -8214,7 +8189,7 @@ msgstr "Kurze Beschreibung für Listing-Karten …"
 msgid "Bring back the old, linear navigation."
 msgstr "Bring die alte, lineare Navigation zurück."
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1020
+#: src/addons/bulk-delete/BulkDeleteView.ts:1019
 msgid "Broadcasting deletion in the background…"
 msgstr "Löschung wird im Hintergrund übertragen …"
 
@@ -8578,7 +8553,7 @@ msgstr "Zuletzt geprüft: %s."
 msgid "Last updated %s"
 msgstr "Zuletzt aktualisiert: %s"
 
-#: src/addons/calendar/BookingManager.ts:336
+#: src/addons/calendar/BookingManager.ts:337
 msgid ""
 "Let people book appointments in your free time. Your availability is public "
 "(the slots are regular NIP-52 calendar events); bookings arrive as a "
@@ -8625,7 +8600,7 @@ msgstr "Lade weitere Listings …"
 msgid "Loading more transactions…"
 msgstr "Lade weitere Transaktionen …"
 
-#: src/components/timeline/LastNotesPerFollow.ts:86
+#: src/components/timeline/LastNotesPerFollow.ts:84
 msgid "Loading more…"
 msgstr "Lade mehr …"
 
@@ -8719,7 +8694,7 @@ msgstr "Speicher-Optimierung aktiviert"
 msgid "mentioned you in %s"
 msgstr "hat dich in %s erwähnt"
 
-#: src/addons/calendar/BookingManager.ts:362
+#: src/addons/calendar/BookingManager.ts:363
 msgid "Minimum notice"
 msgstr "Mindestvorlauf"
 
@@ -8854,7 +8829,7 @@ msgstr "Telefon:"
 msgid "Pick a district first"
 msgstr "Wähle zuerst einen Bezirk"
 
-#: src/addons/calendar/BookingManager.ts:236
+#: src/addons/calendar/BookingManager.ts:237
 msgid "Pick a from and to date first"
 msgstr "Wähle zuerst Von- und Bis-Datum"
 
@@ -8871,7 +8846,7 @@ msgstr "Beitrags-Kürzung aktiviert"
 msgid "posted a new article"
 msgstr "hat einen neuen Artikel veröffentlicht"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:899
+#: src/addons/bulk-delete/BulkDeleteView.ts:898
 msgid "Posts module not ready"
 msgstr "Beiträge-Modul nicht bereit"
 
@@ -9007,7 +8982,7 @@ msgid "Scheduled post cancelled"
 msgstr "Geplanter Beitrag abgebrochen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
-#: src/addons/bulk-delete/BulkDeleteView.ts:817
+#: src/addons/bulk-delete/BulkDeleteView.ts:816
 #: src/components/views/MessagesView.ts:200
 #: src/components/views/MessagesView.ts:817
 msgid "Select all visible"
@@ -9026,7 +9001,7 @@ msgstr "Eigene Reposts wieder eingeblendet"
 msgid "Seller"
 msgstr "Verkäufer"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:905
+#: src/addons/bulk-delete/BulkDeleteView.ts:904
 msgid ""
 "Send a deletion request for %s? This broadcasts a NIP-09 request to relays "
 "and cannot be undone. Relays may or may not honor it."
@@ -9094,7 +9069,7 @@ msgstr "Site-Hash"
 msgid "Skip compression for files below"
 msgstr "Komprimierung überspringen für Dateien unter"
 
-#: src/addons/calendar/BookingManager.ts:354
+#: src/addons/calendar/BookingManager.ts:355
 msgid "Slot length"
 msgstr "Slot-Länge"
 
@@ -9262,7 +9237,7 @@ msgstr "Zeiten in deiner lokalen Zeitzone"
 msgid "Title *"
 msgstr "Titel *"
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:678
+#: src/addons/bulk-delete/BulkDeleteView.ts:677
 msgid "to"
 msgstr "bis"
 
@@ -9364,37 +9339,6 @@ msgstr "Wallet nicht verbunden"
 #: src/components/settings/PrivacySettingsSection.ts:267
 msgid "Warning:"
 msgstr "Warnung:"
-
-#: src/components/settings/UISettingsSection.ts:233
-#: src/shell/focusSettings.ts:143
-msgid ""
-"When enabled, highlight posts by others that quote an external website "
-"(kind 9802 with a web source) are hidden from your timelines, including "
-"pure reposts of them. Your own highlights stay visible. Individual users "
-"can be hidden from their profile."
-msgstr ""
-"Aktiviert werden Highlight-Beiträge anderer, die eine externe Website "
-"zitieren (Kind 9802 mit Web-Quelle), aus deinen Timelines ausgeblendet - "
-"inklusive reiner Reposts davon. Deine eigenen Highlights bleiben sichtbar. "
-"Einzelne Benutzer kannst du über deren Profil ausblenden."
-
-#: src/components/settings/UISettingsSection.ts:254
-#: src/shell/focusSettings.ts:163
-msgid ""
-"When enabled, long posts will always be displayed in full without \"Show "
-"More\" buttons."
-msgstr ""
-"Aktiviert werden lange Beiträge immer vollständig ohne „Mehr "
-"anzeigen“-Buttons dargestellt."
-
-#: src/components/settings/UISettingsSection.ts:180
-#: src/shell/focusSettings.ts:110
-msgid ""
-"When enabled, reposts of a user's own notes are hidden from your timeline. "
-"Reposts of other people's notes are unaffected."
-msgstr ""
-"Aktiviert werden Reposts der eigenen Notes eines Benutzers aus deiner "
-"Timeline ausgeblendet. Reposts von Notes anderer bleiben unberührt."
 
 #: src/components/views/AboutView.ts:245
 msgid ""
@@ -10646,12 +10590,12 @@ msgstr "Willkommen bei NoorNote"
 msgid "%s new"
 msgstr "%s neu"
 
-#: src/components/timeline/LastNotesPerFollow.ts:107
+#: src/components/timeline/LastNotesPerFollow.ts:105
 #: src/components/timeline/Timeline.ts:447
 msgid "Latest"
 msgstr "Neueste"
 
-#: src/components/timeline/LastNotesPerFollow.ts:108
+#: src/components/timeline/LastNotesPerFollow.ts:106
 #: src/components/timeline/Timeline.ts:448
 msgid "Latest + Replies"
 msgstr "Neueste + Antworten"
@@ -10884,7 +10828,7 @@ msgstr "Antworten konnten nicht geladen werden. Bitte erneut versuchen."
 msgid "Follow pack not found"
 msgstr "Follow-Pack nicht gefunden"
 
-#: src/components/timeline/LastNotesPerFollow.ts:148
+#: src/components/timeline/LastNotesPerFollow.ts:146
 #: src/components/timeline/Timeline.ts:433
 msgid "Follow some users or check your relay connections."
 msgstr "Folge einigen Konten oder prüfe deine Relay-Verbindungen."
@@ -10930,7 +10874,7 @@ msgstr "Lightning-Rechnung"
 msgid "Loading follow pack..."
 msgstr "Lade Follow-Pack..."
 
-#: src/components/timeline/LastNotesPerFollow.ts:143
+#: src/components/timeline/LastNotesPerFollow.ts:141
 #: src/components/timeline/Timeline.ts:421
 msgid "Loading more events..."
 msgstr "Lade weitere Events..."
@@ -11004,7 +10948,7 @@ msgstr "Keine passenden Notes gefunden."
 msgid "No media from your follows yet."
 msgstr "Noch keine Medien von deinen Konten."
 
-#: src/components/timeline/LastNotesPerFollow.ts:147
+#: src/components/timeline/LastNotesPerFollow.ts:145
 #: src/components/timeline/Timeline.ts:427
 msgid "No notes found"
 msgstr "Keine Notes gefunden"
@@ -11192,7 +11136,7 @@ msgstr "Dies ist eine Umfrage-Note."
 msgid "This relay may be empty or not responding"
 msgstr "Dieses Relay ist möglicherweise leer oder antwortet nicht"
 
-#: src/components/timeline/LastNotesPerFollow.ts:188
+#: src/components/timeline/LastNotesPerFollow.ts:186
 msgid "Timeline not ready. Please try again."
 msgstr "Timeline noch nicht bereit. Bitte erneut versuchen."
 
@@ -11314,12 +11258,12 @@ msgstr "Tribe „%s“ löschen? %s Mitglieder werden gelöscht."
 msgid "Delete tribe \"%s\"? 1 member will be deleted."
 msgstr "Tribe „%s“ löschen? 1 Mitglied wird gelöscht."
 
-#: src/addons/calendar/BookingManager.ts:426
+#: src/addons/calendar/BookingManager.ts:427
 #: src/addons/calendar/CalendarEventModal.ts:529
 msgid "failed DM: 1"
 msgstr "fehlgeschlagene DM: 1"
 
-#: src/addons/calendar/BookingManager.ts:426
+#: src/addons/calendar/BookingManager.ts:427
 #: src/addons/calendar/CalendarEventModal.ts:529
 msgid "failed DMs: %s"
 msgstr "fehlgeschlagene DMs: %s"
@@ -11392,7 +11336,7 @@ msgstr "„%s\" vom Profil getrennt"
 msgid "An error occurred while deleting the note"
 msgstr "Fehler beim Löschen der Notiz"
 
-#: src/components/ui/NoteMenu.ts:884
+#: src/components/ui/NoteMenu.ts:887
 msgid "Author added to %s"
 msgstr "Autor zu %s hinzugefügt"
 
@@ -11560,7 +11504,7 @@ msgstr ""
 "Die Desktop-App hat kein Relay-Verbindungslimit des Browsers - für ein "
 "besseres Erlebnis im Following-Feed."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:77
+#: src/addons/feedback-board/FeedbackBoardView.ts:78
 msgid ""
 "A public board between you and the developer: file wishes and bugs, follow "
 "their progress, get a DM on every update. Tickets are public Nostr events."
@@ -11569,35 +11513,35 @@ msgstr ""
 "einreichen, den Fortschritt verfolgen, bei jedem Update eine DM bekommen. "
 "Tickets sind öffentliche Nostr-Events."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:681
+#: src/addons/feedback-board/FeedbackBoardView.ts:682
 msgid "A title is required."
 msgstr "Ein Titel ist erforderlich."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:744
+#: src/addons/feedback-board/FeedbackBoardView.ts:745
 msgid "Add comment"
 msgstr "Kommentar hinzufügen"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:553
+#: src/addons/feedback-board/FeedbackBoardView.ts:554
 msgid "Archive ticket"
 msgstr "Ticket archivieren"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:554
+#: src/addons/feedback-board/FeedbackBoardView.ts:555
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr "Archivierte Tickets sind nur noch für dich sichtbar. „%s“ archivieren?"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:267
+#: src/addons/feedback-board/FeedbackBoardView.ts:268
 msgid "Bug"
 msgstr "Bug"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:979
+#: src/addons/feedback-board/FeedbackBoardView.ts:980
 msgid "Comment sent"
 msgstr "Kommentar gesendet"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:75
+#: src/addons/feedback-board/FeedbackBoardView.ts:76
 msgid "Enable Feedback Board"
 msgstr "Feedback-Board aktivieren"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:108
+#: src/addons/feedback-board/FeedbackBoardView.ts:109
 #: src/shell/focusDomains.ts:227
 msgid "Feedback Board"
 msgstr "Feedback-Board"
@@ -11606,7 +11550,7 @@ msgstr "Feedback-Board"
 msgid "In Progress"
 msgstr "In Arbeit"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:191
+#: src/addons/feedback-board/FeedbackBoardView.ts:192
 msgid "Loading board…"
 msgstr "Board wird geladen…"
 
@@ -11618,12 +11562,12 @@ msgstr "Neuer Kommentar zu „%s“: %s"
 msgid "New feedback board ticket: \"%s\""
 msgstr "Neues Feedback-Board-Ticket: „%s“"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:250
-#: src/addons/feedback-board/FeedbackBoardView.ts:659
+#: src/addons/feedback-board/FeedbackBoardView.ts:251
+#: src/addons/feedback-board/FeedbackBoardView.ts:660
 msgid "New Ticket"
 msgstr "Neues Ticket"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:468
+#: src/addons/feedback-board/FeedbackBoardView.ts:469
 msgid "No archived tickets yet."
 msgstr "Noch keine archivierten Tickets."
 
@@ -11631,7 +11575,7 @@ msgstr "Noch keine archivierten Tickets."
 msgid "Only readable in NoorNote."
 msgstr "Nur in NoorNote lesbar."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:634
+#: src/addons/feedback-board/FeedbackBoardView.ts:635
 msgid "Post Ticket"
 msgstr "Ticket veröffentlichen"
 
@@ -11643,77 +11587,77 @@ msgstr "Status-Update für „%s“: %s"
 msgid "Ticket \"%s\" was archived"
 msgstr "Ticket „%s“ wurde archiviert"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:575
+#: src/addons/feedback-board/FeedbackBoardView.ts:576
 msgid "Ticket archived"
 msgstr "Ticket archiviert"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:702
+#: src/addons/feedback-board/FeedbackBoardView.ts:703
 msgid "Ticket posted to the board"
 msgstr "Ticket wurde gepostet"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:867
+#: src/addons/feedback-board/FeedbackBoardView.ts:868
 msgid "Ticket updated"
 msgstr "Ticket aktualisiert"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:624
+#: src/addons/feedback-board/FeedbackBoardView.ts:625
 msgid "Type"
 msgstr "Typ"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:266
+#: src/addons/feedback-board/FeedbackBoardView.ts:267
 msgid "Wish"
 msgstr "Wunsch"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:735
+#: src/addons/feedback-board/FeedbackBoardView.ts:736
 msgid "Withdraw Ticket"
 msgstr "Ticket zurückziehen"
 
 #: src/addons/feedback-board/FeedbackBoardService.ts:632
-#: src/addons/feedback-board/FeedbackBoardView.ts:416
-#: src/addons/feedback-board/FeedbackBoardView.ts:438
+#: src/addons/feedback-board/FeedbackBoardView.ts:417
+#: src/addons/feedback-board/FeedbackBoardView.ts:439
 msgid "Withdrawn"
 msgstr "Zurückgezogen"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:419
+#: src/addons/feedback-board/FeedbackBoardView.ts:420
 msgid "%s comment"
 msgid_plural "%s comments"
 msgstr[0] "%s Kommentar"
 msgstr[1] "%s Kommentare"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:241
+#: src/addons/feedback-board/FeedbackBoardView.ts:242
 msgid "%s ticket"
 msgid_plural "%s tickets"
 msgstr[0] "%s Ticket"
 msgstr[1] "%s Tickets"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:808
+#: src/addons/feedback-board/FeedbackBoardView.ts:809
 msgid "Delete ticket"
 msgstr "Ticket löschen"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:844
+#: src/addons/feedback-board/FeedbackBoardView.ts:845
 msgid "Ticket deleted"
 msgstr "Ticket gelöscht"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:268
+#: src/addons/feedback-board/FeedbackBoardView.ts:269
 msgid "Question"
 msgstr "Frage"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:269
+#: src/addons/feedback-board/FeedbackBoardView.ts:270
 msgid "Refinement"
 msgstr "Verfeinerung"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:950
+#: src/addons/feedback-board/FeedbackBoardView.ts:951
 msgid "Comment deleted"
 msgstr "Kommentar gelöscht"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:933
+#: src/addons/feedback-board/FeedbackBoardView.ts:934
 msgid "Delete comment"
 msgstr "Kommentar löschen"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:934
+#: src/addons/feedback-board/FeedbackBoardView.ts:935
 msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
 msgstr "Der Kommentar wird von Relays entfernt, die NIP-09 umsetzen. Löschen?"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:809
+#: src/addons/feedback-board/FeedbackBoardView.ts:810
 msgid ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
@@ -11796,7 +11740,7 @@ msgstr "Neue Nachricht von %s"
 msgid "New message from an unknown sender"
 msgstr "Neue Nachricht von unbekanntem Sender"
 
-#: src/services/ViewMountingService.ts:109
+#: src/services/ViewMountingService.ts:129
 msgid "This view failed to load. Please reload the page."
 msgstr "Diese Ansicht konnte nicht geladen werden. Bitte Seite neu laden."
 
@@ -11870,11 +11814,11 @@ msgstr "Buchung storniert, Gast und Teilnehmer informiert"
 msgid "Booking cancelled, host and 1 participant informed"
 msgstr "Buchung storniert, Gastgeber und 1 Teilnehmer informiert"
 
-#: src/addons/calendar/BookingManager.ts:206
+#: src/addons/calendar/BookingManager.ts:207
 msgid "Booking page disabled, published slots removed"
 msgstr "Buchungsseite deaktiviert, veröffentlichte Slots entfernt"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:408
+#: src/addons/feedback-board/FeedbackBoardView.ts:409
 msgid "Card options"
 msgstr "Kartenoptionen"
 
@@ -11902,7 +11846,7 @@ msgstr ""
 msgid "Connection not ready yet, try again in a moment."
 msgstr "Verbindung noch nicht bereit, gleich nochmal versuchen."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:291
+#: src/addons/feedback-board/FeedbackBoardView.ts:292
 msgid "Copy Permalink"
 msgstr "Permalink kopieren"
 
@@ -12031,7 +11975,7 @@ msgstr ""
 "Hier wurde noch nichts veröffentlicht, oder ist auf deinen Relays nicht "
 "verfügbar."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:321
+#: src/addons/feedback-board/FeedbackBoardView.ts:322
 msgid "Permalink"
 msgstr "Permalink"
 
@@ -12055,18 +11999,18 @@ msgstr "Pilot-Übersetzung (unvollständig, unübersetzter Text bleibt Englisch)
 msgid "Private, encrypted"
 msgstr "Privat, verschlüsselt"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:565
-#: src/addons/feedback-board/FeedbackBoardView.ts:569
-#: src/addons/feedback-board/FeedbackBoardView.ts:691
-#: src/addons/feedback-board/FeedbackBoardView.ts:695
-#: src/addons/feedback-board/FeedbackBoardView.ts:831
-#: src/addons/feedback-board/FeedbackBoardView.ts:835
-#: src/addons/feedback-board/FeedbackBoardView.ts:861
-#: src/addons/feedback-board/FeedbackBoardView.ts:864
-#: src/addons/feedback-board/FeedbackBoardView.ts:943
-#: src/addons/feedback-board/FeedbackBoardView.ts:947
-#: src/addons/feedback-board/FeedbackBoardView.ts:971
-#: src/addons/feedback-board/FeedbackBoardView.ts:976
+#: src/addons/feedback-board/FeedbackBoardView.ts:566
+#: src/addons/feedback-board/FeedbackBoardView.ts:570
+#: src/addons/feedback-board/FeedbackBoardView.ts:692
+#: src/addons/feedback-board/FeedbackBoardView.ts:696
+#: src/addons/feedback-board/FeedbackBoardView.ts:832
+#: src/addons/feedback-board/FeedbackBoardView.ts:836
+#: src/addons/feedback-board/FeedbackBoardView.ts:862
+#: src/addons/feedback-board/FeedbackBoardView.ts:865
+#: src/addons/feedback-board/FeedbackBoardView.ts:944
+#: src/addons/feedback-board/FeedbackBoardView.ts:948
+#: src/addons/feedback-board/FeedbackBoardView.ts:972
+#: src/addons/feedback-board/FeedbackBoardView.ts:977
 msgid "Publishing failed, try again."
 msgstr "Veröffentlichen fehlgeschlagen, versuch es erneut."
 
@@ -12142,19 +12086,6 @@ msgstr ""
 msgid "Signer did not respond, message not sent"
 msgstr "Signer hat nicht geantwortet, Nachricht nicht gesendet"
 
-#: src/components/settings/UISettingsSection.ts:293
-#: src/shell/focusSettings.ts:173
-msgid ""
-"Skips rendering of off-screen notes (CSS <code>content-visibility: "
-"auto</code>). Significantly reduces memory usage on long timelines, "
-"especially on Linux. May cause minor scrollbar jumps when scrolling fast, "
-"disable if it bothers you."
-msgstr ""
-"Überspringt das Rendern von Notes außerhalb des Bildschirms (CSS "
-"<code>content-visibility: auto</code>). Reduziert den Speicherverbrauch auf "
-"langen Timelines deutlich, besonders unter Linux. Kann beim schnellen "
-"Scrollen kleine Scrollbar-Sprünge verursachen, abschalten, wenn es stört."
-
 #: src/components/views/ProfileView.ts:1185
 msgid "Soft muted, their interactions no longer notify you"
 msgstr "Soft-Mute aktiv, Interaktionen dieses Users benachrichtigen dich nicht mehr"
@@ -12167,7 +12098,7 @@ msgstr "Spam-Modus aktiviert, Alarme 24 h aus"
 msgid "Subscribed, events added to your calendar grid"
 msgstr "Abonniert, Events zu deinem Kalender hinzugefügt"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:207
+#: src/addons/feedback-board/FeedbackBoardView.ts:208
 msgid "The board could not be loaded, check your connection."
 msgstr "Das Board konnte nicht geladen werden, prüfe deine Verbindung."
 
@@ -12185,7 +12116,7 @@ msgstr ""
 "Die Rückmeldung konnte nicht veröffentlicht werden, kein Relay hat sie "
 "akzeptiert"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:630
+#: src/addons/feedback-board/FeedbackBoardView.ts:631
 msgid ""
 "Tickets are public Nostr events, visible in every Nostr client "
 "(kanbanstr-compatible), not only in NoorNote. Do not include private data."
@@ -12194,7 +12125,7 @@ msgstr ""
 "(kanbanstr-kompatibel), nicht nur in NoorNote. Keine privaten Daten "
 "eintragen."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:252
+#: src/addons/feedback-board/FeedbackBoardView.ts:253
 msgid ""
 "Tickets are public, visible in every Nostr client (kanbanstr-compatible), "
 "not only in NoorNote."
@@ -12215,7 +12146,7 @@ msgstr ""
 "deinen gesamten Verlauf ab, aller Zeit, kein festes Fenster, soweit die "
 "Relay-Aufbewahrung es erlaubt."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:415
+#: src/addons/feedback-board/FeedbackBoardView.ts:416
 msgid "Zap the developer"
 msgstr "Zap an den Entwickler senden"
 
@@ -12270,7 +12201,7 @@ msgstr "Buchung storniert, %s Empfänger informiert"
 msgid "Booking cancelled, host and %s participants informed"
 msgstr "Buchung storniert, Gastgeber und %s Teilnehmer informiert"
 
-#: src/addons/calendar/BookingManager.ts:201
+#: src/addons/calendar/BookingManager.ts:202
 msgid "Booking page updated, %s slots published, %s removed"
 msgstr "Buchungsseite aktualisiert, %s Slots veröffentlicht, %s entfernt"
 
@@ -12510,7 +12441,7 @@ msgstr "Ablaufhinweise eingeblendet"
 msgid "Failed to load live streams"
 msgstr "Livestreams konnten nicht geladen werden"
 
-#: src/components/ui/NoteMenu.ts:628
+#: src/components/ui/NoteMenu.ts:631
 msgid "Failed to update pin"
 msgstr "Pin konnte nicht aktualisiert werden"
 
@@ -12519,7 +12450,7 @@ msgstr "Pin konnte nicht aktualisiert werden"
 msgid "Focus UI (v2)"
 msgstr "Focus UI (v2)"
 
-#: src/components/views/WhatsNewView.ts:77
+#: src/components/views/WhatsNewView.ts:76
 msgid "Highlight of v%s"
 msgstr "Highlight von v%s"
 
@@ -12552,11 +12483,11 @@ msgstr "Läuft nie ab"
 msgid "No live streams found."
 msgstr "Keine Livestreams gefunden."
 
-#: src/components/ui/NoteMenu.ts:621
+#: src/components/ui/NoteMenu.ts:624
 msgid "Note pinned to profile"
 msgstr "Note ans Profil angeheftet"
 
-#: src/components/ui/NoteMenu.ts:624
+#: src/components/ui/NoteMenu.ts:627
 msgid "Note unpinned from profile"
 msgstr "Note vom Profil entpinnt"
 
@@ -12564,7 +12495,7 @@ msgstr "Note vom Profil entpinnt"
 msgid "Pause"
 msgstr "Pause"
 
-#: src/components/ui/NoteMenu.ts:182
+#: src/components/ui/NoteMenu.ts:183
 msgid "Pin to profile"
 msgstr "Ans Profil heften"
 
@@ -12591,15 +12522,6 @@ msgstr "Note läuft am %s ab"
 #: src/components/post/PostNoteModal.ts:480
 msgid "Set expiry"
 msgstr "Ablaufzeit setzen"
-
-#: src/components/settings/UISettingsSection.ts:243
-#: src/shell/focusSettings.ts:153
-msgid ""
-"Show a small \"Post expires on …\" line under notes that carry an "
-"expiration time (NIP-40). Off by default."
-msgstr ""
-"Zeigt eine kleine Zeile \"Note läuft am … ab\" unter Notes mit Ablaufzeit "
-"(NIP-40). Standardmäßig aus."
 
 #: src/addons/live-streams/LiveStreamsAddonView.ts:153
 msgid ""
@@ -12637,11 +12559,11 @@ msgstr "Stream auf deinen Relays nicht gefunden."
 msgid "Supported NIPs"
 msgstr "Unterstützte NIPs"
 
-#: src/components/ui/NoteMenu.ts:182
+#: src/components/ui/NoteMenu.ts:183
 msgid "Unpin from profile"
 msgstr "Vom Profil lösen"
 
-#: src/components/views/WhatsNewView.ts:74
+#: src/components/views/WhatsNewView.ts:73
 msgid "What's New"
 msgstr "Was ist neu"
 
@@ -12697,6 +12619,7 @@ msgstr "Obere Fläche"
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
+#: src/components/views/TimelineView.ts:135
 #: src/shell/focusDomains.ts:147
 msgid "Social Media"
 msgstr "Social Media"
@@ -12721,6 +12644,80 @@ msgstr "Tablet-Modus"
 #: src/components/settings/UISettingsSection.ts:433
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
+
+#: src/shell/focusStage.ts:1192
+#: src/shell/focusStage.ts:1211
+msgid "Distribute circles evenly"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:233
+#: src/shell/focusSettings.ts:143
+msgid ""
+"Hides other users' highlight posts that quote an external website, "
+"including pure reposts of them."
+msgstr ""
+"Blendet Highlight-Posts anderer aus, die eine externe Website zitieren, "
+"inklusive reiner Reposts davon."
+
+#: src/components/settings/UISettingsSection.ts:180
+#: src/shell/focusSettings.ts:110
+msgid "Hides reposts of users' own notes from your timeline."
+msgstr "Blendet Reposts von eigenen Notes anderer Benutzer aus deiner Timeline aus."
+
+#: src/components/settings/UISettingsSection.ts:254
+#: src/shell/focusSettings.ts:163
+msgid "Long posts are always displayed in full, without \"Show More\" buttons."
+msgstr ""
+"Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
+"anzeigen\"-Buttons."
+
+#: src/shell/focusStage.ts:1208
+msgid "Move all circles"
+msgstr ""
+
+#: src/shell/focusStage.ts:1188
+msgid "Move all circles to the left column"
+msgstr ""
+
+#: src/shell/focusStage.ts:1187
+msgid "Move all circles to the right column"
+msgstr ""
+
+#: src/shell/focusStage.ts:359
+#: src/shell/focusStage.ts:523
+msgid "Reorder"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:293
+#: src/shell/focusSettings.ts:173
+msgid ""
+"Saves memory by skipping rendering of off-screen notes. May cause minor "
+"scrollbar jumps when scrolling fast."
+msgstr ""
+"Spart Speicher, indem Notizen außerhalb des Bildschirms nicht gerendert "
+"werden. Kann kleine Scrollbar-Sprünge beim schnellen Scrollen verursachen."
+
+#: src/components/settings/UISettingsSection.ts:243
+#: src/shell/focusSettings.ts:153
+msgid ""
+"Shows a \"Post expires on …\" line under notes with an expiration time "
+"(NIP-40)."
+msgstr "Zeigt eine \"Post läuft ab am …\"-Zeile unter Notes mit Ablaufzeit (NIP-40)."
+
+#: src/components/settings/UISettingsSection.ts:223
+#: src/shell/focusSettings.ts:133
+msgid "Shows reactions (likes) from people you follow as entries in your timeline."
+msgstr ""
+"Zeigt Reactions (Likes) von Benutzern, denen du folgst, als Einträge in "
+"deiner Timeline."
+
+#: src/shell/focusSettings.ts:323
+msgid ""
+"Whose articles appear in the main article feed — higher degrees broaden the "
+"feed but take longer to build."
+msgstr ""
+"Deren Artikel im Haupt-Artikel-Feed erscheinen — höhere Grade erweitern den "
+"Feed, brauchen aber länger zum Aufbau."
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
