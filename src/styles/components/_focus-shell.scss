@@ -141,7 +141,9 @@ html.ui--focus {
   // Soft radial glow in the object hue, centered toward the top right,
   // slightly lighter in the middle — gives the circle a lit, dome-like feel.
   background-image: $focus-glow;
-  transition: border-color $transition-fast, outline-color $transition-fast,
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast,
     background-color $transition-fast;
 
   // Hover tint only on the circle state — the focused column must not
@@ -236,12 +238,23 @@ html.ui--focus {
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
 
-  // Reordering is a home-grid affordance only — while ANY domain is
-  // focused (grid.is-focused, e.g. /timeline) the handles stay hidden
-  // (the circles live in the side stacks there).
-  .focus-stage__grid:not(.is-focused) .focus-object:not(.focus-object--active):hover & {
+  // Reordering affordance: shown on hover in the home grid (SV swap
+  // reorder) AND on side-stack circles in the focused state (FV column
+  // drag) — the active object's handle stays hidden there.
+  .focus-stage__grid:not(.is-focused)
+    .focus-object:not(.focus-object--active):hover
+    &,
+  .focus-side-stack .focus-object:hover & {
     display: grid;
   }
+}
+
+// FV column drag: the lifted circle follows the cursor as a fixed overlay
+// (position/left/top set inline by focusStage.startColumnDrag) — it must
+// ride above the stack tools (sticky, $z-back-bar) in BOTH columns.
+.focus-object.is-column-drag {
+  z-index: $z-fullscreen-overlay;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 // Active drag: the source circle follows the cursor (transform set by
@@ -414,6 +427,20 @@ html.ui--focus {
   outline-offset: -1px;
   border-radius: $radius-xl;
   background: color-mix(in srgb, var(--color-3) 8%, transparent);
+}
+
+// Insertion line during a single-circle column drag (FV): absolutely
+// positioned at the drop boundary (top set inline by focusStage) — no grid
+// rows shift while it moves between positions.
+.focus-side-stack__drop-line {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  height: 2px;
+  border-radius: $radius-full;
+  background: var(--color-3);
+  pointer-events: none; // never shadow elementFromPoint
+  z-index: $z-back-bar;
 }
 
 // Surface slot: the focused domain's view mounts here (after the morph).

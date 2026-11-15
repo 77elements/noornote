@@ -89,14 +89,14 @@ export class FocusStage {
    */
   private order: string[] = [];
   /**
-   * Which side stack holds ALL circles while focused ('left' | 'right'),
-   * null = alternating distribution. Persisted per account (FOCUS_UI_STACK).
+   * Circle arrangement in the focused layout (FV), explicit per-column
+   * positions. null = alternating distribution derived from the SV order.
+   * Independent of `order` (SV grid) — FV drags never touch the SV.
+   * Persisted per account (FOCUS_UI_COLUMN_LAYOUT); later secondary
+   * objects (widgets) join the same lists.
    */
-  private stackSide: 'left' | 'right' | null =
-    PerAccountLocalStorage.getInstance().get<'left' | 'right' | null>(
-      StorageKeys.FOCUS_UI_STACK,
-      null
-    );
+  private columnLayout: { left: string[]; right: string[] } | null =
+    this.loadColumnLayout();
   /** Unread-diode drivers (v1 badge managers over the shell's diodes). */
   private badgeManagers: Array<{
     destroy(): void;
@@ -199,6 +199,55 @@ export class FocusStage {
     return this.order
       .map(id => FOCUS_DOMAINS.find(d => d.id === id))
       .filter((d): d is FocusDomainDef => !!d);
+  }
+
+  /**
+   * The persisted FV column layout, validated against the registry: stale
+   * ids dropped, duplicates removed, an id listed in BOTH columns kept
+   * only in 'left'. Null when nothing (or a broken shape) is stored —
+   * callers derive the alternating default.
+   */
+  private loadColumnLayout(): { left: string[]; right: string[] } | null {
+    const ids = FOCUS_DOMAINS.map(d => d.id);
+    const stored = PerAccountLocalStorage.getInstance().get<{
+      left: string[];
+      right: string[];
+    } | null>(StorageKeys.FOCUS_UI_COLUMN_LAYOUT, null);
+    if (
+      !stored ||
+      !Array.isArray(stored.left) ||
+      !Array.isArray(stored.right)
+    ) {
+      return null;
+    }
+    const clean = (list: string[], skip: string[]): string[] => [
+      ...new Set(list.filter(id => ids.includes(id) && !skip.includes(id))),
+    ];
+    const left = clean(stored.left, []);
+    const right = clean(stored.right, left);
+    if (left.length === 0 && right.length === 0) return null;
+    return { left, right };
+  }
+
+  /**
+   * The arrangement to render RIGHT NOW: the persisted column layout or,
+   * when none is stored, alternating 50/50 — with registry additions since
+   * the layout was saved interleaved by their SV position (even index →
+   * left), so every circle always has a home and the default derivation
+   * stays stable. Always returns fresh arrays (callers mutate the result).
+   */
+  private effectiveLayout(): { left: string[]; right: string[] } {
+    const base = this.columnLayout ?? {
+      left: [] as string[],
+      right: [] as string[],
+    };
+    const left = [...base.left];
+    const right = [...base.right];
+    this.orderedDefs().forEach((def, i) => {
+      if (left.includes(def.id) || right.includes(def.id)) return;
+      (i % 2 === 0 ? left : right).push(def.id);
+    });
+    return { left, right };
   }
 
   /** Full teardown (shell unmount): destroy every cached surface. */
@@ -343,6 +392,13 @@ export class FocusStage {
     const moveBtn = el.querySelector('.focus-object__move') as HTMLElement;
     moveBtn.addEventListener('click', e => e.stopPropagation());
     moveBtn.addEventListener('pointerdown', e => {
+      if (this.morphing) return;
+      if (this.activeId) {
+        // Focused (FV): only side-stack circles drag — the active one keeps
+        // its slot in the center column.
+        if (def.id !== this.activeId) this.startColumnDrag(e, def.id, el);
+        return;
+      }
       this.startOrderDrag(e, def.id, el);
     });
     const control = el.querySelector('.focus-object__control') as HTMLElement;
@@ -820,11 +876,141 @@ export class FocusStage {
     window.addEventListener('pointercancel', cleanup);
   }
 
-  /** Move ALL circles into the given stack (stored order), persist. */
+  /**
+   * Pointer drag on a side-stack circle's move handle (focused state).
+   * The circle is lifted OUT of its stack (position: fixed — the stack's
+   * overflow clipping would otherwise cut the visual mid-flight) and
+   * follows the cursor; its slot closes up and an insertion line marks the
+   * exact drop position in BOTH columns: above all circles (column top,
+   * later the widget slot) or between two circles. Dropping writes the new
+   * per-column arrangement to FOCUS_UI_COLUMN_LAYOUT — the SV grid order
+   * is untouched — and re-distributes. Same dead-zone mechanics as
+   * startOrderDrag.
+   */
+  private startColumnDrag(
+    e: PointerEvent,
+    dragId: string,
+    el: HTMLElement
+  ): void {
+    if (this.morphing || !this.sideStacks) return;
+    e.stopPropagation();
+    e.preventDefault(); // no text selection / native drag while moving
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    const grabX = e.clientX - rect.left;
+    const grabY = e.clientY - rect.top;
+    let dragging = false;
+    let line: HTMLElement | null = null;
+    let target: { stack: HTMLElement; index: number } | null = null;
+
+    // Insertion line into the target stack at the boundary of `index`
+    // (0 = above the first visible circle). Absolute inside the stack, so
+    // no grid rows shift while it moves; coordinates are content-space
+    // (scroll-aware).
+    const placeLine = (t: { stack: HTMLElement; index: number }): void => {
+      const stackRect = t.stack.getBoundingClientRect();
+      const scrollTop = t.stack.scrollTop;
+      const circles = (
+        [...t.stack.querySelectorAll('.focus-object')] as HTMLElement[]
+      ).filter(c => !c.classList.contains('is-column-drag'));
+      const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
+      let y: number;
+      if (circles.length === 0) {
+        const tools = t.stack.querySelector(
+          '.focus-side-stack__tools'
+        ) as HTMLElement | null;
+        y = tools
+          ? tools.getBoundingClientRect().bottom -
+            stackRect.top +
+            scrollTop +
+            halfGap
+          : halfGap;
+      } else if (t.index >= circles.length) {
+        const last = circles[circles.length - 1];
+        if (!last) return;
+        const r = last.getBoundingClientRect();
+        y = r.bottom - stackRect.top + scrollTop + halfGap;
+      } else {
+        const next = circles[t.index];
+        if (!next) return;
+        const r = next.getBoundingClientRect();
+        y = r.top - stackRect.top + scrollTop - halfGap;
+      }
+      if (!line) {
+        line = document.createElement('div');
+        line.className = 'focus-side-stack__drop-line';
+        t.stack.appendChild(line);
+      }
+      line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
+      if (line.parentElement !== t.stack) t.stack.appendChild(line);
+    };
+
+    const onMove = (ev: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+        dragging = true;
+        // Fixed lift: escapes the stack's overflow clipping; the hole in
+        // the source column closes (the insertion line takes its place).
+        el.classList.add('is-drag-source', 'is-column-drag');
+        el.style.position = 'fixed';
+        el.style.left = `${rect.left}px`;
+        el.style.top = `${rect.top}px`;
+        el.style.width = `${rect.width}px`;
+        el.style.height = `${rect.height}px`;
+      }
+      el.style.left = `${ev.clientX - grabX}px`;
+      el.style.top = `${ev.clientY - grabY}px`;
+      const next = this.columnDropTarget(ev.clientX, ev.clientY);
+      if (
+        !!next !== !!target ||
+        (next &&
+          target &&
+          (next.stack !== target.stack || next.index !== target.index))
+      ) {
+        line?.remove();
+        line = null;
+        if (next) placeLine(next);
+        target = next;
+      }
+    };
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      el.classList.remove('is-drag-source', 'is-column-drag');
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.width = '';
+      el.style.height = '';
+      line?.remove();
+      line = null;
+    };
+    const onUp = (): void => {
+      const t = target;
+      cleanup();
+      if (!t || !this.sideStacks) return;
+      const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+      this.moveCircleTo(dragId, side, t.index);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', cleanup);
+  }
+
+  /** Move ALL circles into the given stack (SV order), persist. */
   private moveAllCircles(side: 'left' | 'right'): void {
     if (!this.sideStacks || !this.activeId) return;
-    this.stackSide = side;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, side);
+    const svOrder = this.orderedDefs().map(d => d.id);
+    this.columnLayout = {
+      left: side === 'left' ? svOrder : [],
+      right: side === 'right' ? svOrder : [],
+    };
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      this.columnLayout
+    );
     this.distributeSideCircles(
       this.sideStacks[0],
       this.sideStacks[1],
@@ -833,14 +1019,96 @@ export class FocusStage {
   }
 
   /**
-   * Reset the stack distribution to the default alternating 50/50
-   * (starting LEFT) and clear the persisted side. Wired to the reset
-   * button next to each stack's move handle.
+   * Which side stack the pointer is over and at which VISIBLE position the
+   * drop would insert (0 = above all circles of that column, circles.length
+   * = below the last). Null when the pointer is outside both stacks. The
+   * active circle never counts — it is not rendered in the stacks.
+   */
+  private columnDropTarget(
+    x: number,
+    y: number
+  ): { stack: HTMLElement; index: number } | null {
+    if (!this.sideStacks) return null;
+    const hit = document.elementFromPoint(x, y);
+    const stack = hit?.closest('.focus-side-stack') as HTMLElement | null;
+    if (
+      !stack ||
+      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
+    )
+      return null;
+    // The lifted circle is still a DOM child of its source stack (fixed
+    // positioning) — exclude it, it holds no drop position.
+    const circles = (
+      [...stack.querySelectorAll('.focus-object')] as HTMLElement[]
+    ).filter(c => !c.classList.contains('is-column-drag'));
+    for (let i = 0; i < circles.length; i++) {
+      const circle = circles[i];
+      if (!circle) continue;
+      const r = circle.getBoundingClientRect();
+      if (y < r.top + r.height / 2) return { stack, index: i };
+    }
+    return { stack, index: circles.length };
+  }
+
+  /**
+   * Move ONE circle to an exact position in a column (visible index,
+   * 0 = above all circles of the target column) and persist. The index
+   * counts the circles VISIBLE in the column — the active circle is skipped
+   * when mapping it onto the underlying id lists (it holds its own slot).
+   */
+  private moveCircleTo(
+    dragId: string,
+    side: 'left' | 'right',
+    index: number
+  ): void {
+    if (!this.sideStacks || !this.activeId) return;
+    const activeId = this.activeId;
+    const layout = this.effectiveLayout();
+    const source = layout.left.includes(dragId) ? 'left' : 'right';
+    const target = layout[side].filter(id => id !== dragId);
+    // Map the visible insertion index onto the full id list (active slot
+    // skipped): first position whose visible rank equals `index`.
+    let insertAt = target.length;
+    let seen = 0;
+    for (let i = 0; i < target.length; i++) {
+      if (target[i] === activeId) continue;
+      if (seen === index) {
+        insertAt = i;
+        break;
+      }
+      seen++;
+    }
+    target.splice(insertAt, 0, dragId);
+    if (source === side) {
+      layout[side] = target;
+    } else {
+      layout[source] = layout[source].filter(id => id !== dragId);
+      layout[side] = target;
+    }
+    this.columnLayout = { left: layout.left, right: layout.right };
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      this.columnLayout
+    );
+    this.distributeSideCircles(
+      this.sideStacks[0],
+      this.sideStacks[1],
+      activeId
+    );
+  }
+
+  /**
+   * Reset the column layout to the default alternating 50/50 (derived
+   * from the SV order, starting LEFT) and clear the persisted layout.
+   * Wired to the reset button next to each stack's move handle.
    */
   private resetStackSide(): void {
     if (!this.sideStacks || !this.activeId) return;
-    this.stackSide = null;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, null);
+    this.columnLayout = null;
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      null
+    );
     this.distributeSideCircles(
       this.sideStacks[0],
       this.sideStacks[1],
@@ -947,29 +1215,27 @@ export class FocusStage {
   }
 
   /**
-   * Fill the two stacks with the non-active circles. Persisted state
-   * (stackSide): ALL circles into that one stack — in the user's stored
-   * order, 1 2 3 … top to bottom — leaving the other column empty as the
-   * future secondary-widget area. Default: alternating starting LEFT
-   * (1 Content 2 / 3 4 / 5 6).
+   * Fill the two stacks with the non-active circles, in the order of the
+   * effective column layout (persisted FOCUS_UI_COLUMN_LAYOUT or the
+   * alternating default). The ACTIVE circle is skipped: it stays in the
+   * center column but KEEPS its slot in the layout, so it returns to its
+   * position when the focus ends.
    */
   private distributeSideCircles(
     left: HTMLElement,
     right: HTMLElement,
     activeId: string
   ): void {
-    let next: HTMLElement = left;
-    for (const def of this.orderedDefs()) {
-      if (def.id === activeId) continue;
-      const circle = this.objects.get(def.id);
-      if (!circle) continue;
-      (this.stackSide === 'left'
-        ? left
-        : this.stackSide === 'right'
-          ? right
-          : next
-      ).appendChild(circle);
-      if (!this.stackSide) next = next === left ? right : left;
+    const layout = this.effectiveLayout();
+    for (const [stack, ids] of [
+      [left, layout.left],
+      [right, layout.right],
+    ] as const) {
+      for (const id of ids) {
+        if (id === activeId) continue;
+        const circle = this.objects.get(id);
+        if (circle) stack.appendChild(circle);
+      }
     }
   }
 
