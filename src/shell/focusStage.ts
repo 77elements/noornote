@@ -654,17 +654,28 @@ export class FocusStage {
       return;
     }
     if (nav) {
-      try {
-        await surface.view?.openDetail?.(nav.param);
-        // The frame's setBackVisible event was dispatched while the frame
-        // was still detached (handoff runs before appendChild) — the
-        // object's back action is wired via that event, so set it here.
-        const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
-        if (backBtn) backBtn.hidden = false;
-      } catch {
-        // Handoff failed (e.g. detail import) — fall back to the list
-        // and its URL instead of bricking the morph.
-        surface.view?.syncUrl?.();
+      if (surface.view?.openDetail) {
+        try {
+          await surface.view.openDetail(nav.param);
+          // The frame's setBackVisible event was dispatched while the
+          // frame was still detached (handoff runs before appendChild) —
+          // the object's back action is wired via that event, so set it
+          // here.
+          const backBtn = el.querySelector(
+            '.focus-object__back'
+          ) as HTMLElement;
+          if (backBtn) backBtn.hidden = false;
+        } catch {
+          // Handoff failed (e.g. detail import) — fall back to the list
+          // and its URL instead of bricking the morph.
+          surface.view?.syncUrl?.();
+        }
+      } else {
+        // Object-root seam nav (no detail — e.g. 'tribes' from the TV
+        // tab row): a deliberate object switch — the URL follows the
+        // domain route like a circle click would.
+        if (surface.view?.syncUrl) surface.view.syncUrl();
+        else if (def.route) Router.getInstance().replaceUrl(def.route);
       }
     }
 

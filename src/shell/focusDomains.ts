@@ -17,6 +17,7 @@ import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
+import { tribesSurface } from './focusTribesSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
   articlesSettings,
@@ -215,7 +216,18 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     createSurface: bookmarksSurface,
     createSettings: bookmarksSettings,
   },
-  { id: 'tribes', label: _('Tribes'), icon: 'icon-tribe', addon: true },
+  {
+    id: 'tribes',
+    label: _('Tribes'),
+    icon: 'icon-tribe',
+    route: '/tribes',
+    viewTypes: ['tribes'],
+    createSurface: tribesSurface,
+    // Always-on (never on-demand), no settings — the object has no gear.
+    // Every manager change emits tribe:updated; the TV tab row rebuilds
+    // on it (TimelineView), the TV "Edit tribes" link routes here via
+    // the 'tribes' view type (focus navigation seam).
+  },
   { id: 'follows', label: _('Follows'), icon: 'icon-follows' },
   { id: 'muted', label: _('Muted'), icon: 'icon-mute', addon: true },
   { id: 'profile', label: _('Profile'), icon: 'icon-profile' },

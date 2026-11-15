@@ -504,6 +504,7 @@ export function getRootOrder(): RootOrderItem[] {
 
 export function setRootOrder(order: RootOrderItem[]): void {
   getStorage().set(StorageKeys.TRIBE_ROOT_ORDER, order);
+  eventBus.emit('tribe:updated');
 }
 
 export function hasRootOrder(): boolean {
@@ -562,6 +563,7 @@ export function createFolder(name: string): TribeFolder {
 
   // Add to root order
   addToRootOrder('folder', id);
+  eventBus.emit('tribe:updated');
 
   logger.info('Tribes', `Created folder: ${name}`);
   return folder;
@@ -573,6 +575,7 @@ export function renameFolder(folderId: string, newName: string): void {
   if (folder) {
     folder.name = newName;
     setFolders(folders);
+    eventBus.emit('tribe:updated');
     logger.info('Tribes', `Renamed folder to: ${newName}`);
   }
 }
