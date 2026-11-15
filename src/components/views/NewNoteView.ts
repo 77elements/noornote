@@ -133,6 +133,11 @@ export class NewNoteView extends View {
    *  save-draft dialog) so confirmBack no longer vetoes the back. */
   private closing = false;
 
+  /** Pending auto-grow frame (textarea grows with its content, see autoGrowTextarea). */
+  private autoGrowFrame = 0;
+  /** Bound resize listener so it can be removed again in destroy(). */
+  private readonly onWindowResize = (): void => this.scheduleAutoGrow();
+
   /** Cap mirrored from the classic composer (also enforced in PostService). */
   private static readonly MAX_TAGS_PER_IMAGE = 50;
 
@@ -164,6 +169,8 @@ export class NewNoteView extends View {
     // (same deferred setup the classic modal uses).
     setTimeout(() => {
       this.setupEventHandlers();
+      this.scheduleAutoGrow();
+      window.addEventListener('resize', this.onWindowResize);
     }, 0);
   }
 
@@ -187,9 +194,69 @@ export class NewNoteView extends View {
   }
 
   destroy(): void {
+    window.removeEventListener('resize', this.onWindowResize);
+    if (this.autoGrowFrame) cancelAnimationFrame(this.autoGrowFrame);
     this.cleanup();
     this.eventHandlerManager?.destroy();
     this.eventHandlerManager = null;
+  }
+
+  /**
+   * Auto-grow the textarea with its content: it expands to fit the text so
+   * no inner scrollbar appears — until the bottom of the scroll container
+   * (the focus surface, fallback: the viewport) is reached. Past that limit
+   * the height clamps and the textarea scrolls internally. Runs rAF-batched
+   * so consecutive edits (typing, emoji insert, media insert) coalesce.
+   */
+  private scheduleAutoGrow(): void {
+    if (this.autoGrowFrame) cancelAnimationFrame(this.autoGrowFrame);
+    this.autoGrowFrame = requestAnimationFrame(() => {
+      this.autoGrowFrame = 0;
+      this.autoGrowTextarea();
+    });
+  }
+
+  private autoGrowTextarea(): void {
+    if (this.currentTab !== 'edit') return;
+    const textarea = this.container.querySelector(
+      '[data-textarea]'
+    ) as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    // Bottom boundary: nearest scrollable ancestor (the focus surface owns
+    // scrolling in v2); viewport fallback covers detached/other contexts.
+    // Whichever ends higher wins — the textarea never passes the screen.
+    let boundaryBottom = window.innerHeight;
+    let node: HTMLElement | null = textarea.parentElement;
+    while (node && node !== document.body) {
+      const overflowY = getComputedStyle(node).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        boundaryBottom = Math.min(
+          boundaryBottom,
+          node.getBoundingClientRect().bottom
+        );
+        break;
+      }
+      node = node.parentElement;
+    }
+
+    // Measure natural height, then clamp to the space below the textarea
+    // (small margin keeps the composer's action row reachable).
+    const MIN_HEIGHT = 200;
+    // Stop ~170px above the bottom edge: the two action-button rows below
+    // the textarea (~94px) plus a $gap before and after them, plus the
+    // ED-b settings tab (~31px + $gap) that overlays the action row when
+    // open — otherwise the clamped composer produces double scrollbars.
+    const BOTTOM_MARGIN = 170;
+    textarea.style.height = 'auto';
+    const natural = textarea.scrollHeight;
+    const max = Math.max(
+      MIN_HEIGHT,
+      boundaryBottom - textarea.getBoundingClientRect().top - BOTTOM_MARGIN
+    );
+    const height = Math.min(natural, max);
+    textarea.style.height = `${height}px`;
+    textarea.style.overflowY = natural > max ? 'auto' : 'hidden';
   }
 
   /**
@@ -223,6 +290,7 @@ export class NewNoteView extends View {
   private render(): void {
     this.container.innerHTML = `
       <div class="new-note-view">
+        <h1 class="new-note-view__title">${_('Write new note')}</h1>
         <div class="post-note-composer">
           ${this.renderTabs()}
           ${this.renderHighlightQuote()}
@@ -576,6 +644,7 @@ export class NewNoteView extends View {
       onTextInput: value => {
         this.content = value;
         this.updatePostButton();
+        this.scheduleAutoGrow();
       },
       onCancel: () => this.handleCancel(),
       onSubmit: () => void this.handlePost(),
@@ -648,6 +717,7 @@ export class NewNoteView extends View {
             textarea,
             files => void this.toolbar?.handleFileUpload(files)
           );
+        this.scheduleAutoGrow();
       }
     }
   }
@@ -670,6 +740,7 @@ export class NewNoteView extends View {
     ) as HTMLTextAreaElement | null;
     if (textarea) textarea.value = this.content;
     this.updatePostButton();
+    this.scheduleAutoGrow();
   }
 
   /**
@@ -715,6 +786,7 @@ export class NewNoteView extends View {
       },
       onShowNSFWSwitch: () => this.showNSFWSwitch(),
     });
+    this.scheduleAutoGrow();
     // NIP-68 image tagging — register URL in state + render thumbnail.
     // Skip non-image URLs (videos, audio) — NIP-68 is image-only.
     if (isImageUrl(url)) {
@@ -741,6 +813,7 @@ export class NewNoteView extends View {
         onShowNSFWSwitch: () => this.showNSFWSwitch(),
       }
     );
+    this.scheduleAutoGrow();
   }
 
   /**
@@ -974,6 +1047,7 @@ export class NewNoteView extends View {
         this.updatePostButton();
       },
     });
+    this.scheduleAutoGrow();
   }
 
   /**
@@ -1013,6 +1087,7 @@ export class NewNoteView extends View {
       this.pollData = null;
       pollContainer.innerHTML = '';
       this.updatePostButton();
+      this.scheduleAutoGrow();
     } else {
       // Add poll
       this.pollCreator = new PollCreator({
@@ -1033,6 +1108,7 @@ export class NewNoteView extends View {
 
       pollContainer.innerHTML = this.pollCreator.render();
       this.pollCreator.setupEventListeners(pollContainer as HTMLElement);
+      this.scheduleAutoGrow();
     }
   }
 

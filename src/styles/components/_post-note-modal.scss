@@ -23,6 +23,22 @@
 .new-note-view {
   max-width: 650px;
 
+  // Auto-grow textarea: JS sizes it to its content (rAF-batched) up to the
+  // bottom of the scroll surface; past that it clamps and scrolls internally.
+  .textarea {
+    min-height: 200px;
+    height: auto;
+    resize: none;
+  }
+
+  &__title {
+    @extend %h1;
+
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0 0 $gap 0;
+  }
+
   &__controls {
     display: flex;
     align-items: center;
