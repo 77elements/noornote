@@ -348,6 +348,7 @@ html.ui--focus {
 // circles pinned to the row top. Focused state: the stage is viewport-
 // fixed, so each stack scrolls its own overflow (230px rhythm preserved).
 .focus-side-stack {
+  position: relative; // anchor for the stack move handle
   display: grid;
   grid-template-columns: 230px;
   justify-self: center;
@@ -365,6 +366,54 @@ html.ui--focus {
       display: none;
     }
   }
+}
+
+// Stack top tools: move handle (drag moves ALL circles) + reset (back to
+// the alternating 50/50 distribution), pinned ABOVE the circles — a sticky
+// first grid row, so it stays in place while the stack scrolls (circles
+// slide beneath it). Always visible (an empty stack must keep its handles
+// for the way back).
+.focus-side-stack__tools {
+  position: sticky;
+  top: 0;
+  justify-self: center; // center of the 230px column
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  z-index: $z-back-bar;
+}
+
+.focus-side-stack__move,
+.focus-side-stack__reset {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: pointer;
+  touch-action: none; // the pointer drag must not scroll the page
+
+  &.is-drag-source {
+    pointer-events: none; // never shadow the drop zone in elementFromPoint
+    cursor: grabbing;
+  }
+}
+
+.focus-side-stack__move {
+  cursor: grab;
+}
+
+// Drop zone while a stack handle is dragged: the opposite stack lights up
+// as the target (dash-outlined frame over the whole column).
+.focus-side-stack.is-dropzone {
+  outline: 1px dashed var(--color-3);
+  outline-offset: -1px;
+  border-radius: $radius-xl;
+  background: color-mix(in srgb, var(--color-3) 8%, transparent);
 }
 
 // Surface slot: the focused domain's view mounts here (after the morph).
