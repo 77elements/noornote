@@ -666,9 +666,13 @@ $focus-tab-overlap: 1px;
   // Composed multi-panel content (composePanels): one full-width column
   // stacked vertically — child panels must NOT join the responsive grid
   // (the composer's ED-b shows custom emojis above scheduled posts).
+  // Readable form width, centered inside the drawer.
   .focus-settings__stack {
     grid-column: 1 / -1;
+    width: 100%;
     min-width: 0;
+    max-width: 600px;
+    margin-inline: auto;
     display: flex;
     flex-direction: column;
     align-items: stretch;

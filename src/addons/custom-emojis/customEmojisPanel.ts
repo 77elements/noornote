@@ -25,10 +25,9 @@ export const createCustomEmojisSettings = (): SettingsPanel => {
   return {
     mount(el: HTMLElement): void {
       host = el;
-      el.innerHTML = `
-        <section class="section" id="custom-emojis-settings-content"></section>
-        <div data-addon-content="custom-emojis"></div>
-      `;
+      // No settings section in on-demand mode (no toggle) — an empty
+      // .section would render as a dark pill above the management UI.
+      el.innerHTML = `<div data-addon-content="custom-emojis"></div>`;
       settings = new CustomEmojisSettings(true);
       settings.mount(el);
       // On-demand: the runtime is loaded with the composer session —

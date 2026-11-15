@@ -34,7 +34,7 @@ export class CustomEmojisView extends View {
     this.container.innerHTML = `
       <div class="back-padder">
         <h1>${_('Custom Emojis')}</h1>
-        <section class="section" id="custom-emojis-settings-content"></section>
+        ${this.v2OnDemand ? '' : '<section class="section" id="custom-emojis-settings-content"></section>'}
         <div data-addon-content="custom-emojis"></div>
       </div>
     `;

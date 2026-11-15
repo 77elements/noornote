@@ -41,11 +41,13 @@ export class CustomEmojisSettings extends SettingsSection {
 
   public mount(parentContainer: HTMLElement): void {
     const contentContainer = this.getContentContainer(parentContainer);
-    if (!contentContainer) return;
 
     const enabled = isCustomEmojisEnabled();
 
     if (!this.onDemand) {
+      // No settings section in the parent → nothing to mount the toggle
+      // into (on-demand mode skips the toggle entirely instead).
+      if (!contentContainer) return;
       this.enableSwitch = new Switch({
         label: '',
         checked: enabled,
