@@ -44,7 +44,8 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--color-3);
+  // Inactive tab = still a clickable affordance → $color-4 ("click me" color).
+  color: var(--color-4);
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;

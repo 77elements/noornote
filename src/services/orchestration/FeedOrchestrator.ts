@@ -219,23 +219,24 @@ export class FeedOrchestrator extends Orchestrator {
    * truth shared by the network fetch (loadInitialFeed) and the cache-only
    * paint (loadInitialFeedFromCache), so both query the same content.
    *
-   * cacheMode (instant cache paint): the window branch drops the `since`
-   * The network path starts at a 1h window and auto-expands up to 48h; the
-   * cache has no reason to replicate that dance — it holds whatever was
-   * cached before, so the query asks for the newest notes per author at any
-   * age and the caller slices to pageSize after sorting.
+   * Amethyst-form initial fetch: the window branch carries NO `since` bound —
+   * relays (and the local cache) return the newest `pageSize` notes per query
+   * at any age. The former 1h network window made the initial page depend on
+   * feed volume per hour (8–28 notes typical, 0–2 on quiet hours) and left
+   * the rest to scroll-driven 3h chunks; a first page smaller than the
+   * viewport then never filled (no scroll overflow → the IntersectionObserver
+   * sentinel never transitions → loadMore never re-fires). Scrolling still
+   * extends the feed via until-chunks in loadMore; polling covers live notes.
    */
   private buildInitialFeedFilters(
     request: FeedLoadRequest,
     params: Pick<
       ReturnType<FeedOrchestrator['resolveFetchParams']>,
       'pagination' | 'pageSize'
-    >,
-    cacheMode = false
+    >
   ): NDKFilter<number>[] {
     const {
       followingPubkeys,
-      timeWindowHours = 1,
       since: explicitSince,
       until: explicitUntil,
     } = request;
@@ -302,30 +303,35 @@ export class FeedOrchestrator extends Orchestrator {
       return filters;
     }
 
-    // Window pagination (TimelineView live mode).
-    const windowSince = Math.floor(Date.now() / 1000) - timeWindowHours * 3600;
+    // Window pagination (TimelineView live mode): newest notes, no time
+    // bound — same shape for the network fetch and the cache paint.
+    //
+    // Raw oversupply limit: relays count RAW kind-1 events (threads + replies
+    // mixed) against the limit BEFORE any client-side reply filtering — a
+    // pageSize-sized limit burns ~3/4 of its budget on replies that
+    // processEvents then drops (phone logs: raw 91 → filtered 24). Fetch a
+    // raw oversupply instead and slice to pageSize after filtering. This
+    // mirrors the reference-client form (limit ≈ authors×10, capped at 500,
+    // no since). Data Saver trades volume: 100 raw events.
+    const rawLimit =
+      params.pagination === 'window'
+        ? Math.max(params.pageSize, isDataSaverEnabled() ? 100 : 200)
+        : params.pageSize;
     const filters: NDKFilter<number>[] = [
       {
         authors: followingPubkeys,
         kinds: feedKindsFor(request.config?.source.kind),
-        limit: params.pageSize,
-        // cacheMode: no since — the cache query spans all ages (newest first).
-        ...(cacheMode ? {} : { since: windowSince }),
+        limit: rawLimit,
       },
       ...this.reactionOverrideFilters(
         request.config?.source.kind,
         followingPubkeys,
-        // Same for the per-user reaction-override filters.
-        cacheMode
-          ? { limit: params.pageSize }
-          : { limit: params.pageSize, since: windowSince }
+        { limit: params.pageSize }
       ),
     ];
     const wc = this.webCommentFilter(
       followingPubkeys,
-      cacheMode
-        ? { limit: params.pageSize }
-        : { since: windowSince, limit: params.pageSize },
+      { limit: params.pageSize },
       webCommentsIncludeViewer(request.config)
     );
     if (wc) filters.push(wc);
@@ -353,7 +359,7 @@ export class FeedOrchestrator extends Orchestrator {
   ): Promise<FeedLoadResult | null> {
     const params = this.resolveFetchParams(request);
 
-    const filters = this.buildInitialFeedFilters(request, params, true);
+    const filters = this.buildInitialFeedFilters(request, params);
     const events = await this.transport.fetchFromCache(filters);
     if (events.length === 0) return null;
 
@@ -386,7 +392,6 @@ export class FeedOrchestrator extends Orchestrator {
     const {
       followingPubkeys,
       includeReplies,
-      timeWindowHours = 1,
       specificRelay,
       exemptFromMuteFilter,
       since: explicitSince,
@@ -401,7 +406,7 @@ export class FeedOrchestrator extends Orchestrator {
         ? `Loading profile for ${followingPubkeys[0]?.slice(0, 8)} (direct fetch, no time window)`
         : isTimeRangeMode
           ? `Loading time range ${new Date(explicitSince * 1000).toLocaleDateString()} – ${new Date((explicitUntil ?? Date.now() / 1000) * 1000).toLocaleDateString()}`
-          : `Loading timeline for ${followingPubkeys.length} users (${timeWindowHours}h window)${specificRelay ? ` from ${specificRelay}` : ''}`
+          : `Loading timeline for ${followingPubkeys.length} users${specificRelay ? ` from ${specificRelay}` : ''}`
     );
 
     try {
@@ -481,7 +486,7 @@ export class FeedOrchestrator extends Orchestrator {
 
         this.systemLogger.info(
           'FeedOrchestrator',
-          `⚠️ ${filteredEvents.length} events found in ${timeWindowHours}h window - Auto-loading until first paint content (minimum ${minimumNotes} needed)`
+          `⚠️ ${filteredEvents.length} events found — auto-loading older chunks until first paint content (minimum ${minimumNotes} needed)`
         );
 
         let accumulatedEvents = [...filteredEvents];
@@ -671,13 +676,16 @@ export class FeedOrchestrator extends Orchestrator {
 
       // 'until' pagination (single author): no `since` window, larger page. The
       // window + small limit fragmented multi-relay pages into gaps. Windowed
-      // feeds + time-range keep the windowed page.
+      // feeds + time-range keep the windowed page but use the raw oversupply
+      // limit — relays count raw events (replies included) against the limit
+      // before client-side reply filtering drops most of them.
       const pureUntil = params.pagination === 'until' && !isTimeRangeMode;
+      const windowedRawLimit = isDataSaverEnabled() ? 100 : 200;
       const filterObj: NDKFilter<number> = {
         authors: followingPubkeys,
         kinds: feedKindsFor(request.config?.source.kind),
         until: until - 1,
-        limit: pureUntil ? params.pageSize : 50,
+        limit: pureUntil ? params.pageSize : windowedRawLimit,
       };
       if (!pureUntil) {
         filterObj.since = since;
@@ -1430,7 +1438,12 @@ export class FeedOrchestrator extends Orchestrator {
     if (fetchMode === 'direct') {
       return this.transport.fetchDirect(relays, filters, 15000, 'FeedOrch-PV');
     }
-    return this.transport.fetch(relays, filters, 5000, skipCache, 'FeedOrch');
+    // 10s: mobile relays routinely need >5s to answer a 100–200-limit REQ;
+    // a 5s cut-off silently discarded slow relays' entire contribution while
+    // reference clients keep the subscription open until EOSE. This only
+    // stretches the background refresh — the instant cache paint is local
+    // and unaffected.
+    return this.transport.fetch(relays, filters, 10000, skipCache, 'FeedOrch');
   }
 
   /**

@@ -217,6 +217,7 @@ export class Timeline extends View {
           void this.islStatsUpdater.fetchAndUpdateStats(events);
         },
         onInitializeTimeline: () => this.initializeTimeline(),
+        onLoadComplete: () => this.infiniteScroll.revalidate(),
       }
     );
 
@@ -830,6 +831,11 @@ export class Timeline extends View {
       );
     } finally {
       this.stateManager.setLoading(false);
+      // Deadlock recheck: if the initial page is shorter than the viewport,
+      // the sentinel is visible but the IntersectionObserver already consumed
+      // its transition while we loaded — force a fresh evaluation so
+      // loadMore fires (the re-check inside loadMoreEvents keeps it going).
+      this.infiniteScroll.revalidate();
     }
   }
 
