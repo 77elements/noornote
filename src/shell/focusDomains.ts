@@ -16,7 +16,11 @@ import { _ } from '../i18n';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
-import { articlesSettings, socialSettings } from './focusSettings';
+import {
+  articlesSettings,
+  notificationsSettings,
+  socialSettings,
+} from './focusSettings';
 
 /**
  * Structural contract for the view behind a surface. Kept structural on
@@ -190,6 +194,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-notifications',
     route: '/notifications',
     createSurface: notificationsSurface,
+    createSettings: notificationsSettings,
   },
   { id: 'messages', label: _('Messages'), icon: 'icon-email' },
   {

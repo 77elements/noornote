@@ -13,6 +13,7 @@
 
 import { Switch } from '../components/ui/Switch';
 import { NnDropdown } from '../components/ui/NnDropdown';
+import { NotificationPrioritySection } from '../components/settings/NotificationPrioritySection';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import {
@@ -345,6 +346,33 @@ export const socialSettings = (): FocusSettingsView =>
   new FocusSocialSettings();
 export const articlesSettings = (): FocusSettingsView =>
   new FocusArticlesSettings();
+
+/**
+ * Notifications object settings — the notification-priority drag list from
+ * the classic settings, mounted as-is (same storage keys, same save toast,
+ * same `notifications:priorities-changed` event the badge and orchestrator
+ * listen on). The v1 section mounts itself into a `#<sectionId>-content`
+ * slot, so the panel only renders that slot and cleans up via unmount().
+ */
+export class FocusNotificationsSettings extends FocusSettingsPanel {
+  private section = new NotificationPrioritySection();
+
+  protected render(): string {
+    return '<div id="notification-priority-content"></div>';
+  }
+
+  protected bind(el: HTMLElement): void {
+    this.section.mount(el);
+  }
+
+  override destroy(): void {
+    this.section.unmount();
+    super.destroy();
+  }
+}
+
+export const notificationsSettings = (): FocusSettingsView =>
+  composePanels([new FocusNotificationsSettings()]);
 
 /**
  * Compose several settings panels into one vertical stack — each child
