@@ -40,6 +40,15 @@ const BATCH_SIZE = 15;
 
 type TabFilter = 'known' | 'unknown';
 
+export interface MessagesViewOptions {
+  /**
+   * Focus UI (v2): open the conversation inside the surface column instead
+   * of Router navigation (the shell owns URL + mounting). Omitted in the
+   * classic UI — behaves exactly as before.
+   */
+  onOpenConversation?: (partnerPubkey: string) => void;
+}
+
 export class MessagesView extends View {
   private container: HTMLElement;
   private _dmsApi?: DMsModuleApi | null;
@@ -68,9 +77,11 @@ export class MessagesView extends View {
   private spamTooltipDisposer: (() => void) | null = null;
   /** Coalescing timer for dm:badge-update bursts (see setupEventListeners). */
   private badgeRefreshTimer: number | null = null;
+  private options: MessagesViewOptions;
 
-  constructor() {
+  constructor(options: MessagesViewOptions = {}) {
     super();
+    this.options = options;
 
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--messages';
@@ -865,6 +876,12 @@ export class MessagesView extends View {
   private openConversation(partnerPubkey: string): void {
     // Mark as read
     void this.dmsApi?.markAsRead(partnerPubkey);
+
+    // Focus UI (v2): the surface column owns conversation rendering.
+    if (this.options.onOpenConversation) {
+      this.options.onOpenConversation(partnerPubkey);
+      return;
+    }
 
     // Navigate to conversation view
     this.router.navigate(`/messages/${partnerPubkey}`);

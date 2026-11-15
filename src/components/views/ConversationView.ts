@@ -89,7 +89,10 @@ export class ConversationView extends View {
   /** Emoji picker instance (Note-Composer component) — one at a time. */
   private emojiPicker: EmojiPicker | null = null;
 
-  constructor(partnerPubkey: string) {
+  constructor(
+    partnerPubkey: string,
+    private options: { onExit?: () => void } = {}
+  ) {
     super();
 
     this.partnerPubkey = npubToHex(partnerPubkey) || partnerPubkey;
@@ -309,13 +312,27 @@ export class ConversationView extends View {
   }
 
   /**
+   * Leave the conversation back to the messages overview. Focus UI (v2):
+   * the surface's back action restores its cached list; classic UI keeps
+   * Router navigation.
+   */
+  private exitToMessages(): void {
+    if (this.options.onExit) {
+      this.options.onExit();
+      return;
+    }
+    this.router.navigate('/messages');
+  }
+
+  /**
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    // Back button
+    // Back button — Focus UI (v2): return to the surface's cached list
+    // instead of Router navigation when an exit callback is wired.
     const backBtn = this.container.querySelector('[data-action="back"]');
     backBtn?.addEventListener('click', () => {
-      this.router.navigate('/messages');
+      this.exitToMessages();
     });
 
     // Menu trigger
@@ -1087,7 +1104,7 @@ export class ConversationView extends View {
 
     await this.dmsApi?.deleteConversation(this.partnerPubkey);
     ToastService.show(_('Conversation deleted'), 'success');
-    this.router.navigate('/messages');
+    this.exitToMessages();
   }
 
   /**
@@ -1142,7 +1159,7 @@ export class ConversationView extends View {
       this.eventBus.emit('mute:updated');
 
       // Navigate back to messages list
-      this.router.navigate('/messages');
+      this.exitToMessages();
     } catch (_error) {
       this.systemLogger.error(
         'ConversationView',

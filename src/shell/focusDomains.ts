@@ -15,6 +15,7 @@
 import { _ } from '../i18n';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
+import { messagesSurface } from './focusMessagesSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
   articlesSettings,
@@ -196,7 +197,14 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     createSurface: notificationsSurface,
     createSettings: notificationsSettings,
   },
-  { id: 'messages', label: _('Messages'), icon: 'icon-email' },
+  {
+    id: 'messages',
+    label: _('Messages'),
+    icon: 'icon-email',
+    route: '/messages',
+    viewTypes: ['messages'],
+    createSurface: messagesSurface,
+  },
   {
     id: 'bookmarks',
     label: _('Bookmarks'),
