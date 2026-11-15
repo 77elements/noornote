@@ -9,6 +9,7 @@
 
 import { Router } from './Router';
 import { AppState } from './AppState';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { ViewMountingService } from './ViewMountingService';
 import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 
@@ -18,6 +19,15 @@ export class PostLoginService {
   private router = Router.getInstance();
   private appState = AppState.getInstance();
   private viewMountingService = ViewMountingService.getInstance();
+  /**
+   * Event-bus subscription for the runtime v2↔v1 interface switch. The
+   * v2 background gates (article polling, mention-profile preload) are
+   * evaluated at login — a mid-session switch must re-apply them in BOTH
+   * directions, otherwise v1 keeps polling under v2 (wasted relay load)
+   * or classic mode misses its services after switching back. Registered
+   * once (idempotent), survives account switches.
+   */
+  private focusUiToggleSubscriptionId: string | null = null;
 
   /**
    * Pubkey of the account that handleLogin is currently running for (or has
@@ -132,13 +142,9 @@ export class PostLoginService {
           await NotificationsOrchestrator.getInstance().start();
           // Focus UI (v2): no background article fetching — the Articles
           // object fetches when the user opens it. (Notifications itself
-          // stays: it drives the notifications diode.)
-          if (!isFocusUiEnabled()) {
-            const { ArticleNotificationService } = await import(
-              './ArticleNotificationService'
-            );
-            ArticleNotificationService.getInstance().startPolling();
-          }
+          // stays: it drives the notifications diode.) The switch bridge
+          // below re-applies this on every interface toggle.
+          this.syncBackgroundFetchGate();
         }),
         // hashtag-subscriptions is managed by AddonLoader via the user:login event.
         // Its runtime calls service.startPolling() — no explicit bootstrap here.
@@ -169,6 +175,15 @@ export class PostLoginService {
           .syncFromRelays()
           .catch(() => {});
       });
+
+      // Runtime interface switch (instant, no reload): keep the v1-only
+      // background fetches in sync with the active interface.
+      if (!this.focusUiToggleSubscriptionId) {
+        this.focusUiToggleSubscriptionId = TypedEventBus.getInstance().on(
+          'settings:focus-ui-changed',
+          () => this.syncBackgroundFetchGate()
+        );
+      }
     } catch (error) {
       // Reset so a retry (e.g. manual re-login) is not blocked by the guard.
       this.loggedInPubkey = null;
@@ -210,6 +225,7 @@ export class PostLoginService {
 
       // Focus UI (v2): skip the mention-profile preload (relay fetches for
       // EVERY follow) — profiles load on demand when surfaces render them.
+      // The switch bridge re-applies this on every interface toggle.
       if (!isFocusUiEnabled()) {
         MentionProfileCache.getInstance()
           .preloadProfiles(followingPubkeys)
@@ -218,5 +234,39 @@ export class PostLoginService {
     } catch (error) {
       console.error('[PostLoginService] Failed to load follow list:', error);
     }
+  }
+
+  /**
+   * Apply the v1-only background-fetch gates to the CURRENT interface:
+   * classic = article-notification polling + mention-profile preload run;
+   * Focus UI = both off (objects fetch on open). Every step is idempotent
+   * (ArticleNotificationService.isPollingStarted, MentionProfileCache
+   * cachedSuggestions), so this is safe to call on every toggle AND at
+   * login — one code path for both moments.
+   */
+  private syncBackgroundFetchGate(): void {
+    if (isFocusUiEnabled()) {
+      void import('./ArticleNotificationService').then(
+        ({ ArticleNotificationService }) => {
+          ArticleNotificationService.getInstance().stopPolling();
+        }
+      );
+      return;
+    }
+    // Classic interface: start the poller (no-op when already running)…
+    void import('./ArticleNotificationService').then(
+      ({ ArticleNotificationService }) => {
+        ArticleNotificationService.getInstance().startPolling();
+      }
+    );
+    // …and warm the mention-profile cache (no-op when already loaded).
+    void import('./MentionProfileCache').then(({ MentionProfileCache }) => {
+      const following = this.appState.getState('user').followingPubkeys;
+      if (following.length > 0) {
+        MentionProfileCache.getInstance()
+          .preloadProfiles(following)
+          .catch(() => {});
+      }
+    });
   }
 }
