@@ -224,5 +224,8 @@ describe('FeedOrchestrator.loadInitialFeedFromCache — instant cache paint', ()
     );
     expect(main).toBeDefined();
     expect(main?.since).toBeUndefined();
+    // Same raw oversupply limit as the network path (shared filter
+    // construction — single source of truth).
+    expect(main?.limit).toBe(200);
   });
 });

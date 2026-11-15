@@ -17,6 +17,7 @@ import {
 import { RefreshButton } from '../../ui/RefreshButton';
 import { NnDropdown } from '../../ui/NnDropdown';
 import { AppState } from '../../../services/AppState';
+import { shouldLatchTerminalAfterEmptyStreak } from '../../../helpers/infiniteScrollRefill';
 import { NoteUI } from '../../ui/NoteUI';
 import {
   type TimelineConfig,
@@ -44,6 +45,13 @@ export class TimelineEventHandler {
   private onAppendEvents: (events: NostrEvent[]) => void;
   private onPrependEvents: (events: NostrEvent[]) => void;
   private onInitializeTimeline: () => Promise<void>;
+  private onLoadComplete: () => void;
+
+  // Consecutive loadMore results with zero NEW (non-duplicate) events. After
+  // 3 in a row the cursor provably stopped advancing (all fetched events were
+  // duplicates → oldest event / until cursor unchanged → the same query would
+  // repeat forever), so hasMore latches false instead of hammering relays.
+  private emptyLoadStreak = 0;
 
   constructor(
     timelineApi: TimelineModuleApi,
@@ -58,6 +66,7 @@ export class TimelineEventHandler {
       onAppendEvents: (events: NostrEvent[]) => void;
       onPrependEvents: (events: NostrEvent[]) => void;
       onInitializeTimeline: () => Promise<void>;
+      onLoadComplete?: () => void;
     }
   ) {
     this.timelineApi = timelineApi;
@@ -71,6 +80,7 @@ export class TimelineEventHandler {
     this.onAppendEvents = callbacks.onAppendEvents;
     this.onPrependEvents = callbacks.onPrependEvents;
     this.onInitializeTimeline = callbacks.onInitializeTimeline;
+    this.onLoadComplete = callbacks.onLoadComplete ?? (() => {});
   }
 
   // Rate limit for gate-blocked logs: one entry per 10s max (scroll fires often)
@@ -366,10 +376,30 @@ export class TimelineEventHandler {
       const uniqueNewEvents = this.stateManager.addEvents(result.events);
 
       if (uniqueNewEvents.length > 0) {
+        this.emptyLoadStreak = 0;
         this.onAppendEvents(uniqueNewEvents);
+      } else {
+        this.emptyLoadStreak++;
       }
 
       this.stateManager.setHasMore(result.hasMore);
+
+      // Zero NEW events three times in a row means the until cursor stopped
+      // advancing (every fetched event was already loaded, so the oldest-event
+      // cursor is unchanged and the next loadMore would repeat the identical
+      // query forever). Latch terminal instead of hammering relays.
+      if (
+        result.hasMore &&
+        shouldLatchTerminalAfterEmptyStreak(this.emptyLoadStreak)
+      ) {
+        this.stateManager.setHasMore(false);
+        diagLog('system', 'loadMore hasMore-latched-false', {
+          sourceKind,
+          until: untilISO,
+          reason: 'empty-streak',
+          streak: this.emptyLoadStreak,
+        });
+      }
 
       diagLog('system', 'loadMore exit', {
         sourceKind,
@@ -400,6 +430,12 @@ export class TimelineEventHandler {
     } finally {
       this.stateManager.setLoading(false);
       this.uiStateHandler.showMoreLoading(false);
+      // Deadlock recheck: if the sentinel is STILL visible after this load
+      // (short page / empty chunk), the observer's intersection state never
+      // transitioned and would never fire again — force a fresh evaluation.
+      // Runs after setLoading(false) so the re-triggered loadMore passes the
+      // loading gate.
+      this.onLoadComplete();
     }
   }
 }

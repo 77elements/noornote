@@ -1,12 +1,11 @@
 /**
  * Focus surface frame (v2) — shared chrome for domain surfaces that swap
  * inner views inside the focus column (articles: list ↔ detail, social:
- * timeline ↔ note). Provides the root element and the back control; the
- * back button sits in the top band (clears the ED-t drawer) and is shown
- * by the surface whenever a detail view replaces the list.
+ * timeline ↔ note). Provides the root element and the list/detail swap;
+ * the visible back control lives in the object's action-button stack
+ * (focusStage), so the frame only broadcasts the detail state via
+ * 'focus:surface-back'.
  */
-
-import { _ } from '../i18n';
 
 export interface FocusSurfaceFrame {
   /** Root element to hand out as FocusDomainSurface.element. */
@@ -23,27 +22,15 @@ export interface FocusSurfaceFrame {
    * detail element from the DOM (see swapToDetail).
    */
   swapToList(el: HTMLElement): void;
-  /** Show/hide the back control. */
+  /** Broadcast detail visibility (drives the object's back action). */
   setBackVisible(visible: boolean): void;
   /** Drop all references (the surface destroys its views itself). */
   destroy(): void;
 }
 
-export function createFocusSurfaceFrame(
-  className: string,
-  onBack: () => void
-): FocusSurfaceFrame {
+export function createFocusSurfaceFrame(className: string): FocusSurfaceFrame {
   const element = document.createElement('div');
   element.className = `focus-surface ${className}`;
-
-  const backBtn = document.createElement('button');
-  backBtn.type = 'button';
-  backBtn.className = 'focus-surface__back';
-  backBtn.setAttribute('aria-label', _('Back'));
-  backBtn.innerHTML = '<svg><use href="#icon-back"/></svg>';
-  backBtn.addEventListener('click', onBack);
-  backBtn.hidden = true;
-  element.appendChild(backBtn);
 
   let listEl: HTMLElement | null = null;
   let detailEl: HTMLElement | null = null;
@@ -63,7 +50,6 @@ export function createFocusSurfaceFrame(
       element.appendChild(el);
     },
     setBackVisible: visible => {
-      backBtn.hidden = !visible;
       // The object's action-button stack mirrors this state (the satellite
       // back button below the close X) — focusStage listens on the object.
       element.dispatchEvent(
@@ -74,7 +60,6 @@ export function createFocusSurfaceFrame(
       );
     },
     destroy: () => {
-      backBtn.remove();
       listEl?.remove();
       detailEl?.remove();
       listEl = null;

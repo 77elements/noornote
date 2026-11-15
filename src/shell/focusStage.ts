@@ -1,14 +1,15 @@
 /**
  * Focus Stage (v2) — builds the FS grid of primary domain circles inside
  * #focus-stage and owns the unified morph logic: clicking a circle grows
- * it into the center column (600px), the other circles shift aside, the
+ * it into the center column (600px surface + actions rail), the other
+ * circles shift aside, the
  * domain surface mounts BEFORE the morph — document flow: the column
  * height is its content height, so the FLIP animates to the laid-out
  * final geometry. The close control reverses the morph and restores the
  * grid.
  *
  * Morph technique: FLIP on the real elements via the Web Animations API.
- * The grid switches to `1fr 600px 1fr` and every object animates from its
+ * The grid switches to `1fr calc(600px + $gap + 30px) 1fr` and every object animates from its
  * previous geometry to the new one — top-left-anchored translate for the
  * position delta, px-animated width/height for size changes (no scale, so
  * the 2px border stays 2px; animated height is capped at the viewport
@@ -24,7 +25,15 @@
  */
 
 import { _ } from '../i18n';
+import { Tooltip } from '../components/ui/Tooltip';
 import { Router } from '../services/Router';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
+import { NotificationsBadgeManager } from '../components/layout/managers/NotificationsBadgeManager';
+import { DMBadgeManager } from '../components/layout/managers/DMBadgeManager';
+import { ListsCountManager } from '../components/layout/managers/ListsCountManager';
 import {
   FOCUS_DOMAINS,
   type FocusDomainDef,
@@ -52,11 +61,48 @@ interface FocusHandoff {
   param: string;
 }
 
+/**
+ * Unread diodes on the circles (v1 nn-wheel parity): notifications, DMs
+ * and unread bookmarks. Same badge classes + SAME badge managers as the
+ * classic nav drive them (wired in mount), shown whenever unread exists —
+ * always rendered, no hover gating like the move handle.
+ */
+const DIODES: Record<string, string> = {
+  notifications:
+    '<span class="notifications-badge focus-object__diode"></span>',
+  messages:
+    '<span class="badge badge--green dm-badge focus-object__diode" style="display: none"></span>',
+  bookmarks:
+    '<span class="notifications-badge focus-object__diode" data-list-unread="bookmarks"></span>',
+};
+
 export class FocusStage {
   private root: HTMLElement;
   private grid!: HTMLElement;
   private objects = new Map<string, HTMLElement>();
   private surfaces = new Map<string, FocusDomainSurface>();
+  /**
+   * Circle order — registry order by default, user-adjustable via drag &
+   * drop on the circles' move handles (drop on another circle SWAPS the
+   * two positions), persisted per account. Drives the grid DOM order and
+   * the side-stack distribution (see reparentSideStacks).
+   */
+  private order: string[] = [];
+  /**
+   * Which side stack holds ALL circles while focused ('left' | 'right'),
+   * null = alternating distribution. Persisted per account (FOCUS_UI_STACK).
+   */
+  private stackSide: 'left' | 'right' | null =
+    PerAccountLocalStorage.getInstance().get<'left' | 'right' | null>(
+      StorageKeys.FOCUS_UI_STACK,
+      null
+    );
+  /** Unread-diode drivers (v1 badge managers over the shell's diodes). */
+  private badgeManagers: Array<{
+    destroy(): void;
+  }> = [];
+  /** Tooltip disposers for the persistent 30px controls (destroy contract). */
+  private tooltipDisposers: Array<() => void> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
@@ -107,11 +153,52 @@ export class FocusStage {
   mount(): void {
     this.grid = document.createElement('div');
     this.grid.className = 'focus-stage__grid';
-    for (const def of FOCUS_DOMAINS) {
-      this.grid.appendChild(this.createObject(def));
+    this.order = this.loadOrder();
+    for (const id of this.order) {
+      const def = FOCUS_DOMAINS.find(d => d.id === id);
+      if (def) this.grid.appendChild(this.createObject(def));
     }
     this.root.appendChild(this.grid);
     window.addEventListener('resize', this.onResize);
+    this.setupBadgeManagers();
+  }
+
+  /**
+   * Wire the SAME badge managers the classic nav uses to the shell's
+   * diode spans (notifications / DMs / unread bookmarks). Scoped to the
+   * grid; destroyed on shell unmount.
+   */
+  private setupBadgeManagers(): void {
+    const notif = this.grid.querySelector(
+      '.notifications-badge:not([data-list-unread])'
+    ) as HTMLElement | null;
+    const dm = this.grid.querySelector('.dm-badge') as HTMLElement | null;
+    if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
+    if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
+    this.badgeManagers.push(new ListsCountManager(this.grid));
+  }
+
+  /**
+   * The persisted circle order, validated against the registry: stale ids
+   * dropped, unknown domains appended in registry order — the array is
+   * always a permutation of FOCUS_DOMAINS.
+   */
+  private loadOrder(): string[] {
+    const ids = FOCUS_DOMAINS.map(d => d.id);
+    const stored = PerAccountLocalStorage.getInstance().get<string[] | null>(
+      StorageKeys.FOCUS_UI_ORDER,
+      null
+    );
+    if (!Array.isArray(stored)) return ids;
+    const valid = stored.filter(id => ids.includes(id));
+    return [...valid, ...ids.filter(id => !valid.includes(id))];
+  }
+
+  /** Registry defs in the user's stored order. */
+  private orderedDefs(): FocusDomainDef[] {
+    return this.order
+      .map(id => FOCUS_DOMAINS.find(d => d.id === id))
+      .filter((d): d is FocusDomainDef => !!d);
   }
 
   /** Full teardown (shell unmount): destroy every cached surface. */
@@ -127,6 +214,10 @@ export class FocusStage {
     this.objects.clear();
     this.scrollTopState.clear();
     this.hist = [];
+    for (const mgr of this.badgeManagers) mgr.destroy();
+    this.badgeManagers = [];
+    for (const dispose of this.tooltipDisposers) dispose();
+    this.tooltipDisposers = [];
     this.grid?.remove();
   }
 
@@ -216,6 +307,9 @@ export class FocusStage {
         ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
         <span class="focus-object__label">${def.label}</span>
       </button>
+      <button type="button" class="focus-object__move" aria-label="${_('Reorder')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
+      </button>
       <div class="focus-object__actions">
         <button type="button" class="focus-object__control"
           aria-label="${_('Close')}">
@@ -239,9 +333,18 @@ export class FocusStage {
             : ''
         }
       </div>
+      ${DIODES[def.id] ?? ''}
       <div class="focus-object__surface"></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def));
+    // Move handle: pointer drag reorders the circles (drop on another
+    // circle swaps the two positions, persisted per account). The handle
+    // click itself must never open the object.
+    const moveBtn = el.querySelector('.focus-object__move') as HTMLElement;
+    moveBtn.addEventListener('click', e => e.stopPropagation());
+    moveBtn.addEventListener('pointerdown', e => {
+      this.startOrderDrag(e, def.id, el);
+    });
     const control = el.querySelector('.focus-object__control') as HTMLElement;
     control.addEventListener('click', e => {
       // The control only exists on the active object (hidden in grid state
@@ -356,6 +459,22 @@ export class FocusStage {
         if (this.activeId !== def.id || this.morphing) return;
         this.toggleSettings(def, settingsBtn);
       });
+    }
+    // Tooltips on every 30px control (nn-tooltip, shared popup portalled
+    // to <body>). The aria-label texts already describe the actions —
+    // reuse them. Disposers tracked for the destroy contract.
+    const tips: Array<[string, HTMLElement | null]> = [
+      [_('Reorder'), moveBtn],
+      [_('Close'), control],
+      [_('Back'), backBtn],
+      [_('Scroll to top'), scrollTopBtn],
+      [
+        _('Settings'),
+        el.querySelector('.focus-object__settings') as HTMLElement | null,
+      ],
+    ];
+    for (const [text, btn] of tips) {
+      if (btn) this.tooltipDisposers.push(Tooltip.attach(btn, text));
     }
     this.objects.set(def.id, el);
     return el;
@@ -592,6 +711,171 @@ export class FocusStage {
   }
 
   /**
+   * Pointer drag on a circle's move handle (grid state only — never while
+   * a domain is focused or a morph runs). The circle follows the cursor
+   * visually; the circle under the pointer is highlighted as the drop
+   * target. Dropping on another circle swaps the two ids in the stored
+   * order and persists it. A few pixels of dead zone keep a shaky click
+   * from becoming a drag.
+   */
+  private startOrderDrag(
+    e: PointerEvent,
+    dragId: string,
+    el: HTMLElement
+  ): void {
+    if (this.activeId || this.morphing) return;
+    e.stopPropagation();
+    e.preventDefault(); // no text selection / native drag while moving
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragging = false;
+    let target: HTMLElement | null = null;
+
+    const onMove = (ev: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+        dragging = true;
+        // pointer-events off: the translated circle must not shadow the
+        // drop target in elementFromPoint.
+        el.classList.add('is-drag-source');
+      }
+      el.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+      const obj = hit?.closest('.focus-object') as HTMLElement | null;
+      const next = obj && obj !== el && obj.dataset.domainId ? obj : null;
+      if (next !== target) {
+        target?.classList.remove('is-drop-target');
+        next?.classList.add('is-drop-target');
+        target = next;
+      }
+    };
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      el.classList.remove('is-drag-source');
+      el.style.transform = '';
+      target?.classList.remove('is-drop-target');
+    };
+    const onUp = (): void => {
+      const dropId = target?.dataset.domainId;
+      cleanup();
+      if (dropId) this.swapOrder(dragId, dropId);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', cleanup);
+  }
+
+  /**
+   * Pointer drag on a side stack's move handle (focused state only).
+   * Dragging it toward the OPPOSITE stack highlights that stack as the
+   * drop zone; dropping there moves ALL circles into it — in the user's
+   * stored order — and persists the side (the source column empties as
+   * the future secondary-widget area). Same dead-zone mechanics as
+   * startOrderDrag.
+   */
+  private startStackDrag(
+    e: PointerEvent,
+    side: 'left' | 'right',
+    icon: HTMLElement
+  ): void {
+    if (this.morphing || !this.sideStacks) return;
+    e.stopPropagation();
+    e.preventDefault(); // no text selection / native drag while moving
+    const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragging = false;
+    let over = false;
+
+    const onMove = (ev: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+        dragging = true;
+        // pointer-events off: the translated icon must not shadow the
+        // drop zone in elementFromPoint.
+        icon.classList.add('is-drag-source');
+        targetEl.classList.add('is-dropzone');
+      }
+      icon.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+      over = !!hit && hit.closest('.focus-side-stack') === targetEl;
+    };
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      icon.classList.remove('is-drag-source');
+      icon.style.transform = '';
+      targetEl.classList.remove('is-dropzone');
+    };
+    const onUp = (): void => {
+      const drop = over;
+      cleanup();
+      if (drop) this.moveAllCircles(side === 'left' ? 'right' : 'left');
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', cleanup);
+  }
+
+  /** Move ALL circles into the given stack (stored order), persist. */
+  private moveAllCircles(side: 'left' | 'right'): void {
+    if (!this.sideStacks || !this.activeId) return;
+    this.stackSide = side;
+    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, side);
+    this.distributeSideCircles(
+      this.sideStacks[0],
+      this.sideStacks[1],
+      this.activeId
+    );
+  }
+
+  /**
+   * Reset the stack distribution to the default alternating 50/50
+   * (starting LEFT) and clear the persisted side. Wired to the reset
+   * button next to each stack's move handle.
+   */
+  private resetStackSide(): void {
+    if (!this.sideStacks || !this.activeId) return;
+    this.stackSide = null;
+    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, null);
+    this.distributeSideCircles(
+      this.sideStacks[0],
+      this.sideStacks[1],
+      this.activeId
+    );
+  }
+
+  /** Swap two ids in the stored order, persist, re-apply the grid order. */
+  private swapOrder(a: string, b: string): void {
+    if (a === b) return;
+    const ia = this.order.indexOf(a);
+    const ib = this.order.indexOf(b);
+    if (ia < 0 || ib < 0) return;
+    const idA = this.order[ia];
+    const idB = this.order[ib];
+    if (idA === undefined || idB === undefined) return;
+    this.order[ia] = idB;
+    this.order[ib] = idA;
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_ORDER,
+      this.order
+    );
+    this.applyOrderToGrid();
+  }
+
+  /** Mirror the stored order into the grid DOM (grid state only). */
+  private applyOrderToGrid(): void {
+    if (this.activeId || this.morphing) return;
+    for (const id of this.order) {
+      const circle = this.objects.get(id);
+      if (circle) this.grid.appendChild(circle);
+    }
+  }
+
+  /**
    * Re-parent the non-active circles into two per-side stacks (grid
    * columns 1 and 3). In one flat grid the active object's content height
    * would be distributed across all spanned rows (circles spread over
@@ -605,29 +889,99 @@ export class FocusStage {
     const right = document.createElement('div');
     right.className = 'focus-side-stack';
     right.style.gridColumn = '3';
-    let next: HTMLElement = left;
-    for (const def of FOCUS_DOMAINS) {
-      if (def.id === activeId) continue;
-      const circle = this.objects.get(def.id);
-      if (!circle) continue;
-      next.appendChild(circle);
-      next = next === left ? right : left;
+    left.innerHTML = this.stackMoveIcon('left');
+    right.innerHTML = this.stackMoveIcon('right');
+    for (const [stack, side] of [
+      [left, 'left'],
+      [right, 'right'],
+    ] as const) {
+      // The buttons must never open an object underneath.
+      const tools = stack.querySelector(
+        '.focus-side-stack__tools'
+      ) as HTMLElement;
+      tools.addEventListener('click', ev => ev.stopPropagation());
+      const move = tools.querySelector(
+        '.focus-side-stack__move'
+      ) as HTMLElement;
+      move.addEventListener('pointerdown', ev =>
+        this.startStackDrag(ev, side, move)
+      );
+      tools
+        .querySelector('.focus-side-stack__reset')
+        ?.addEventListener('click', () => this.resetStackSide());
+      // Stack tools live only while their stack exists (recreated per
+      // focus, removed on close) — their listeners die with the elements,
+      // so no disposer tracking is needed here. The move tooltip states
+      // the drop DIRECTION: dragging it toward the other column.
+      const stackTips: Array<[string, HTMLElement]> = [
+        [
+          side === 'left'
+            ? _('Move all circles to the right column')
+            : _('Move all circles to the left column'),
+          move,
+        ],
+        [
+          _('Distribute circles evenly'),
+          tools.querySelector('.focus-side-stack__reset') as HTMLElement,
+        ],
+      ];
+      for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
     }
+    this.distributeSideCircles(left, right, activeId);
     const active = this.objects.get(activeId) as HTMLElement;
     this.grid.insertBefore(left, active);
     this.grid.insertBefore(right, active.nextSibling);
     this.sideStacks = [left, right];
   }
 
-  /** Move the circles back into the grid (registry order) and drop the stacks. */
+  /** The stack's top tools: move handle (drag moves ALL circles) + reset. */
+  private stackMoveIcon(side: 'left' | 'right'): string {
+    return `<div class="focus-side-stack__tools">
+      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" aria-label="${_('Move all circles')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
+      </button>
+      <button type="button" class="focus-side-stack__reset" aria-label="${_('Distribute circles evenly')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-pull-refresh"/></svg>
+      </button>
+    </div>`;
+  }
+
+  /**
+   * Fill the two stacks with the non-active circles. Persisted state
+   * (stackSide): ALL circles into that one stack — in the user's stored
+   * order, 1 2 3 … top to bottom — leaving the other column empty as the
+   * future secondary-widget area. Default: alternating starting LEFT
+   * (1 Content 2 / 3 4 / 5 6).
+   */
+  private distributeSideCircles(
+    left: HTMLElement,
+    right: HTMLElement,
+    activeId: string
+  ): void {
+    let next: HTMLElement = left;
+    for (const def of this.orderedDefs()) {
+      if (def.id === activeId) continue;
+      const circle = this.objects.get(def.id);
+      if (!circle) continue;
+      (this.stackSide === 'left'
+        ? left
+        : this.stackSide === 'right'
+          ? right
+          : next
+      ).appendChild(circle);
+      if (!this.stackSide) next = next === left ? right : left;
+    }
+  }
+
+  /** Move the circles back into the grid (stored order) and drop the stacks. */
   private restoreSideCircles(): void {
     if (!this.sideStacks) return;
-    // Append EVERY circle in registry order — including the one that
+    // Append EVERY circle in the stored order — including the one that
     // stayed in the grid as the focused column. appendChild moves it, so
-    // the original order (social → articles → …) is restored exactly;
-    // re-appending only the stacked circles would place them all AFTER
-    // the formerly active object and shuffle the grid.
-    for (const def of FOCUS_DOMAINS) {
+    // the original order is restored exactly; re-appending only the
+    // stacked circles would place them all AFTER the formerly active
+    // object and shuffle the grid.
+    for (const def of this.orderedDefs()) {
       const circle = this.objects.get(def.id);
       if (circle) this.grid.appendChild(circle);
     }

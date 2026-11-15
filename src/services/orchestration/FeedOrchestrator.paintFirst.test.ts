@@ -96,7 +96,7 @@ describe('FeedOrchestrator.loadInitialFeed — paint-first auto-expand', () => {
     shouldFetchReactions.mockImplementation(() => true);
   });
 
-  it('paints immediately when the 1h window already has notes (no auto-expand)', async () => {
+  it('paints immediately when the initial fetch already has notes (no auto-expand)', async () => {
     orch.fetchEvents = vi.fn().mockResolvedValue([EV1, EV2]);
 
     const result = await orch.loadInitialFeed({
@@ -143,5 +143,67 @@ describe('FeedOrchestrator.loadInitialFeed — paint-first auto-expand', () => {
 
     expect(result.events).toEqual([]);
     expect(result.hasMore).toBe(false);
+  });
+
+  it('initial network fetch: no since bound, raw oversupply limit, 10s timeout', async () => {
+    // Real fetchEvents → transport.fetch is the seam; an empty result keeps
+    // the auto-expand loop running, but only the FIRST call (the initial
+    // fetch) is asserted here.
+    feedTestState.transportFetch.mockResolvedValue([]);
+
+    await orch.loadInitialFeed({
+      followingPubkeys: ['a'.repeat(64)],
+      includeReplies: false,
+      config: TV_CONFIG,
+    });
+
+    const [relays, filters, timeoutMs] = feedTestState.transportFetch.mock
+      .calls[0] as unknown as [
+      string[],
+      Array<Record<string, unknown>>,
+      number,
+    ];
+    void relays;
+
+    // Fix: the initial fetch must not be bound to a 1h window — relays return
+    // the newest notes at ANY age (reference-client form). A windowed first
+    // page starved on quiet hours and deadlocked the sentinel refill below
+    // it.
+    const main = filters.find(
+      f => f.kinds && (f.kinds as number[]).includes(1)
+    );
+    expect(main).toBeDefined();
+    expect(main?.since).toBeUndefined();
+    expect(main?.until).toBeUndefined();
+
+    // Fix: the raw limit must exceed pageSize — relays count raw events
+    // (replies included) before client-side reply filtering drops most of
+    // them (raw 91 → filtered 24 in phone logs). Data Saver off → 200.
+    expect(main?.limit).toBe(200);
+
+    // Fix: background refresh timeout 10s (was 5s — slow mobile relays
+    // contributed nothing).
+    expect(timeoutMs).toBe(10000);
+  });
+
+  it('loadMore window chunks use the raw oversupply limit too', async () => {
+    // First call (initial fetch): empty → auto-expand calls loadMore with a
+    // 3h window chunk. That chunk's main filter must carry the raw limit.
+    feedTestState.transportFetch.mockResolvedValue([]);
+
+    await orch.loadInitialFeed({
+      followingPubkeys: ['a'.repeat(64)],
+      includeReplies: false,
+      config: TV_CONFIG,
+    });
+
+    const chunkFilters = feedTestState.transportFetch.mock
+      .calls[1] as unknown as [string[], Array<Record<string, unknown>>];
+    const chunkMain = chunkFilters[1].find(
+      f => f.kinds && (f.kinds as number[]).includes(1)
+    );
+    expect(chunkMain?.until).toBeDefined();
+    expect(chunkMain?.since).toBeDefined();
+    expect(chunkMain?.limit).toBe(200);
   });
 });

@@ -99,13 +99,18 @@ html.ui--focus {
     gap: 2rem;
   }
 
-  // Focused state: middle column (600px) takes the active object, the
-  // side columns hold the re-parented side stacks (see below). One full-
+  // Focused state: middle column takes the active object — 600px surface
+  // + base gap + 30px actions column (the object's internal two-column
+  // layout, see .focus-object__layout). The side columns hold the
+  // re-parented side stacks (see below). One full-
   // height row — the focused column fills the stage, its inner view
   // scrolls (classic .timeline-view__timeline mechanics).
   &.is-focused {
     height: 100%;
-    grid-template-columns: 1fr 600px 1fr;
+    // Clears the ED-t drawer above the focused layout (all three columns
+    // start flush below it).
+    margin-top: calc($gap * 3);
+    grid-template-columns: 230px calc(600px + $gap + 30px) 230px;
     grid-template-rows: 100%;
 
     @media (max-width: 1099px) {
@@ -152,14 +157,26 @@ html.ui--focus {
   // No background: the shell (and its watermark) shows through.
   &--active {
     max-width: none;
-    width: 100%; // fill the 600px center column (base width is the 230px circle)
+    width: 100%; // fill the center column (base width is the 230px circle)
     height: 100%; // fill the single full-height grid row
     aspect-ratio: auto; // drop the circle ratio: the content defines the height
     border: none; // the column needs no circle frame
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
     background: none;
-    margin-top: 6rem; // clear the ED-t drawer above the column
+    // Two-column body: the surface (fixed 600px) plus the action-button
+    // column (30px), separated by the base gap — the stage's middle grid
+    // column grows by $gap + 30px accordingly (see .focus-stage__grid).
+    // Takeover: the column IS the viewport, so the surface flexes instead
+    // of the fixed 600px.
+    display: grid;
+    grid-template-columns: 600px 30px;
+    grid-template-rows: 100%;
+    gap: $gap;
+
+    @media (max-width: 1099px) {
+      grid-template-columns: 1fr 30px;
+    }
   }
 }
 
@@ -198,22 +215,95 @@ html.ui--focus {
   overflow-wrap: break-word;
 }
 
-// Object action buttons: a vertical stack of 30px circles on the active
-// object's top-right corner. The first button straddles the corner exactly
-// like the old single close control; further buttons stack downward along
-// the right border (half outside). Back is hidden until a detail view is
-// open (focusStage listens to the surface's 'focus:surface-back' event);
+// Move handle (drag & drop reorder): sits at ~2 o'clock of the circle,
+// shown on hover in the grid state only. Grabbing it starts a pointer
+// drag — dropping the circle on another SWAPS the two positions
+// (focusStage persists the order per account).
+.focus-object__move {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: grab;
+  touch-action: none; // the pointer drag must not scroll the page
+  z-index: $z-back-bar;
+
+  // Reordering is a home-grid affordance only — while ANY domain is
+  // focused (grid.is-focused, e.g. /timeline) the handles stay hidden
+  // (the circles live in the side stacks there).
+  .focus-stage__grid:not(.is-focused) .focus-object:not(.focus-object--active):hover & {
+    display: grid;
+  }
+}
+
+// Active drag: the source circle follows the cursor (transform set by
+// focusStage) and must not shadow the drop target in elementFromPoint;
+// the hovered counterpart ring-lights as the drop target.
+.focus-object.is-drag-source {
+  pointer-events: none;
+  z-index: $z-back-bar;
+
+  .focus-object__move {
+    cursor: grabbing;
+  }
+}
+
+.focus-object.is-drop-target {
+  border-color: var(--color-3);
+  outline-color: var(--color-3);
+}
+
+// Unread diodes (v1 nn-wheel parity): green counters on the notifications,
+// messages and bookmarks circles at ~5 o'clock — always rendered (no hover
+// gating), driven by the same badge managers as the classic nav. The
+// two-class selector out-specifies the v1 .notifications-badge chrome (its
+// 20px pill would otherwise win the cascade).
+.focus-object .focus-object__diode {
+  position: absolute;
+  bottom: 10px;
+  right: 0;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  // The v1 badge is a padded text pill (line-height + padding centering);
+  // at the fixed 30px diode size flex centering is needed instead — the
+  // badge managers set display:inline-flex, so justify/align do the work.
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-5);
+  text-shadow: $diode-text-shadow;
+  border-radius: $radius-full;
+  z-index: $z-back-bar;
+  pointer-events: none; // never block the circle's click/hover
+}
+
+// Object action buttons: the second column of the active object's grid
+// body (600px surface + base gap + 30px controls, see .focus-object) —
+// every button fills the column width. Back is hidden until a detail view
+// is open (focusStage listens to the surface's 'focus:surface-back' event);
 // scroll-to-top is hidden until the column is scrolled. Settings opens
 // the ED-b drawer with the object's own settings panel (per-object
 // settings, dissolves the v1 UI settings step by step).
 .focus-object__actions {
-  position: absolute;
-  top: 3px;
-  right: -40px;
   display: none;
   flex-direction: column;
-  align-items: center;
   gap: 10px;
+  // Explicit cell: column 2, row 1. DOM order (actions before surface)
+  // would otherwise push the surface to an auto-placed second row via the
+  // sparse packing cursor.
+  grid-column: 2;
+  grid-row: 1;
   z-index: $z-back-bar;
 
   .focus-object--active & {
@@ -225,7 +315,7 @@ html.ui--focus {
 .focus-object__back,
 .focus-object__scroll-top,
 .focus-object__settings {
-  width: 30px;
+  width: 100%; // fill the 30px actions column
   height: 30px;
   padding: 0;
   border: 2px solid var(--color-3);
@@ -258,6 +348,7 @@ html.ui--focus {
 // circles pinned to the row top. Focused state: the stage is viewport-
 // fixed, so each stack scrolls its own overflow (230px rhythm preserved).
 .focus-side-stack {
+  position: relative; // anchor for the stack move handle
   display: grid;
   grid-template-columns: 230px;
   justify-self: center;
@@ -277,12 +368,62 @@ html.ui--focus {
   }
 }
 
+// Stack top tools: move handle (drag moves ALL circles) + reset (back to
+// the alternating 50/50 distribution), pinned ABOVE the circles — a sticky
+// first grid row, so it stays in place while the stack scrolls (circles
+// slide beneath it). Always visible (an empty stack must keep its handles
+// for the way back).
+.focus-side-stack__tools {
+  position: sticky;
+  top: 0;
+  justify-self: center; // center of the 230px column
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  z-index: $z-back-bar;
+}
+
+.focus-side-stack__move,
+.focus-side-stack__reset {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: pointer;
+  touch-action: none; // the pointer drag must not scroll the page
+
+  &.is-drag-source {
+    pointer-events: none; // never shadow the drop zone in elementFromPoint
+    cursor: grabbing;
+  }
+}
+
+.focus-side-stack__move {
+  cursor: grab;
+}
+
+// Drop zone while a stack handle is dragged: the opposite stack lights up
+// as the target (dash-outlined frame over the whole column).
+.focus-side-stack.is-dropzone {
+  outline: 1px dashed var(--color-3);
+  outline-offset: -1px;
+  border-radius: $radius-xl;
+  background: color-mix(in srgb, var(--color-3) 8%, transparent);
+}
+
 // Surface slot: the focused domain's view mounts here (after the morph).
 // Definite height (fills the active object) — the view's own .view-content
 // (height: 100%) resolves against it exactly like in the classic layout.
 // The only sanctioned override on .view-content is the focus-scoped top
 // spacing below (clears the ED-t overlay).
 .focus-object__surface {
+  grid-column: 1; // first column of the active object's grid body
+  grid-row: 1; // pinned — see .focus-object__actions
   height: 100%;
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling
@@ -307,45 +448,13 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// The sticky timeline header's opaque v1 background would cut a box out of
-// the shell gradient — transparent in the shell.
-.ui--focus .timeline .timeline-header {
-  background: transparent;
-}
-
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
 // list ↔ detail) inside the focus column. The classic SCC tab system has
 // no equivalent in the shell — detail views render in the column, the
-// back control returns to the list.
+// object's action-button stack (focusStage) provides the back control.
 .focus-surface {
   position: relative;
   height: 100%;
-}
-
-.focus-surface__back {
-  position: absolute;
-  top: 0;
-  left: $gap;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-3);
-  cursor: pointer;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-  }
-
-  &:hover {
-    opacity: 0.8;
-  }
 }
 
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in

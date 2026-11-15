@@ -160,6 +160,25 @@ export class InfiniteScroll {
   }
 
   /**
+   * Re-evaluate the sentinel after a load completed.
+   *
+   * The IntersectionObserver only fires on intersection TRANSITIONS. If the
+   * sentinel was already visible while a load ran (its transition fired the
+   * trigger that started the load) and the load appended too few notes to push
+   * the sentinel out of view, the intersection state never changes — no new
+   * event ever fires and the feed deadlocks right below a short first screen.
+   * unobserve→observe forces a fresh evaluation cycle that reports the
+   * CURRENT intersection state, so a still-visible sentinel re-triggers
+   * loadMore immediately. If the scroller now overflows, the re-observation
+   * reports not-intersecting and nothing happens.
+   */
+  revalidate(): void {
+    if (!this.observer || !this.sentinelElement) return;
+    this.observer.unobserve(this.sentinelElement);
+    this.observer.observe(this.sentinelElement);
+  }
+
+  /**
    * Clean up and destroy
    */
   destroy(): void {
