@@ -15,6 +15,7 @@ import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { canonicalShareUrl } from '../../helpers/canonicalShareUrl';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -317,7 +318,7 @@ export class FeedbackBoardAddonView extends View {
             relays: this.cardRelayHints(),
           });
           void ClipboardActionsService.getInstance().copyText(
-            `${window.location.origin}/addons/feedback-board/${naddr}`,
+            canonicalShareUrl(`/addons/feedback-board/${naddr}`),
             _('Permalink')
           );
           break;

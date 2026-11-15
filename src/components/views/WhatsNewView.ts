@@ -24,7 +24,7 @@ interface WhatsNewCategory {
 /** The big feature of the CURRENT release — promotional tone. */
 // i18n-ok (release marketing text, English only)
 const HIGHLIGHT =
-  'NoorNote now loads things noticeably faster and goes even easier on your device\u2019s memory!';
+  'Feed pagination has been rebuilt from the ground up: NoorNote now fills your timeline with a more resilient, cursor-based fetch pipeline and never stalls below a short first screen.';
 
 /** Full release notes of the CURRENT version (replaced on every release). */
 const RELEASE: {
@@ -32,34 +32,26 @@ const RELEASE: {
   date: string;
   categories: WhatsNewCategory[];
 } = {
-  version: '1.9.14',
+  version: '1.9.15',
   date: 'November 2026',
   categories: [
     {
-      title: 'Speed', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      title: 'Feed engine', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        "NoorNote loads noticeably faster: your timeline, profile pages and articles appear instantly — NoorNote shows what's already on your device first, then quietly refreshes in the background.",
-        "Lighter on your device's memory, especially on phones and tablets.",
+        'Reworked initial feed query shape: cursor-based pagination with oversampled request limits and post-filter page slicing, replacing the previous time-windowed first page.',
+        'Background feed refresh window extended to 10s for slow relay responses.',
       ],
     },
     {
-      title: 'Tablet Mode', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      title: 'Pagination reliability', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        '"Wide Mode" is now called "Tablet Mode", and on large screens the two columns sit nicely centered.',
+        'Scroll pagination now re-validates the load trigger after every page, eliminating stalls on pages shorter than the viewport; bounded terminal latch for exhausted cursors.',
       ],
     },
     {
-      title: 'Nice touches', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      title: 'Interface', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        'Scroll through feeds with the Page Up / Page Down keys.',
-        'When you come back to a note you were reading, NoorNote remembers where you had scrolled to.',
-      ],
-    },
-    {
-      title: 'Fixes', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'Quotes of deleted notes still show up when they appear inside a repost.',
-        'Opening a note link — and reloading it — now reliably lands you on the right note.',
+        'Visually-hidden page headings; inactive tab color aligned to the interactive palette token.',
       ],
     },
   ],
