@@ -17,6 +17,7 @@
 import type {
   FocusDomainSurface,
   FocusDomainSurfaceView,
+  FocusSettingsView,
 } from './focusDomains';
 import {
   createFocusSurfaceFrame,
@@ -55,6 +56,13 @@ export interface FocusListDetailSurfaceConfig {
     route: string;
     /** Create the secondary detail view. */
     createDetail: () => Promise<SurfaceViewHandle>;
+    /**
+     * Per-object settings for the ED-b while THIS secondary detail is
+     * shown (the gear swaps its panel content). Dynamic import so the
+     * shell never statically references addon code. Null/omitted → the
+     * stage falls back to def.createSettings().
+     */
+    settings?: () => Promise<FocusSettingsView>;
   };
   /**
    * Save/restore the column scroll around detail swaps — for list views
@@ -152,6 +160,18 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     this.frame.setBackVisible(true);
     // Keep the classic URL scheme, in place (no view mounting, no history).
     Router.getInstance().replaceUrl(this.config.detailRoute(param));
+  }
+
+  /**
+   * Per-object settings override for the gear's ED-b: while the secondary
+   * detail is shown and it carries a settings factory, return its panel —
+   * otherwise null (the stage falls back to the domain's default panel).
+   */
+  async getSettingsForCurrentState(): Promise<FocusSettingsView | null> {
+    if (!this.detailIsSecondary || !this.config.secondary?.settings) {
+      return null;
+    }
+    return this.config.secondary.settings();
   }
 
   /** Open the configured secondary (param-less) detail in the column. */

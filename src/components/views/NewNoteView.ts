@@ -41,6 +41,7 @@ import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
+import { AddonLoader } from '../../addons/AddonLoader';
 import {
   ModalEventHandlerManager,
   type TabMode,
@@ -197,6 +198,10 @@ export class NewNoteView extends View {
     window.removeEventListener('resize', this.onWindowResize);
     if (this.autoGrowFrame) cancelAnimationFrame(this.autoGrowFrame);
     this.cleanup();
+    // Safety net for close paths that bypass onClose (e.g. account
+    // switch): on-demand addons release here too (idempotent no-op when
+    // already unloaded or permanently enabled).
+    this.releaseOnDemandAddons();
     this.eventHandlerManager?.destroy();
     this.eventHandlerManager = null;
   }
@@ -402,7 +407,10 @@ export class NewNoteView extends View {
       onPollToggle: () => this.handlePollToggle(),
       onScheduleClick: () => this.handleScheduleClick(),
       textareaSelector: `${SCOPE} [data-textarea]`,
-      showSchedule: isScheduledPostsEnabled(),
+      // v2 on-demand addons: the schedule icon is always visible; the
+      // Scheduled Posts code loads only when the icon is used
+      // (handleScheduleClick) and unloads again when the work is done.
+      showSchedule: true,
     });
 
     // Highlight mode: comment is optional, only require relays.
@@ -549,6 +557,8 @@ export class NewNoteView extends View {
         this.scheduledAt = null;
         this.updateScheduleHint();
         this.updatePostButtonLabel();
+        // Pending schedule removed → the addon's work is done.
+        this.releaseOnDemandAddons();
       });
     }
   }
@@ -568,6 +578,9 @@ export class NewNoteView extends View {
    * Open the date/time picker to schedule this post.
    */
   private async handleScheduleClick(): Promise<void> {
+    // On-demand addon activation: load the Scheduled Posts code now, at
+    // the moment its functionality is first used (idempotent).
+    await AddonLoader.getInstance().ensureLoaded('scheduled-posts');
     const { pickDateTime } = await import('../../helpers/datePickerModal');
     const initial = this.scheduledAt
       ? new Date(this.scheduledAt * 1000)
@@ -583,7 +596,12 @@ export class NewNoteView extends View {
       confirmLabel: _('Schedule'),
       ...(anchorEl ? { anchorEl } : {}),
     });
-    if (!picked) return;
+    if (!picked) {
+      // Picker dismissed without a pick: unless a schedule is already
+      // pending, the addon's functionality is no longer in use → release.
+      if (this.scheduledAt === null) this.releaseOnDemandAddons();
+      return;
+    }
     this.scheduledAt = Math.floor(picked.getTime() / 1000);
     this.updateScheduleHint();
     this.updatePostButtonLabel();
@@ -1113,6 +1131,19 @@ export class NewNoteView extends View {
   }
 
   /**
+   * v2 on-demand addon lifecycle: release addons whose functionality is no
+   * longer needed. Scheduled Posts is the pilot — it was loaded on demand
+   * when the schedule icon was used and unloads once the work is done
+   * (schedule instruction accepted, or the composer closes without
+   * scheduling). Permanently user-enabled addons (stored preference ON)
+   * stay loaded — the login refresh keeps them alive anyway.
+   */
+  private releaseOnDemandAddons(): void {
+    if (isScheduledPostsEnabled()) return;
+    void AddonLoader.getInstance().deactivateOnDemand('scheduled-posts');
+  }
+
+  /**
    * Handle cancel button click
    */
   private handleCancel(): void {
@@ -1122,6 +1153,7 @@ export class NewNoteView extends View {
     if (this.confirmBack()) {
       this.closing = true;
       this.cleanup();
+      this.releaseOnDemandAddons();
       this.onClose();
     }
   }
@@ -1154,6 +1186,7 @@ export class NewNoteView extends View {
       if (this.closing) return;
       this.closing = true;
       this.cleanup();
+      this.releaseOnDemandAddons();
       this.onClose();
     };
     const onPop = (): void => proceed();
@@ -1238,7 +1271,9 @@ export class NewNoteView extends View {
       const clientTag = this.customClientTag.trim();
 
       let success: boolean;
-      if (this.scheduledAt !== null && isScheduledPostsEnabled()) {
+      // v2 on-demand addons: a picked schedule date IS the intent to
+      // schedule — no dependency on the stored addon preference here.
+      if (this.scheduledAt !== null) {
         const { scheduleNote } = await import(
           '../../addons/scheduled-posts/scheduleNote'
         );
@@ -1297,6 +1332,7 @@ export class NewNoteView extends View {
 
         this.closing = true;
         this.cleanup();
+        this.releaseOnDemandAddons();
         this.onClose();
         this.systemLogger.success('NewNoteView', 'Note posted successfully');
       } else {

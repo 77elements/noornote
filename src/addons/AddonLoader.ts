@@ -79,6 +79,8 @@ interface AddonLoaderEntry {
   instance: AddonRuntime | null;
   /** Pubkey the current instance was initialized for (for account-switch detection). */
   loadedForPubkey: string | null;
+  /** An unload op is queued but not yet executed (dedupes on-demand unload logs). */
+  unloadPending: boolean;
   /** Serialization chain: every lifecycle op for this addon appends here. */
   opChain: Promise<void>;
 }
@@ -121,6 +123,7 @@ export class AddonLoader {
       load: entry.load,
       instance: null,
       loadedForPubkey: null,
+      unloadPending: false,
       opChain: Promise.resolve(),
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
@@ -298,6 +301,43 @@ export class AddonLoader {
     this.enqueue(entry, () => this.runDestroy(entry));
   }
 
+  /**
+   * On-demand activation (v2): load the addon regardless of the stored
+   * user preference, for exactly as long as its functionality is being
+   * used. Call sites pair this with deactivate() once the work is done
+   * (e.g. the composer unloads Scheduled Posts after the schedule
+   * instruction was accepted). Idempotent; serialized through the addon's
+   * op chain. The returned promise settles when the load op completed.
+   */
+  public ensureLoaded(id: string): Promise<void> {
+    const entry = this.entries.get(id);
+    if (!entry || entry.instance) return Promise.resolve();
+    diagLog('addons', 'addons_on_demand_load', {
+      id,
+      pubkey: this.currentPubkey,
+    });
+    entry.unloadPending = false;
+    this.enqueue(entry, () => this.runInit(entry));
+    return entry.opChain;
+  }
+
+  /**
+   * On-demand counterpart of ensureLoaded(): unload an addon that was
+   * activated on demand. No-op when not loaded or unknown id. Call sites
+   * should skip this when the addon is permanently user-enabled — a later
+   * login refresh would just load it again.
+   */
+  public deactivateOnDemand(id: string): Promise<void> {
+    const entry = this.entries.get(id);
+    if (!entry || !entry.instance || entry.unloadPending) {
+      return Promise.resolve();
+    }
+    diagLog('addons', 'addons_on_demand_unload', { id });
+    entry.unloadPending = true;
+    this.enqueue(entry, () => this.runDestroy(entry));
+    return entry.opChain;
+  }
+
   /** Append an op to the addon's serialized chain. Errors are caught and logged. */
   private enqueue(entry: AddonLoaderEntry, op: () => Promise<void>): void {
     entry.opChain = entry.opChain.then(op).catch(err => {
@@ -356,6 +396,7 @@ export class AddonLoader {
     }
     entry.instance = runtime;
     entry.loadedForPubkey = this.currentPubkey;
+    entry.unloadPending = false;
     const initDur = Math.round(performance.now() - initStart);
     diagLog('addons', 'addons_init_ok', {
       id: entry.id,
@@ -371,6 +412,7 @@ export class AddonLoader {
     const runtime = entry.instance;
     entry.instance = null;
     entry.loadedForPubkey = null;
+    entry.unloadPending = false;
     try {
       await runtime.destroy();
     } catch (err) {

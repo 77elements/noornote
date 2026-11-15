@@ -38,6 +38,15 @@ export const socialSurface = async (): Promise<FocusDomainSurface> => {
         const { NewNoteView } = await import('../components/views/NewNoteView');
         return new NewNoteView({ onClose: () => surface.back() });
       },
+      // While the composer is open the gear's ED-b carries the scheduled
+      // posts list instead of the timeline settings (on-demand addon —
+      // loads on open, unloads on close).
+      settings: async () => {
+        const { createScheduledPostsSettings } = await import(
+          '../addons/scheduled-posts/scheduledPostsSettings'
+        );
+        return createScheduledPostsSettings();
+      },
     },
     // The timeline manages its own internal scroll — no column-scroll
     // preservation needed around the swap.

@@ -49,6 +49,14 @@ export interface FocusDomainSurfaceView {
    */
   reset?(): void;
   /**
+   * Per-object settings override for the ED-b (gear action): while this
+   * surface shows its secondary detail, it can swap the domain's default
+   * settings panel for a detail-specific one (e.g. the scheduled posts
+   * list while the composer is open). Resolve null → the stage uses
+   * def.createSettings().
+   */
+  getSettingsForCurrentState?(): Promise<FocusSettingsView | null>;
+  /**
    * Leave the in-column detail and return to the surface's list (the
    * object's back action button — only shown while a detail is open).
    */

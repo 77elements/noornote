@@ -121,6 +121,8 @@ export class FocusStage {
   private settingsView: FocusSettingsView | null = null;
   private settingsDef: FocusDomainDef | null = null;
   private settingsHost: HTMLElement | null = null;
+  /** True while the panel came from the surface's secondary detail. */
+  private settingsFromSecondary = false;
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -294,18 +296,31 @@ export class FocusStage {
   /**
    * The gear action: open the ED-b bottom drawer with this object's
    * settings panel. Toggle — clicking again closes via the drawer.
+   * While the active surface shows its secondary detail (e.g. the
+   * composer), the surface can swap in its own panel
+   * (getSettingsForCurrentState) — Timeline settings only in /timeline.
    */
-  private toggleSettings(def: FocusDomainDef, btn: HTMLElement): void {
-    if (!def.createSettings || !this.drawer) return;
+  private async toggleSettings(
+    def: FocusDomainDef,
+    btn: HTMLElement
+  ): Promise<void> {
+    if (!this.drawer) return;
     if (this.settingsView) {
       this.drawer.close();
       return;
     }
+    const surface = this.surfaces.get(def.id);
+    let settings: FocusSettingsView | null = null;
+    if (surface?.view?.getSettingsForCurrentState) {
+      settings = await surface.view.getSettingsForCurrentState();
+    }
+    if (!settings && !def.createSettings) return;
     const host = document.createElement('div');
     host.className = 'focus-settings';
     this.settingsHost = host;
     this.settingsDef = def;
-    this.settingsView = def.createSettings();
+    this.settingsView = settings ?? def.createSettings!();
+    this.settingsFromSecondary = !!settings;
     this.drawer.panel.appendChild(host);
     this.settingsView.mount(host);
     this.drawer.open();
@@ -324,6 +339,7 @@ export class FocusStage {
     this.settingsView = null;
     this.settingsHost?.remove();
     this.settingsHost = null;
+    this.settingsFromSecondary = false;
     this.settingsDef = null;
   }
 
@@ -427,6 +443,14 @@ export class FocusStage {
         // it. Unconditional push: the top entry is the list state the
         // detail was opened from (same object id, different state).
         this.hist.push(def.id);
+      } else if (
+        !detail?.visible &&
+        this.settingsDef?.id === def.id &&
+        this.settingsFromSecondary
+      ) {
+        // The secondary detail closed (e.g. composer posted/cancelled):
+        // its settings panel is state-specific — close the drawer with it.
+        this.drawer?.close();
       }
       // Sync the scroll-to-top action with the swap (no scroll event
       // fires when a view replaces another): a fresh detail starts at
@@ -515,7 +539,7 @@ export class FocusStage {
       settingsBtn.addEventListener('click', e => {
         e.stopPropagation();
         if (this.activeId !== def.id || this.morphing) return;
-        this.toggleSettings(def, settingsBtn);
+        void this.toggleSettings(def, settingsBtn);
       });
     }
     // Tooltips on every 30px control (nn-tooltip, shared popup portalled
