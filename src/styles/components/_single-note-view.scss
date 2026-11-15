@@ -166,8 +166,11 @@
   margin-top: $gap * 2;
 }
 
+.snv-replies__empty {
+  padding: $gap;
+}
+
 .snv-replies__loading,
-.snv-replies__empty,
 .snv-replies__error {
   padding: $gap * 2;
   text-align: center;

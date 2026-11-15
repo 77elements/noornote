@@ -150,6 +150,12 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.savedListScroll = this.scrollSlot?.scrollTop ?? 0;
     }
     this.detail?.destroy();
+    // Set the detail URL BEFORE creating the detail view: a view like the
+    // SNV canonicalizes the address (/note/<hex> → /note/<nevent>) after
+    // its fetch resolves — with a cache hit that happens in the same
+    // microtask cascade, i.e. before any URL set HERE would run. The
+    // canonical form then wins, exactly like the classic Router flow.
+    Router.getInstance().replaceUrl(this.config.detailRoute(param));
     this.detail = await this.config.createDetail(param);
     this.detailParam = param;
     this.detailIsSecondary = false;
@@ -158,8 +164,6 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.scrollSlot.scrollTop = 0;
     }
     this.frame.setBackVisible(true);
-    // Keep the classic URL scheme, in place (no view mounting, no history).
-    Router.getInstance().replaceUrl(this.config.detailRoute(param));
   }
 
   /**
