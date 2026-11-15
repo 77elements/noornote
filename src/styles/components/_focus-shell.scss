@@ -99,13 +99,18 @@ html.ui--focus {
     gap: 2rem;
   }
 
-  // Focused state: middle column (600px) takes the active object, the
-  // side columns hold the re-parented side stacks (see below). One full-
+  // Focused state: middle column takes the active object — 600px surface
+  // + base gap + 30px actions column (the object's internal two-column
+  // layout, see .focus-object__layout). The side columns hold the
+  // re-parented side stacks (see below). One full-
   // height row — the focused column fills the stage, its inner view
   // scrolls (classic .timeline-view__timeline mechanics).
   &.is-focused {
     height: 100%;
-    grid-template-columns: 1fr 600px 1fr;
+    // Clears the ED-t drawer above the focused layout (all three columns
+    // start flush below it).
+    margin-top: calc($gap * 3);
+    grid-template-columns: 230px calc(600px + $gap + 30px) 230px;
     grid-template-rows: 100%;
 
     @media (max-width: 1099px) {
@@ -152,14 +157,26 @@ html.ui--focus {
   // No background: the shell (and its watermark) shows through.
   &--active {
     max-width: none;
-    width: 100%; // fill the 600px center column (base width is the 230px circle)
+    width: 100%; // fill the center column (base width is the 230px circle)
     height: 100%; // fill the single full-height grid row
     aspect-ratio: auto; // drop the circle ratio: the content defines the height
     border: none; // the column needs no circle frame
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
     background: none;
-    margin-top: 6rem; // clear the ED-t drawer above the column
+    // Two-column body: the surface (fixed 600px) plus the action-button
+    // column (30px), separated by the base gap — the stage's middle grid
+    // column grows by $gap + 30px accordingly (see .focus-stage__grid).
+    // Takeover: the column IS the viewport, so the surface flexes instead
+    // of the fixed 600px.
+    display: grid;
+    grid-template-columns: 600px 30px;
+    grid-template-rows: 100%;
+    gap: $gap;
+
+    @media (max-width: 1099px) {
+      grid-template-columns: 1fr 30px;
+    }
   }
 }
 
@@ -271,22 +288,22 @@ html.ui--focus {
   pointer-events: none; // never block the circle's click/hover
 }
 
-// Object action buttons: a vertical stack of 30px circles on the active
-// object's top-right corner. The first button straddles the corner exactly
-// like the old single close control; further buttons stack downward along
-// the right border (half outside). Back is hidden until a detail view is
-// open (focusStage listens to the surface's 'focus:surface-back' event);
+// Object action buttons: the second column of the active object's grid
+// body (600px surface + base gap + 30px controls, see .focus-object) —
+// every button fills the column width. Back is hidden until a detail view
+// is open (focusStage listens to the surface's 'focus:surface-back' event);
 // scroll-to-top is hidden until the column is scrolled. Settings opens
 // the ED-b drawer with the object's own settings panel (per-object
 // settings, dissolves the v1 UI settings step by step).
 .focus-object__actions {
-  position: absolute;
-  top: 3px;
-  right: -40px;
   display: none;
   flex-direction: column;
-  align-items: center;
   gap: 10px;
+  // Explicit cell: column 2, row 1. DOM order (actions before surface)
+  // would otherwise push the surface to an auto-placed second row via the
+  // sparse packing cursor.
+  grid-column: 2;
+  grid-row: 1;
   z-index: $z-back-bar;
 
   .focus-object--active & {
@@ -298,7 +315,7 @@ html.ui--focus {
 .focus-object__back,
 .focus-object__scroll-top,
 .focus-object__settings {
-  width: 30px;
+  width: 100%; // fill the 30px actions column
   height: 30px;
   padding: 0;
   border: 2px solid var(--color-3);
@@ -336,9 +353,6 @@ html.ui--focus {
   justify-self: center;
   align-self: start;
   gap: inherit; // mirror the responsive grid gap
-  // Same top offset as the focused column (clears the ED-t drawer) — the
-  // first side circle aligns with the column's top edge.
-  margin-top: 6rem;
 
   .focus-stage__grid.is-focused & {
     height: 100%;
@@ -359,6 +373,8 @@ html.ui--focus {
 // The only sanctioned override on .view-content is the focus-scoped top
 // spacing below (clears the ED-t overlay).
 .focus-object__surface {
+  grid-column: 1; // first column of the active object's grid body
+  grid-row: 1; // pinned — see .focus-object__actions
   height: 100%;
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling

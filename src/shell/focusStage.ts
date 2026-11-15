@@ -1,14 +1,15 @@
 /**
  * Focus Stage (v2) — builds the FS grid of primary domain circles inside
  * #focus-stage and owns the unified morph logic: clicking a circle grows
- * it into the center column (600px), the other circles shift aside, the
+ * it into the center column (600px surface + actions rail), the other
+ * circles shift aside, the
  * domain surface mounts BEFORE the morph — document flow: the column
  * height is its content height, so the FLIP animates to the laid-out
  * final geometry. The close control reverses the morph and restores the
  * grid.
  *
  * Morph technique: FLIP on the real elements via the Web Animations API.
- * The grid switches to `1fr 600px 1fr` and every object animates from its
+ * The grid switches to `1fr calc(600px + $gap + 30px) 1fr` and every object animates from its
  * previous geometry to the new one — top-left-anchored translate for the
  * position delta, px-animated width/height for size changes (no scale, so
  * the 2px border stays 2px; animated height is capped at the viewport
