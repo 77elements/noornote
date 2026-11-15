@@ -20,6 +20,7 @@ import { bookmarksSurface } from './focusBookmarksSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
   articlesSettings,
+  bookmarksSettings,
   notificationsSettings,
   socialSettings,
 } from './focusSettings';
@@ -212,6 +213,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-bookmark',
     route: '/lists',
     createSurface: bookmarksSurface,
+    createSettings: bookmarksSettings,
   },
   { id: 'tribes', label: _('Tribes'), icon: 'icon-tribe', addon: true },
   { id: 'follows', label: _('Follows'), icon: 'icon-follows' },

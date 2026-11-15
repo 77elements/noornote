@@ -14,6 +14,15 @@
 import { Switch } from '../components/ui/Switch';
 import { NnDropdown } from '../components/ui/NnDropdown';
 import { NotificationPrioritySection } from '../components/settings/NotificationPrioritySection';
+import { ModalService } from '../services/ModalService';
+import { BookmarkReadStateService } from '../services/BookmarkReadStateService';
+import {
+  isReadSyncEnabled,
+  setReadSyncEnabled,
+  getReadSyncFrequency,
+  setReadSyncFrequency,
+  type BookmarkReadSyncFrequency,
+} from '../addons/bookmarks/index';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import {
@@ -373,6 +382,132 @@ export class FocusNotificationsSettings extends FocusSettingsPanel {
 
 export const notificationsSettings = (): FocusSettingsView =>
   composePanels([new FocusNotificationsSettings()]);
+
+/**
+ * Bookmarks object settings — the read-state sync block from the classic
+ * addon settings (identical storage keys, toasts and service calls). The
+ * addon Enable toggle is deliberately NOT repeated here: enabling/disabling
+ * the addon is an addon-lifecycle action (Settings → Addons), not a
+ * bookmark-object setting.
+ */
+export class FocusBookmarksSettings extends FocusSettingsPanel {
+  protected render(): string {
+    const freqOptions: Array<[BookmarkReadSyncFrequency, string]> = [
+      ['rare', 'Rare (every 60 min)'],
+      ['moderate', 'Moderate (every 30 min)'],
+      ['frequent', 'Frequent (every 15 min)'],
+      ['more-frequent', 'More Frequent (every 5 min)'],
+      ['realtime', 'Every 60 seconds'],
+    ];
+    const syncEnabled = isReadSyncEnabled();
+    return `
+      <section class="section">
+        <div class="setting">
+          <span class="setting__label">${_('Sync read bookmarks across relays')}</span>
+          <div class="setting__control" data-focus-setting="read-sync"></div>
+          <p class="setting__desc">
+            ${_('Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total.')}
+          </p>
+        </div>
+
+        <div class="frequency-selector${syncEnabled ? '' : ' is-hidden'}">
+          <p class="setting__label">${_('Sync frequency')}</p>
+          ${freqOptions
+            .map(
+              ([value, label]) => `
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span class="setting__label">${_(label)}</span>
+              <input type="radio" name="focus-bookmarks-read-freq" value="${value}" ${getReadSyncFrequency() === value ? 'checked' : ''} />
+            </label>
+          `
+            )
+            .join('')}
+          <div class="setting">
+            <div class="setting__control">
+              <button class="btn btn--medium" data-focus-setting="reset-read-state">${_('Reset read state')}</button>
+            </div>
+            <p class="setting__desc">
+              ${_('Marks ALL bookmarks as unread again (also on your other devices after their next sync).')}
+            </p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  protected bind(el: HTMLElement): void {
+    this.mountSwitch(
+      el.querySelector('[data-focus-setting="read-sync"]'),
+      isReadSyncEnabled(),
+      checked => {
+        setReadSyncEnabled(checked);
+        const service = BookmarkReadStateService.getInstance();
+        if (checked) void service.start();
+        else service.stop();
+        // Same visibility coupling as the classic addon settings: the
+        // frequency block follows the sync switch, not the addon toggle.
+        el.querySelector('.frequency-selector')?.classList.toggle(
+          'is-hidden',
+          !checked
+        );
+        // Mounted bookmarks views re-render: unread borders drop when the
+        // feature deactivates, appear when it activates.
+        this.bus.emit('bookmark:updated');
+        ToastService.show(
+          checked
+            ? _('Bookmark read-state sync enabled')
+            : _('Bookmark read-state sync disabled'),
+          'success'
+        );
+      }
+    );
+
+    el.querySelectorAll<HTMLInputElement>(
+      'input[name="focus-bookmarks-read-freq"]'
+    ).forEach(radio => {
+      radio.addEventListener('change', () => {
+        const value = radio.value as BookmarkReadSyncFrequency;
+        setReadSyncFrequency(value);
+        ToastService.show(_('Sync frequency: %s', value), 'success');
+      });
+    });
+
+    el.querySelector(
+      '[data-focus-setting="reset-read-state"]'
+    )?.addEventListener('click', () => {
+      void ModalService.getInstance()
+        .confirm({
+          title: _('Reset read state'),
+          message: _(
+            'Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync.'
+          ),
+          confirmText: _('Reset'),
+          confirmDestructive: true,
+        })
+        .then(confirmed => {
+          if (!confirmed) return;
+          BookmarkReadStateService.getInstance()
+            .reset()
+            .then(() =>
+              ToastService.show(
+                _('Read state reset, all bookmarks unread'),
+                'success'
+              )
+            )
+            .catch(error =>
+              ToastService.show(
+                _('Reset failed: %s', String(error)),
+                'error',
+                8000
+              )
+            );
+        });
+    });
+  }
+}
+
+export const bookmarksSettings = (): FocusSettingsView =>
+  composePanels([new FocusBookmarksSettings()]);
 
 /**
  * Compose several settings panels into one vertical stack — each child

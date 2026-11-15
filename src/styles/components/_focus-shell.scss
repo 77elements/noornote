@@ -633,55 +633,34 @@ $focus-tab-overlap: 1px;
   }
 }
 
-// Object settings (ED-b content, mounted by focusStage): the domain's
-// settings sections laid out in responsive columns — 1 on phone, 2 on
-// tablet, 3 on desktop. Reuses the classic .section/.setting markup.
+// Object settings (ED-b content, mounted by focusStage): simple block
+// flow in the classic .section/.setting markup. The container mirrors the
+// focused object's column (600px surface + $gap + 30px actions strip), so
+// the natural auto-centering lands exactly on the surface behind the
+// drawer: left edges flush in the wide layout, centered on it in
+// takeover (<1100px, where the surface flexes) — no per-content overrides.
 .focus-settings {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $gap;
-  align-content: start;
-  align-items: start;
-  padding: $gap $gap calc($gap * 1.5);
-  max-width: 1400px;
+  box-sizing: border-box;
+  max-width: calc(600px + #{$gap * 3} + 30px);
   margin: 0 auto;
+  padding: $gap $gap calc($gap * 1.5);
+  padding-right: calc(#{$gap * 2} + 30px);
 
-  @include tablet {
-    grid-template-columns: repeat(2, 1fr);
+  @media (max-width: 1099px) {
+    max-width: none;
   }
 
-  @include desktop {
-    grid-template-columns: repeat(3, 1fr);
-    // Same total width as the FV layout behind the drawer: 230px stack +
-    // 2rem grid gap + 646px active column (600px surface + $gap + 30px
-    // actions) + 2rem grid gap + 230px stack = 1170px.
-    max-width: calc(230px + 2rem + 600px + #{$gap} + 30px + 2rem + 230px);
-  }
-
-  // Grid gap takes over spacing — the sections' own margin would double it.
-  .section {
-    margin-bottom: 0;
-  }
-
-  // Composed multi-panel content (composePanels): one full-width column
-  // stacked vertically — child panels must NOT join the responsive grid
-  // (the composer's ED-b shows custom emojis above scheduled posts).
-  // Readable form width, centered inside the drawer.
+  // Composed multi-panel content (composePanels): the panels stack with
+  // <hr> dividers between them — plain flow, readable width.
   .focus-settings__stack {
-    grid-column: 1 / -1;
     width: 100%;
-    min-width: 0;
     max-width: 600px;
-    margin-inline: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: $gap;
+    margin: 0 auto;
   }
 
   .focus-settings__divider {
     width: 100%;
-    margin: 0;
+    margin: $gap 0;
     border: 0;
     border-top: 1px solid var(--color-3);
   }
