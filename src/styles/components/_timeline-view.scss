@@ -6,17 +6,24 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../abstracts/utilities' as *;
 
 // Child element styles only - container styles in _view-content.scss
 
-// Visible page heading ("Social Media") — mirrors the article view title
-// (v2 surface chrome; classic v1 shows it above the tab bar too).
+// Page heading ("Social Media") — mirrors the article view title. Visible
+// in the v2 Focus Shell as the domain heading; in classic v1 it stays a
+// screen-reader-only heading (the %visually-hidden recipe, scoped to
+// classic so the v2 surface keeps it rendered).
 .timeline-view__title {
   @extend %h1;
 
   font-weight: 600;
   color: var(--color-5);
   margin: 0 0 $gap 0;
+
+  html:not(.ui--focus) & {
+    @extend %visually-hidden;
+  }
 }
 
 .timeline-view__header {

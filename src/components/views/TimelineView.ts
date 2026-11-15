@@ -126,10 +126,12 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
-    // Page heading — visible, mirrors the article view's title style
-    // (v2 surface chrome; classic v1 shows it above the tab bar too).
+    // Page heading ("Social Media"): visible in v2 as the domain heading,
+    // screen-reader-only in v1 — the hiding is scoped per interface in
+    // SCSS (see .timeline-view__title in _timeline-view.scss), not via
+    // the .visually-hidden class (that would hide it in v2 as well).
     const pageHeading = document.createElement('h1');
-    pageHeading.className = 'timeline-view__title visually-hidden';
+    pageHeading.className = 'timeline-view__title';
     pageHeading.textContent = _('Social Media');
     this.container.appendChild(pageHeading);
 

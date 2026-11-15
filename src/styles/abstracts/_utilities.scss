@@ -7,7 +7,11 @@
 // Visibility utilities
 .hidden { display: none; }
 
-.visually-hidden {
+// Screen-reader-only recipe. Class for static markup; extend the
+// placeholder when the hiding must be CONDITIONAL (e.g. hidden in v1,
+// visible in the v2 Focus Shell) — a class can't be scoped, a
+// placeholder-extend can.
+%visually-hidden, .visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
