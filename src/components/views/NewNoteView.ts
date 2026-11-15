@@ -39,7 +39,6 @@ import { ContentValidationManager } from '../post/ContentValidationManager';
 import { EditorStateManager } from '../post/EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
-import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { AddonLoader } from '../../addons/AddonLoader';
 import {
@@ -411,6 +410,10 @@ export class NewNoteView extends View {
       // Scheduled Posts code loads only when the icon is used
       // (handleScheduleClick) and unloads again when the work is done.
       showSchedule: true,
+      // v2 on-demand: the custom emojis runtime is loaded with the
+      // composer session — the picker uses its pack regardless of the
+      // stored preference (preference keeps gating v1).
+      onDemandCustomEmojis: true,
     });
 
     // Highlight mode: comment is optional, only require relays.
@@ -650,10 +653,13 @@ export class NewNoteView extends View {
 
     this.mentionAutocomplete = createMentionAutocomplete('NewNoteView');
 
-    // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
-    if (isCustomEmojisEnabled()) {
-      void this.initCustomEmojiAutocomplete();
-    }
+    // Custom emoji shortcode autocomplete — v2 on-demand: the addon loads
+    // with the composer session (autocomplete + picker pack), independent
+    // of the stored preference; released again when the composer closes
+    // (releaseOnDemandAddons).
+    void AddonLoader.getInstance()
+      .ensureLoaded('custom-emojis')
+      .then(() => this.initCustomEmojiAutocomplete());
 
     this.eventHandlerManager = createComposerEventHandlers({
       modalSelector: `${SCOPE} .post-note-composer`,
@@ -1139,8 +1145,12 @@ export class NewNoteView extends View {
    * stay loaded — the login refresh keeps them alive anyway.
    */
   private releaseOnDemandAddons(): void {
-    if (isScheduledPostsEnabled()) return;
-    void AddonLoader.getInstance().deactivateOnDemand('scheduled-posts');
+    if (!isScheduledPostsEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('scheduled-posts');
+    }
+    // Custom emojis releases unconditionally — the stored preference
+    // only governs the login-time auto-load, never blocks the release.
+    void AddonLoader.getInstance().deactivateOnDemand('custom-emojis');
   }
 
   /**

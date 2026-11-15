@@ -80,6 +80,13 @@ export interface FocusDomainSurface {
   element: HTMLElement;
   /** Optional view handle for pause/resume/destroy lifecycle. */
   view?: FocusDomainSurfaceView;
+  /**
+   * The surface's scope is the visit itself (on-demand addon objects):
+   * leaving the object destroys the view and evicts the cached surface —
+   * the addon runtime unloads (view.destroy → deactivateOnDemand).
+   * Non-ephemeral surfaces pause + reset and stay cached.
+   */
+  ephemeral?: boolean;
 }
 
 /**
@@ -197,6 +204,15 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Custom Emojis'),
     icon: 'icon-emoji',
     addon: true,
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface).
+    createSurface: async () => {
+      const { CustomEmojisView } = await import(
+        '../addons/custom-emojis/CustomEmojisView'
+      );
+      const view = new CustomEmojisView();
+      return { element: view.getElement(), view, ephemeral: true };
+    },
   },
   {
     id: 'live-streams',
@@ -228,6 +244,15 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Scheduled Posts'),
     icon: 'icon-clock',
     addon: true,
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface).
+    createSurface: async () => {
+      const { ScheduledPostsAddonView } = await import(
+        '../addons/scheduled-posts/ScheduledPostsAddonView'
+      );
+      const view = new ScheduledPostsAddonView();
+      return { element: view.getElement(), view, ephemeral: true };
+    },
   },
   {
     id: 'analytics',

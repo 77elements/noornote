@@ -345,3 +345,36 @@ export const socialSettings = (): FocusSettingsView =>
   new FocusSocialSettings();
 export const articlesSettings = (): FocusSettingsView =>
   new FocusArticlesSettings();
+
+/**
+ * Compose several settings panels into one vertical stack — each child
+ * mounts into its own wrapper, `<hr>` dividers (`--color-3`) separate
+ * them. Destroy runs in reverse mount order. Used where a detail state
+ * pulls together panels from multiple sources (e.g. the composer's
+ * ED-b: custom emojis manager above the scheduled posts list).
+ */
+export const composePanels = (
+  panels: FocusSettingsView[]
+): FocusSettingsView => {
+  return {
+    mount(el: HTMLElement): void {
+      const stack = document.createElement('div');
+      stack.className = 'focus-settings__stack';
+      panels.forEach((panel, i) => {
+        if (i > 0) {
+          const hr = document.createElement('hr');
+          hr.className = 'focus-settings__divider';
+          stack.appendChild(hr);
+        }
+        const child = document.createElement('div');
+        child.className = 'focus-settings__panel';
+        stack.appendChild(child);
+        panel.mount(child);
+      });
+      el.appendChild(stack);
+    },
+    destroy(): void {
+      [...panels].reverse().forEach(p => p.destroy());
+    },
+  };
+};

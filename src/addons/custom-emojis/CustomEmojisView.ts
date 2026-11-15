@@ -9,11 +9,22 @@
 
 import { View } from '../../components/views/View';
 import { CustomEmojisSettings } from './CustomEmojisSettings';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { _ } from '../../i18n';
 
 export class CustomEmojisView extends View {
   private container: HTMLElement;
   private settings: CustomEmojisSettings | null = null;
+  /**
+   * v2 on-demand addon lifecycle: in the Focus UI the stored preference
+   * no longer gates this object — the addon loads when the object is
+   * entered (constructor) and unloads when it is left (destroy), unless
+   * permanently enabled via the stored preference. The enable switch is
+   * hidden there (on-demand settings mode); the preference stays
+   * untouched.
+   */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -27,8 +38,12 @@ export class CustomEmojisView extends View {
         <div data-addon-content="custom-emojis"></div>
       </div>
     `;
-    this.settings = new CustomEmojisSettings();
+    // v2 on-demand: no toggle, management UI regardless of the preference.
+    this.settings = new CustomEmojisSettings(this.v2OnDemand);
     this.settings.mount(this.container);
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('custom-emojis');
+    }
   }
 
   public getElement(): HTMLElement {
@@ -39,5 +54,11 @@ export class CustomEmojisView extends View {
     this.settings?.unmount();
     this.settings = null;
     this.container.innerHTML = '';
+    // v2 on-demand: leaving the object ALWAYS releases the addon — even
+    // with the stored preference ON (the preference only governs the
+    // login-time auto-load; the next use reloads on demand).
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().deactivateOnDemand('custom-emojis');
+    }
   }
 }

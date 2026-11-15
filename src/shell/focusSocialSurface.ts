@@ -38,14 +38,20 @@ export const socialSurface = async (): Promise<FocusDomainSurface> => {
         const { NewNoteView } = await import('../components/views/NewNoteView');
         return new NewNoteView({ onClose: () => surface.back() });
       },
-      // While the composer is open the gear's ED-b carries the scheduled
-      // posts list instead of the timeline settings (on-demand addon —
-      // loads on open, unloads on close).
+      // While the composer is open the gear's ED-b carries the composed
+      // panel — custom emojis manager above the scheduled posts list
+      // (both on-demand addons; dynamic import so the shell never
+      // statically references addon code).
       settings: async () => {
-        const { createScheduledPostsSettings } = await import(
-          '../addons/scheduled-posts/scheduledPostsSettings'
-        );
-        return createScheduledPostsSettings();
+        const [emojis, posts] = await Promise.all([
+          import('../addons/custom-emojis/customEmojisPanel'),
+          import('../addons/scheduled-posts/scheduledPostsSettings'),
+        ]);
+        const { composePanels } = await import('./focusSettings');
+        return composePanels([
+          emojis.createCustomEmojisSettings(),
+          posts.createScheduledPostsSettings(),
+        ]);
       },
     },
     // The timeline manages its own internal scroll — no column-scroll

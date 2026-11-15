@@ -26,9 +26,16 @@ export class CustomEmojisSettings extends SettingsSection {
   private updatedSubId: string | null = null;
   private currentContentZone: HTMLElement | null = null;
   private userSearchInput: UserSearchInput | null = null;
+  /**
+   * v2 on-demand mode (ED-b composer panel): no enable toggle — the
+   * stored preference is meaningless there; the management UI renders
+   * regardless and the addon lifecycle is owned by the composer session.
+   */
+  private readonly onDemand: boolean;
 
-  constructor() {
+  constructor(onDemand = false) {
     super('custom-emojis-settings');
+    this.onDemand = onDemand;
     this.eventBus = TypedEventBus.getInstance();
   }
 
@@ -38,47 +45,54 @@ export class CustomEmojisSettings extends SettingsSection {
 
     const enabled = isCustomEmojisEnabled();
 
-    this.enableSwitch = new Switch({
-      label: '',
-      checked: enabled,
-      onChange: async checked => {
-        setCustomEmojisEnabled(checked);
-        // Emit the uniform AddonLoader event + legacy event so existing
-        // listeners (CustomEmojisView etc.) keep working.
-        this.eventBus.emit('custom-emojis:addon-toggle', { enabled: checked });
-        ToastService.show(
-          checked
-            ? _('%s enabled', _('Custom Emojis'))
-            : _('%s disabled', _('Custom Emojis')),
-          'success'
-        );
-        if (checked && this.currentContentZone) {
-          await this.renderContentZone(this.currentContentZone);
-        }
-      },
-    });
+    if (!this.onDemand) {
+      this.enableSwitch = new Switch({
+        label: '',
+        checked: enabled,
+        onChange: async checked => {
+          setCustomEmojisEnabled(checked);
+          // Emit the uniform AddonLoader event + legacy event so existing
+          // listeners (CustomEmojisView etc.) keep working.
+          this.eventBus.emit('custom-emojis:addon-toggle', {
+            enabled: checked,
+          });
+          ToastService.show(
+            checked
+              ? _('%s enabled', _('Custom Emojis'))
+              : _('%s disabled', _('Custom Emojis')),
+            'success'
+          );
+          if (checked && this.currentContentZone) {
+            await this.renderContentZone(this.currentContentZone);
+          }
+        },
+      });
 
-    contentContainer.innerHTML = `
-      <div class="setting">
-        <span class="setting__label">${_('Enable Custom Emojis')}</span>
-        <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">${_('Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.')}</p>
-      </div>
-    `;
-    this.enableSwitch.setupEventListeners(contentContainer);
+      contentContainer.innerHTML = `
+        <div class="setting">
+          <span class="setting__label">${_('Enable Custom Emojis')}</span>
+          <div class="setting__control">${this.enableSwitch.render()}</div>
+          <p class="setting__desc">${_('Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.')}</p>
+        </div>
+      `;
+      this.enableSwitch.setupEventListeners(contentContainer);
+    }
 
     // Mount management UI into the addon content zone (visible only when enabled)
     const contentZone = parentContainer.querySelector(
       '[data-addon-content="custom-emojis"]'
     ) as HTMLElement | null;
     this.currentContentZone = contentZone;
-    if (contentZone && enabled) {
+    if (contentZone && (enabled || this.onDemand)) {
       void this.renderContentZone(contentZone);
     }
 
     // Live updates whenever the pack changes
     this.updatedSubId = this.eventBus.on('emojis:updated', () => {
-      if (this.currentContentZone && isCustomEmojisEnabled()) {
+      if (
+        this.currentContentZone &&
+        (this.onDemand || isCustomEmojisEnabled())
+      ) {
         this.renderEmojiList(this.currentContentZone);
       }
     });

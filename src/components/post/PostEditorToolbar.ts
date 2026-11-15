@@ -14,6 +14,7 @@ import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModalService } from '../../services/ModalService';
 import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
+import { AddonLoader } from '../../addons/AddonLoader';
 import { GifPicker } from '../gif/GifPicker';
 import type { GifItem } from '../../services/GifSearchService';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
@@ -28,6 +29,12 @@ export interface PostEditorToolbarConfig {
   textareaSelector: string;
   showPoll?: boolean; // Default: true
   showSchedule?: boolean; // Default: false — caller sets via isScheduledPostsEnabled()
+  /**
+   * v2 on-demand custom emojis: the picker gets the custom pack whenever
+   * the addon runtime is loaded (ensureLoaded), independent of the stored
+   * preference — the preference stays untouched and keeps gating v1.
+   */
+  onDemandCustomEmojis?: boolean;
 }
 
 export class PostEditorToolbar {
@@ -289,10 +296,15 @@ export class PostEditorToolbar {
       this.emojiPicker = null;
     }
 
-    // Custom emojis (NIP-30) — only loaded when the addon is enabled
+    // Custom emojis (NIP-30) — loaded when the addon is enabled (v1) or
+    // when the on-demand runtime is active (v2 composer session)
     let customEmojis: CustomEmojiEntry[] | undefined;
-    if (isCustomEmojisEnabled()) {
+    const onDemandEmojis = this.config.onDemandCustomEmojis === true;
+    if (onDemandEmojis || isCustomEmojisEnabled()) {
       try {
+        if (onDemandEmojis) {
+          await AddonLoader.getInstance().ensureLoaded('custom-emojis');
+        }
         const { EmojiService } = await import(
           '../../addons/custom-emojis/EmojiService'
         );

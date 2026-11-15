@@ -675,12 +675,19 @@ export class FocusStage {
     // Mutation phase (one task — no paint in between): swap the focus.
     if (oldId) {
       if (oldSurface) {
-        oldSurface.view?.pause?.();
-        // Handoff switch: the old object keeps its full state (list OR
-        // detail) — back returns to exactly what the user came from.
-        // Deliberate switches (circle click) reset it to the list.
-        if (!nav) {
-          oldSurface.view?.reset?.();
+        // Ephemeral surfaces (on-demand addon objects) die on switch —
+        // leaving the object unloads the addon runtime.
+        if (oldSurface.ephemeral) {
+          oldSurface.view?.destroy?.();
+          this.surfaces.delete(oldId);
+        } else {
+          oldSurface.view?.pause?.();
+          // Handoff switch: the old object keeps its full state (list OR
+          // detail) — back returns to exactly what the user came from.
+          // Deliberate switches (circle click) reset it to the list.
+          if (!nav) {
+            oldSurface.view?.reset?.();
+          }
         }
         oldSurface.element.remove();
       }
@@ -759,10 +766,17 @@ export class FocusStage {
     // Detach the surface first: the view pauses, its element is kept
     // cached so reopening does not refetch everything. The surface
     // returns to its list state — reopening never shows a stale detail.
+    // Ephemeral surfaces (on-demand addon objects) are destroyed and
+    // evicted instead — leaving the object unloads the addon runtime.
     const surface = this.surfaces.get(def.id);
     if (surface) {
-      surface.view?.pause?.();
-      surface.view?.reset?.();
+      if (surface.ephemeral) {
+        surface.view?.destroy?.();
+        this.surfaces.delete(def.id);
+      } else {
+        surface.view?.pause?.();
+        surface.view?.reset?.();
+      }
       surface.element.remove();
     }
     // The column is gone — reset the scroll-to-top action for a clean

@@ -662,6 +662,25 @@ $focus-tab-overlap: 1px;
   .section {
     margin-bottom: 0;
   }
+
+  // Composed multi-panel content (composePanels): one full-width column
+  // stacked vertically — child panels must NOT join the responsive grid
+  // (the composer's ED-b shows custom emojis above scheduled posts).
+  .focus-settings__stack {
+    grid-column: 1 / -1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: $gap;
+  }
+
+  .focus-settings__divider {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--color-3);
+  }
 }
 
 .focus-drawer__tab {
