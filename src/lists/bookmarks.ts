@@ -25,7 +25,6 @@ import { ModalService } from '../services/ModalService';
 import { NoteService } from '../services/NoteService';
 import { DeletionService } from '../services/DeletionService';
 import { UserProfileService } from '../services/UserProfileService';
-import { Router } from '../services/Router';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
 import {
@@ -3153,13 +3152,11 @@ export class BookmarkCard {
   private options: BookmarkCardOptions;
   private element: HTMLElement | null = null;
   private userProfileService: UserProfileService;
-  private router: Router;
 
   constructor(data: BookmarkCardData, options: BookmarkCardOptions) {
     this.data = data;
     this.options = options;
     this.userProfileService = UserProfileService.getInstance();
-    this.router = Router.getInstance();
   }
 
   public async render(): Promise<HTMLElement> {
@@ -3439,6 +3436,18 @@ export class BookmarkCard {
         }
       }
 
+      // URL bookmark (type 'r'): always open externally in a new browser
+      // tab — wherever the click landed (anchor text or card padding).
+      if (this.data.type === 'r' && this.data.value) {
+        e.stopPropagation();
+        if (PlatformService.getInstance().isElectron) {
+          await window.electronAPI!.openExternal(this.data.value);
+        } else {
+          window.open(this.data.value, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      }
+
       // Navigate to listing for 'a' tag bookmarks (kind:30402)
       if (this.data.type === 'a' && this.data.value?.startsWith('30402:')) {
         const parts = this.data.value.split(':');
@@ -3449,7 +3458,13 @@ export class BookmarkCard {
             pubkey: parts[1]!,
             identifier: parts.slice(2).join(':'),
           });
-          this.router.navigate(`/listing/${naddr}`);
+          // Central navigation (not raw router): default/wide/mobile modes
+          // resolve to the same route; right-pane opens a view tab; the
+          // Focus UI (v2) routes through its seam.
+          const { getViewNavigationController } = await import(
+            '../services/ViewNavigationController'
+          );
+          getViewNavigationController().openView('listing', naddr, e);
         }
         return;
       }
@@ -3469,7 +3484,10 @@ export class BookmarkCard {
               '../services/NostrToolsAdapter'
             );
             const naddr = encodeNaddr({ kind: kindNum, pubkey, identifier });
-            this.router.navigate(`/note/${naddr}`);
+            const { getViewNavigationController } = await import(
+              '../services/ViewNavigationController'
+            );
+            getViewNavigationController().openView('single-note', naddr, e);
           }
         }
         return;
@@ -3479,10 +3497,15 @@ export class BookmarkCard {
       // value (hex event id) so the card is still clickable when the event
       // isn't in memory (e.g. older replaceable events whose original id is
       // no longer carried by any relay).
-      const eventIdForNav = event?.id || this.data.value;
-      if (eventIdForNav) {
-        const nevent = encodeNevent(eventIdForNav);
-        this.router.navigate(`/note/${nevent}`);
+      if (this.data.type === 'e') {
+        const eventIdForNav = event?.id || this.data.value;
+        if (eventIdForNav) {
+          const nevent = encodeNevent(eventIdForNav);
+          const { getViewNavigationController } = await import(
+            '../services/ViewNavigationController'
+          );
+          getViewNavigationController().openView('single-note', nevent, e);
+        }
       }
     });
 

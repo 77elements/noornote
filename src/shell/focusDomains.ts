@@ -16,6 +16,7 @@ import { _ } from '../i18n';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
+import { bookmarksSurface } from './focusBookmarksSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
   articlesSettings,
@@ -209,7 +210,8 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     id: 'bookmarks',
     label: _('Bookmarks'),
     icon: 'icon-bookmark',
-    addon: true,
+    route: '/lists',
+    createSurface: bookmarksSurface,
   },
   { id: 'tribes', label: _('Tribes'), icon: 'icon-tribe', addon: true },
   { id: 'follows', label: _('Follows'), icon: 'icon-follows' },
