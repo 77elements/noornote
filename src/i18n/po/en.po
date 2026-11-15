@@ -7,42 +7,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components/settings/UISettingsSection.ts:168
-#: src/components/settings/UISettingsSection.ts:379
+#: src/components/settings/UISettingsSection.ts:167
+#: src/components/settings/UISettingsSection.ts:368
 msgid "Gregorian"
 msgstr "Gregorian"
 
-#: src/components/settings/UISettingsSection.ts:170
-#: src/components/settings/UISettingsSection.ts:381
+#: src/components/settings/UISettingsSection.ts:169
+#: src/components/settings/UISettingsSection.ts:370
 msgid "Gregorian + Hijri"
 msgstr "Gregorian + Hijri"
 
-#: src/components/settings/UISettingsSection.ts:395
+#: src/components/settings/UISettingsSection.ts:384
 msgid "Gregorian + Hijri calendars"
 msgstr "Gregorian + Hijri calendars"
 
-#: src/components/settings/UISettingsSection.ts:393
+#: src/components/settings/UISettingsSection.ts:382
 msgid "Gregorian calendar"
 msgstr "Gregorian calendar"
 
-#: src/components/settings/UISettingsSection.ts:380
+#: src/components/settings/UISettingsSection.ts:369
 msgid "Hijri (Islamic)"
 msgstr "Hijri (Islamic)"
 
-#: src/components/settings/UISettingsSection.ts:394
+#: src/components/settings/UISettingsSection.ts:383
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri (Islamic) calendar"
 
-#: src/components/settings/UISettingsSection.ts:116
+#: src/components/settings/UISettingsSection.ts:115
 msgid "Language"
 msgstr "Language"
 
-#: src/components/settings/UISettingsSection.ts:359
+#: src/components/settings/UISettingsSection.ts:348
 msgid "Language changed"
 msgstr "Language changed"
 
-#: src/components/settings/UISettingsSection.ts:399
-#: src/components/settings/UISettingsSection.ts:437
+#: src/components/settings/UISettingsSection.ts:388
+#: src/components/settings/UISettingsSection.ts:426
 #: src/helpers/ListSyncMode.ts:84
 msgid "Switched to %s"
 msgstr "Switched to %s"
@@ -2145,7 +2145,7 @@ msgstr "Set Petname"
 msgid "Set status…"
 msgstr "Set status…"
 
-#: src/components/settings/UISettingsSection.ts:220
+#: src/components/settings/UISettingsSection.ts:219
 #: src/components/views/ProfileView.ts:984
 #: src/shell/focusSettings.ts:130
 msgid "Show reactions"
@@ -2626,7 +2626,7 @@ msgstr "Follow Pack"
 msgid "Follow pack was updated"
 msgstr "Follow pack was updated"
 
-#: src/components/settings/UISettingsSection.ts:133
+#: src/components/settings/UISettingsSection.ts:132
 #: src/components/ui/FontSizeSwitcher.ts:33
 msgid "Font Size"
 msgstr "Font Size"
@@ -6069,7 +6069,7 @@ msgid "Check frequency for all supported group clients"
 msgstr "Check frequency for all supported group clients"
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:162
-#: src/components/settings/UISettingsSection.ts:317
+#: src/components/settings/UISettingsSection.ts:306
 msgid "Check now"
 msgstr "Check now"
 
@@ -8700,17 +8700,17 @@ msgstr "Schedule post"
 msgid "Upload media"
 msgstr "Upload media"
 
-#: src/components/settings/UISettingsSection.ts:107
-#: src/components/settings/UISettingsSection.ts:602
-#: src/shell/focusSettings.ts:203
+#: src/components/settings/UISettingsSection.ts:106
+#: src/components/settings/UISettingsSection.ts:591
+#: src/shell/focusSettings.ts:193
 #: src/shell/focusSettings.ts:98
 msgid "1 week"
 msgstr "1 week"
 
-#: src/components/settings/UISettingsSection.ts:109
-#: src/components/settings/UISettingsSection.ts:604
+#: src/components/settings/UISettingsSection.ts:108
+#: src/components/settings/UISettingsSection.ts:593
 #: src/shell/focusSettings.ts:100
-#: src/shell/focusSettings.ts:205
+#: src/shell/focusSettings.ts:195
 msgid "1 year"
 msgstr "1 year"
 
@@ -8718,16 +8718,16 @@ msgstr "1 year"
 msgid "1080p (Full HD)"
 msgstr "1080p (Full HD)"
 
-#: src/components/settings/UISettingsSection.ts:106
-#: src/components/settings/UISettingsSection.ts:601
-#: src/shell/focusSettings.ts:202
+#: src/components/settings/UISettingsSection.ts:105
+#: src/components/settings/UISettingsSection.ts:590
+#: src/shell/focusSettings.ts:192
 #: src/shell/focusSettings.ts:97
 msgid "3 days"
 msgstr "3 days"
 
-#: src/components/settings/UISettingsSection.ts:108
-#: src/components/settings/UISettingsSection.ts:603
-#: src/shell/focusSettings.ts:204
+#: src/components/settings/UISettingsSection.ts:107
+#: src/components/settings/UISettingsSection.ts:592
+#: src/shell/focusSettings.ts:194
 #: src/shell/focusSettings.ts:99
 msgid "3 months"
 msgstr "3 months"
@@ -8736,21 +8736,21 @@ msgstr "3 months"
 msgid "720p (HD)"
 msgstr "720p (HD)"
 
-#: src/components/settings/UISettingsSection.ts:605
-#: src/shell/focusSettings.ts:206
+#: src/components/settings/UISettingsSection.ts:594
+#: src/shell/focusSettings.ts:196
 msgid "all"
 msgstr "all"
 
-#: src/components/settings/UISettingsSection.ts:110
+#: src/components/settings/UISettingsSection.ts:109
 #: src/shell/focusSettings.ts:101
 msgid "All self-reposts (any age)"
 msgstr "All self-reposts (any age)"
 
-#: src/components/settings/UISettingsSection.ts:261
+#: src/components/settings/UISettingsSection.ts:260
 msgid "Article excerpt limit in secondary content column"
 msgstr "Article excerpt limit in secondary content column"
 
-#: src/components/settings/UISettingsSection.ts:725
+#: src/components/settings/UISettingsSection.ts:714
 msgid "Article excerpt limit set to %s characters"
 msgstr "Article excerpt limit set to %s characters"
 
@@ -8774,15 +8774,15 @@ msgstr ""
 "Audio files are compressed locally before upload using a hardware-supported "
 "codec."
 
-#: src/components/settings/UISettingsSection.ts:891
+#: src/components/settings/UISettingsSection.ts:845
 msgid "Auto-update check disabled"
 msgstr "Auto-update check disabled"
 
-#: src/components/settings/UISettingsSection.ts:890
+#: src/components/settings/UISettingsSection.ts:844
 msgid "Auto-update check enabled"
 msgstr "Auto-update check enabled"
 
-#: src/components/settings/UISettingsSection.ts:313
+#: src/components/settings/UISettingsSection.ts:302
 msgid "Automatically check for updates"
 msgstr "Automatically check for updates"
 
@@ -8798,11 +8798,11 @@ msgstr "blossom.nostr.build (Blossom, free: 20 MiB)"
 msgid "blossom.primal.net (Blossom, free: 20 MiB)"
 msgstr "blossom.primal.net (Blossom, free: 20 MiB)"
 
-#: src/components/settings/UISettingsSection.ts:170
+#: src/components/settings/UISettingsSection.ts:169
 msgid "Both calendars side-by-side"
 msgstr "Both calendars side-by-side"
 
-#: src/components/settings/UISettingsSection.ts:203
+#: src/components/settings/UISettingsSection.ts:202
 msgid "Bring back the old, linear navigation."
 msgstr "Bring back the old, linear navigation."
 
@@ -8814,15 +8814,15 @@ msgstr ""
 "Choose where to upload images, videos, and other media files. Noornote "
 "supports both Blossom and NIP-96 protocols."
 
-#: src/components/settings/UISettingsSection.ts:497
+#: src/components/settings/UISettingsSection.ts:486
 msgid "Circular navigation active"
 msgstr "Circular navigation active"
 
-#: src/components/settings/UISettingsSection.ts:200
+#: src/components/settings/UISettingsSection.ts:199
 msgid "Classic Menu"
 msgstr "Classic Menu"
 
-#: src/components/settings/UISettingsSection.ts:496
+#: src/components/settings/UISettingsSection.ts:485
 msgid "Classic menu active"
 msgstr "Classic menu active"
 
@@ -8842,31 +8842,31 @@ msgstr "Custom Server URL:"
 msgid "Custom..."
 msgstr "Custom..."
 
-#: src/components/settings/UISettingsSection.ts:165
+#: src/components/settings/UISettingsSection.ts:164
 msgid "Date Format"
 msgstr "Date Format"
 
-#: src/components/settings/UISettingsSection.ts:143
-#: src/components/settings/UISettingsSection.ts:418
+#: src/components/settings/UISettingsSection.ts:142
+#: src/components/settings/UISettingsSection.ts:407
 msgid "Default"
 msgstr "Default"
 
-#: src/components/settings/UISettingsSection.ts:430
+#: src/components/settings/UISettingsSection.ts:419
 msgid "Default layout mode"
 msgstr "Default layout mode"
 
-#: src/components/settings/UISettingsSection.ts:741
-#: src/shell/focusSettings.ts:342
+#: src/components/settings/UISettingsSection.ts:730
+#: src/shell/focusSettings.ts:313
 msgid "Degree 1 (direct follows)"
 msgstr "Degree 1 (direct follows)"
 
-#: src/components/settings/UISettingsSection.ts:742
-#: src/shell/focusSettings.ts:343
+#: src/components/settings/UISettingsSection.ts:731
+#: src/shell/focusSettings.ts:314
 msgid "Degree 2 (friends of friends)"
 msgstr "Degree 2 (friends of friends)"
 
-#: src/components/settings/UISettingsSection.ts:743
-#: src/shell/focusSettings.ts:344
+#: src/components/settings/UISettingsSection.ts:732
+#: src/shell/focusSettings.ts:315
 msgid "Degree 3 (friends of friends of friends)"
 msgstr "Degree 3 (friends of friends of friends)"
 
@@ -8875,12 +8875,12 @@ msgstr "Degree 3 (friends of friends of friends)"
 msgid "Device info stripping"
 msgstr "Device info stripping"
 
-#: src/components/settings/UISettingsSection.ts:251
+#: src/components/settings/UISettingsSection.ts:250
 #: src/shell/focusSettings.ts:160
 msgid "Disable post truncation"
 msgstr "Disable post truncation"
 
-#: src/components/settings/UISettingsSection.ts:183
+#: src/components/settings/UISettingsSection.ts:182
 #: src/shell/focusSettings.ts:113
 msgid "Disable self-reposts younger than:"
 msgstr "Disable self-reposts younger than:"
@@ -8889,23 +8889,23 @@ msgstr "Disable self-reposts younger than:"
 msgid "Display sensitive media"
 msgstr "Display sensitive media"
 
-#: src/components/settings/UISettingsSection.ts:230
+#: src/components/settings/UISettingsSection.ts:229
 #: src/shell/focusSettings.ts:140
 msgid "Hide highlights"
 msgstr "Hide highlights"
 
-#: src/components/settings/UISettingsSection.ts:177
+#: src/components/settings/UISettingsSection.ts:176
 #: src/shell/focusSettings.ts:107
 msgid "Hide self-reposts"
 msgstr "Hide self-reposts"
 
-#: src/components/settings/UISettingsSection.ts:618
-#: src/shell/focusSettings.ts:218
+#: src/components/settings/UISettingsSection.ts:607
+#: src/shell/focusSettings.ts:208
 msgid "Hiding all self-reposts"
 msgstr "Hiding all self-reposts"
 
-#: src/components/settings/UISettingsSection.ts:619
-#: src/shell/focusSettings.ts:219
+#: src/components/settings/UISettingsSection.ts:608
+#: src/shell/focusSettings.ts:209
 msgid "Hiding self-reposts younger than %s"
 msgstr "Hiding self-reposts younger than %s"
 
@@ -8913,12 +8913,12 @@ msgstr "Hiding self-reposts younger than %s"
 msgid "High"
 msgstr "High"
 
-#: src/components/settings/UISettingsSection.ts:642
-#: src/shell/focusSettings.ts:252
+#: src/components/settings/UISettingsSection.ts:631
+#: src/shell/focusSettings.ts:242
 msgid "Highlights shown again"
 msgstr "Highlights shown again"
 
-#: src/components/settings/UISettingsSection.ts:169
+#: src/components/settings/UISettingsSection.ts:168
 msgid "Hijri"
 msgstr "Hijri"
 
@@ -8934,11 +8934,11 @@ msgstr "Image compression disabled"
 msgid "Image compression enabled"
 msgstr "Image compression enabled"
 
-#: src/components/settings/UISettingsSection.ts:169
+#: src/components/settings/UISettingsSection.ts:168
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 msgstr "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 
-#: src/components/settings/UISettingsSection.ts:140
+#: src/components/settings/UISettingsSection.ts:139
 msgid "Layout Mode"
 msgstr "Layout Mode"
 
@@ -8951,8 +8951,8 @@ msgstr "Location & identity stripping"
 msgid "Low (smallest size)"
 msgstr "Low (smallest size)"
 
-#: src/components/settings/UISettingsSection.ts:764
-#: src/shell/focusSettings.ts:359
+#: src/components/settings/UISettingsSection.ts:753
+#: src/shell/focusSettings.ts:330
 msgid "Main article feed: %s"
 msgstr "Main article feed: %s"
 
@@ -8961,7 +8961,7 @@ msgstr "Main article feed: %s"
 msgid "Max resolution"
 msgstr "Max resolution"
 
-#: src/components/settings/UISettingsSection.ts:266
+#: src/components/settings/UISettingsSection.ts:265
 msgid ""
 "Maximum number of characters for article excerpts in the side column. "
 "Default: 200."
@@ -8982,21 +8982,6 @@ msgstr "Media server saved"
 msgid "Medium (recommended)"
 msgstr "Medium (recommended)"
 
-#: src/components/settings/UISettingsSection.ts:290
-#: src/shell/focusSettings.ts:170
-msgid "Memory optimization (experimental)"
-msgstr "Memory optimization (experimental)"
-
-#: src/components/settings/UISettingsSection.ts:826
-#: src/shell/focusSettings.ts:303
-msgid "Memory optimization disabled"
-msgstr "Memory optimization disabled"
-
-#: src/components/settings/UISettingsSection.ts:825
-#: src/shell/focusSettings.ts:302
-msgid "Memory optimization enabled"
-msgstr "Memory optimization enabled"
-
 #: src/components/settings/MediaServerSection.ts:420
 msgid "nostr.build (Most popular, NIP-96, free: 20 MiB)"
 msgstr "nostr.build (Most popular, NIP-96, free: 20 MiB)"
@@ -9006,35 +8991,35 @@ msgstr "nostr.build (Most popular, NIP-96, free: 20 MiB)"
 msgid "Original"
 msgstr "Original"
 
-#: src/components/settings/UISettingsSection.ts:641
-#: src/shell/focusSettings.ts:251
+#: src/components/settings/UISettingsSection.ts:630
+#: src/shell/focusSettings.ts:241
 msgid "Others' highlights hidden"
 msgstr "Others' highlights hidden"
 
-#: src/components/settings/UISettingsSection.ts:146
-#: src/components/settings/UISettingsSection.ts:422
+#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:411
 msgid "Phone"
 msgstr "Phone"
 
-#: src/components/settings/UISettingsSection.ts:434
+#: src/components/settings/UISettingsSection.ts:423
 msgid "Phone layout (390px width)"
 msgstr "Phone layout (390px width)"
 
-#: src/components/settings/UISettingsSection.ts:470
-#: src/shell/focusSettings.ts:283
+#: src/components/settings/UISettingsSection.ts:459
+#: src/shell/focusSettings.ts:273
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr "Post truncation disabled - all posts will be shown in full"
 
-#: src/components/settings/UISettingsSection.ts:471
-#: src/shell/focusSettings.ts:284
+#: src/components/settings/UISettingsSection.ts:460
+#: src/shell/focusSettings.ts:274
 msgid "Post truncation enabled"
 msgstr "Post truncation enabled"
 
-#: src/components/settings/UISettingsSection.ts:853
+#: src/components/settings/UISettingsSection.ts:807
 msgid "Posts will be signed with \"via NoorNote\""
 msgstr "Posts will be signed with \"via NoorNote\""
 
-#: src/components/settings/UISettingsSection.ts:854
+#: src/components/settings/UISettingsSection.ts:808
 msgid "Posts will be signed without client tag"
 msgstr "Posts will be signed without client tag"
 
@@ -9044,40 +9029,40 @@ msgstr "Posts will be signed without client tag"
 msgid "Quality"
 msgstr "Quality"
 
-#: src/components/settings/UISettingsSection.ts:689
-#: src/shell/focusSettings.ts:235
+#: src/components/settings/UISettingsSection.ts:678
+#: src/shell/focusSettings.ts:225
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr "Reactions from people you follow now appear in your timeline"
 
-#: src/components/settings/UISettingsSection.ts:692
-#: src/shell/focusSettings.ts:236
+#: src/components/settings/UISettingsSection.ts:681
+#: src/shell/focusSettings.ts:226
 msgid "Reactions hidden from your timeline again"
 msgstr "Reactions hidden from your timeline again"
 
-#: src/components/settings/UISettingsSection.ts:144
-#: src/components/settings/UISettingsSection.ts:419
+#: src/components/settings/UISettingsSection.ts:143
+#: src/components/settings/UISettingsSection.ts:408
 msgid "Right Pane"
 msgstr "Right Pane"
 
-#: src/components/settings/UISettingsSection.ts:420
+#: src/components/settings/UISettingsSection.ts:409
 msgid "Right Pane (RSS Mode)"
 msgstr "Right Pane (RSS Mode)"
 
-#: src/components/settings/UISettingsSection.ts:431
+#: src/components/settings/UISettingsSection.ts:420
 msgid "Right pane mode (views as tabs)"
 msgstr "Right pane mode (views as tabs)"
 
-#: src/components/settings/UISettingsSection.ts:432
+#: src/components/settings/UISettingsSection.ts:421
 msgid "Right pane RSS mode (compact timeline)"
 msgstr "Right pane RSS mode (compact timeline)"
 
-#: src/components/settings/UISettingsSection.ts:589
-#: src/shell/focusSettings.ts:192
+#: src/components/settings/UISettingsSection.ts:578
+#: src/shell/focusSettings.ts:182
 msgid "Self-reposts hidden from timeline"
 msgstr "Self-reposts hidden from timeline"
 
-#: src/components/settings/UISettingsSection.ts:590
-#: src/shell/focusSettings.ts:193
+#: src/components/settings/UISettingsSection.ts:579
+#: src/shell/focusSettings.ts:183
 msgid "Self-reposts shown again"
 msgstr "Self-reposts shown again"
 
@@ -9093,15 +9078,15 @@ msgstr "Sensitive media will be blurred"
 msgid "Sensitive media will be shown"
 msgstr "Sensitive media will be shown"
 
-#: src/components/settings/UISettingsSection.ts:793
+#: src/components/settings/UISettingsSection.ts:782
 msgid "Side column articles: %s"
 msgstr "Side column articles: %s"
 
-#: src/components/settings/UISettingsSection.ts:300
+#: src/components/settings/UISettingsSection.ts:289
 msgid "Sign posts with \"via NoorNote\""
 msgstr "Sign posts with \"via NoorNote\""
 
-#: src/components/settings/UISettingsSection.ts:146
+#: src/components/settings/UISettingsSection.ts:145
 msgid "Single-column layout (390px width) for phone development and testing"
 msgstr "Single-column layout (390px width) for phone development and testing"
 
@@ -9111,7 +9096,7 @@ msgstr "Single-column layout (390px width) for phone development and testing"
 msgid "Skip compression for files below"
 msgstr "Skip compression for files below"
 
-#: src/components/settings/UISettingsSection.ts:168
+#: src/components/settings/UISettingsSection.ts:167
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 
@@ -9127,7 +9112,7 @@ msgstr "Strip location & identity (EXIF)"
 msgid "Strip timestamps & maker blob (EXIF)"
 msgstr "Strip timestamps & maker blob (EXIF)"
 
-#: src/components/settings/UISettingsSection.ts:126
+#: src/components/settings/UISettingsSection.ts:125
 msgid "Theme"
 msgstr "Theme"
 
@@ -9156,19 +9141,19 @@ msgstr "Video compression disabled"
 msgid "Video compression enabled"
 msgstr "Video compression enabled"
 
-#: src/components/settings/UISettingsSection.ts:144
+#: src/components/settings/UISettingsSection.ts:143
 msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
 msgstr "Views open as tabs in the right pane, timeline stays visible in main pane"
 
-#: src/components/settings/UISettingsSection.ts:143
+#: src/components/settings/UISettingsSection.ts:142
 msgid "Views replace the timeline in the main pane, right pane shows System Logger"
 msgstr "Views replace the timeline in the main pane, right pane shows System Logger"
 
-#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:144
 msgid "Views replace the timeline, right pane is hidden for maximum content space"
 msgstr "Views replace the timeline, right pane is hidden for maximum content space"
 
-#: src/components/settings/UISettingsSection.ts:303
+#: src/components/settings/UISettingsSection.ts:292
 msgid ""
 "When enabled, every event you publish carries a <code>client</code> tag "
 "identifying NoorNote. Other Nostr clients display this as \"via NoorNote\" "
@@ -9212,7 +9197,7 @@ msgstr ""
 "When uploading JPEG images, removes: Make, Model, LensMake, LensModel, "
 "Software, HostComputer."
 
-#: src/components/settings/UISettingsSection.ts:276
+#: src/components/settings/UISettingsSection.ts:275
 msgid ""
 "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden "
 "the feed beyond your direct follows but take longer to build and include "
@@ -9222,7 +9207,7 @@ msgstr ""
 "the feed beyond your direct follows but take longer to build and include "
 "authors you may not know."
 
-#: src/components/settings/UISettingsSection.ts:283
+#: src/components/settings/UISettingsSection.ts:282
 msgid ""
 "Whose articles appear in the side column's \"Newest Articles\" tab. Same "
 "degree meaning as above; you can pick a narrower degree here to keep the "
@@ -11321,19 +11306,19 @@ msgstr ""
 msgid "Remove loaded .po file"
 msgstr "Remove loaded .po file"
 
-#: src/components/settings/UISettingsSection.ts:562
+#: src/components/settings/UISettingsSection.ts:551
 msgid "Back button hidden"
 msgstr "Back button hidden"
 
-#: src/components/settings/UISettingsSection.ts:562
+#: src/components/settings/UISettingsSection.ts:551
 msgid "Back button shown"
 msgstr "Back button shown"
 
-#: src/components/settings/UISettingsSection.ts:210
+#: src/components/settings/UISettingsSection.ts:209
 msgid "Global Back Button"
 msgstr "Global Back Button"
 
-#: src/components/settings/UISettingsSection.ts:213
+#: src/components/settings/UISettingsSection.ts:212
 msgid "Show the Back button at the bottom of the content column."
 msgstr "Show the Back button at the bottom of the content column."
 
@@ -11662,12 +11647,12 @@ msgstr ""
 "Nostrord, there is no public membership list, you need to add each "
 "community manually by pasting its invite link below."
 
-#: src/components/settings/UISettingsSection.ts:273
-#: src/shell/focusSettings.ts:320
+#: src/components/settings/UISettingsSection.ts:272
+#: src/shell/focusSettings.ts:291
 msgid "Article feed source, main view"
 msgstr "Article feed source, main view"
 
-#: src/components/settings/UISettingsSection.ts:280
+#: src/components/settings/UISettingsSection.ts:279
 msgid "Article feed source, secondary column"
 msgstr "Article feed source, secondary column"
 
@@ -11744,18 +11729,18 @@ msgstr ""
 "Default reminder lead for all events. Reminders stay local to this device, "
 "nothing is published. Single events can override this in their editor."
 
-#: src/components/settings/UISettingsSection.ts:733
-#: src/shell/focusSettings.ts:334
+#: src/components/settings/UISettingsSection.ts:722
+#: src/shell/focusSettings.ts:305
 msgid "Degree 1, Direct follows"
 msgstr "Degree 1, Direct follows"
 
-#: src/components/settings/UISettingsSection.ts:734
-#: src/shell/focusSettings.ts:335
+#: src/components/settings/UISettingsSection.ts:723
+#: src/shell/focusSettings.ts:306
 msgid "Degree 2, Friends of friends"
 msgstr "Degree 2, Friends of friends"
 
-#: src/components/settings/UISettingsSection.ts:737
-#: src/shell/focusSettings.ts:338
+#: src/components/settings/UISettingsSection.ts:726
+#: src/shell/focusSettings.ts:309
 msgid "Degree 3, Friends of friends of friends (slow to build)"
 msgstr "Degree 3, Friends of friends of friends (slow to build)"
 
@@ -11857,7 +11842,7 @@ msgstr ""
 "background, relays may honor it or not. Deletion is not guaranteed and "
 "cannot be undone."
 
-#: src/components/settings/UISettingsSection.ts:119
+#: src/components/settings/UISettingsSection.ts:118
 msgid "pilot translation (partial, untranslated text stays English)"
 msgstr "pilot translation (partial, untranslated text stays English)"
 
@@ -12268,7 +12253,7 @@ msgstr "Enable Live Streams"
 msgid "Ended"
 msgstr "Ended"
 
-#: src/components/settings/UISettingsSection.ts:157
+#: src/components/settings/UISettingsSection.ts:156
 msgid ""
 "Experimental v2 interface: all domains are equal surfaces, one takes the "
 "central focus. Layout modes have no effect while active. The classic "
@@ -12278,13 +12263,13 @@ msgstr ""
 "central focus. Layout modes have no effect while active. The classic "
 "interface stays the default and is one switch away."
 
-#: src/components/settings/UISettingsSection.ts:663
-#: src/shell/focusSettings.ts:266
+#: src/components/settings/UISettingsSection.ts:652
+#: src/shell/focusSettings.ts:256
 msgid "Expiry notices hidden"
 msgstr "Expiry notices hidden"
 
-#: src/components/settings/UISettingsSection.ts:663
-#: src/shell/focusSettings.ts:266
+#: src/components/settings/UISettingsSection.ts:652
+#: src/shell/focusSettings.ts:256
 msgid "Expiry notices shown"
 msgstr "Expiry notices shown"
 
@@ -12296,7 +12281,7 @@ msgstr "Failed to load live streams"
 msgid "Failed to update pin"
 msgstr "Failed to update pin"
 
-#: src/components/settings/UISettingsSection.ts:154
+#: src/components/settings/UISettingsSection.ts:153
 #: src/shell/focusShell.ts:216
 msgid "Focus UI (v2)"
 msgstr "Focus UI (v2)"
@@ -12382,7 +12367,7 @@ msgstr ""
 "Show a widget in the sidebar with the currently-live streams of people you "
 "follow (max 3). The widget is hidden when nobody you follow is live."
 
-#: src/components/settings/UISettingsSection.ts:240
+#: src/components/settings/UISettingsSection.ts:239
 #: src/shell/focusSettings.ts:150
 msgid "Show expiry notice"
 msgstr "Show expiry notice"
@@ -12421,7 +12406,7 @@ msgstr "What's New"
 msgid "What's new in v%s"
 msgstr "What's new in v%s"
 
-#: src/components/settings/UISettingsSection.ts:244
+#: src/components/settings/UISettingsSection.ts:243
 msgid ""
 "Check that all of your write relays support NIP-40. Note: even if they do, "
 "someone could repost your note to relays without NIP-40 support, and the "
@@ -12486,12 +12471,12 @@ msgstr "Community"
 msgid "Cancel reply"
 msgstr "Cancel reply"
 
-#: src/components/settings/UISettingsSection.ts:145
-#: src/components/settings/UISettingsSection.ts:421
+#: src/components/settings/UISettingsSection.ts:144
+#: src/components/settings/UISettingsSection.ts:410
 msgid "Tablet Mode"
 msgstr "Tablet Mode"
 
-#: src/components/settings/UISettingsSection.ts:433
+#: src/components/settings/UISettingsSection.ts:422
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
@@ -12500,7 +12485,7 @@ msgstr "Tablet mode (2 columns, centered)"
 msgid "Distribute circles evenly"
 msgstr "Distribute circles evenly"
 
-#: src/components/settings/UISettingsSection.ts:233
+#: src/components/settings/UISettingsSection.ts:232
 #: src/shell/focusSettings.ts:143
 msgid ""
 "Hides other users' highlight posts that quote an external website, "
@@ -12509,12 +12494,12 @@ msgstr ""
 "Hides other users' highlight posts that quote an external website, "
 "including pure reposts of them."
 
-#: src/components/settings/UISettingsSection.ts:180
+#: src/components/settings/UISettingsSection.ts:179
 #: src/shell/focusSettings.ts:110
 msgid "Hides reposts of users' own notes from your timeline."
 msgstr "Hides reposts of users' own notes from your timeline."
 
-#: src/components/settings/UISettingsSection.ts:254
+#: src/components/settings/UISettingsSection.ts:253
 #: src/shell/focusSettings.ts:163
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
@@ -12536,16 +12521,7 @@ msgstr "Move all circles to the right column"
 msgid "Reorder"
 msgstr "Reorder"
 
-#: src/components/settings/UISettingsSection.ts:293
-#: src/shell/focusSettings.ts:173
-msgid ""
-"Saves memory by skipping rendering of off-screen notes. May cause minor "
-"scrollbar jumps when scrolling fast."
-msgstr ""
-"Saves memory by skipping rendering of off-screen notes. May cause minor "
-"scrollbar jumps when scrolling fast."
-
-#: src/components/settings/UISettingsSection.ts:243
+#: src/components/settings/UISettingsSection.ts:242
 #: src/shell/focusSettings.ts:153
 msgid ""
 "Shows a \"Post expires on …\" line under notes with an expiration time "
@@ -12554,12 +12530,12 @@ msgstr ""
 "Shows a \"Post expires on …\" line under notes with an expiration time "
 "(NIP-40)."
 
-#: src/components/settings/UISettingsSection.ts:223
+#: src/components/settings/UISettingsSection.ts:222
 #: src/shell/focusSettings.ts:133
 msgid "Shows reactions (likes) from people you follow as entries in your timeline."
 msgstr "Shows reactions (likes) from people you follow as entries in your timeline."
 
-#: src/shell/focusSettings.ts:323
+#: src/shell/focusSettings.ts:294
 msgid ""
 "Whose articles appear in the main article feed — higher degrees broaden the "
 "feed but take longer to build."

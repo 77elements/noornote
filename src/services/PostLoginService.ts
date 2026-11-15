@@ -60,20 +60,6 @@ export class PostLoginService {
     this.loggedInPubkey = data.pubkey;
 
     try {
-      // Apply per-account UI prefs that need to be on <html> before any rendering
-      const { PerAccountLocalStorage: PALS, StorageKeys: SK } = await import(
-        './PerAccountLocalStorage'
-      );
-      const cvEnabled = PALS.getInstance().getForPubkey<boolean>(
-        SK.CONTENT_VISIBILITY_AUTO,
-        data.pubkey,
-        false
-      );
-      document.documentElement.classList.toggle(
-        'content-visibility-auto',
-        cvEnabled
-      );
-
       // Logged-out CTA stash: when the user came in through a "logged out"
       // modal (e.g. on a public note/profile/article) and just authenticated,
       // jump to the action-specific destination (DM thread, etc.) via a full

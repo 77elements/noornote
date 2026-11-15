@@ -65,7 +65,6 @@ export class UISettingsSection extends SettingsSection {
   private backBarSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private expiryNoticeSwitch: Switch | null = null;
-  private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: NnDropdown | null = null;
   private languageDropdown: NnDropdown | null = null;
@@ -281,16 +280,6 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control article-foaf-scc-dropdown-container"></div>
             <p class="setting__desc">
               ${_('Whose articles appear in the side column\'s "Newest Articles" tab. Same degree meaning as above; you can pick a narrower degree here to keep the side panel focused on closer contacts.')}
-            </p>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="setting">
-            <span class="setting__label">${_('Memory optimization (experimental)')}</span>
-            <div class="setting__control" id="content-visibility-switch-container"></div>
-            <p class="setting__desc">
-              ${_('Saves memory by skipping rendering of off-screen notes. May cause minor scrollbar jumps when scrolling fast.')}
             </p>
           </div>
         </section>
@@ -798,41 +787,6 @@ export class UISettingsSection extends SettingsSection {
       });
       sccFoafContainer.appendChild(
         this.articleFeedFoafSccDropdown.getElement()
-      );
-    }
-
-    // Initialize Content Visibility switch
-    const contentVisibilityContainer = contentContainer.querySelector(
-      '#content-visibility-switch-container'
-    );
-    if (contentVisibilityContainer) {
-      const enabled = this.storage.get<boolean>(
-        StorageKeys.CONTENT_VISIBILITY_AUTO,
-        false
-      );
-
-      this.contentVisibilitySwitch = new Switch({
-        label: '',
-        checked: enabled,
-        onChange: checked => {
-          this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
-          document.documentElement.classList.toggle(
-            'content-visibility-auto',
-            checked
-          );
-          ToastService.show(
-            checked
-              ? _('Memory optimization enabled')
-              : _('Memory optimization disabled'),
-            'success'
-          );
-        },
-      });
-
-      contentVisibilityContainer.innerHTML =
-        this.contentVisibilitySwitch.render();
-      this.contentVisibilitySwitch.setupEventListeners(
-        contentVisibilityContainer as HTMLElement
       );
     }
 

@@ -164,16 +164,6 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           </p>
         </div>
       </section>
-
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">${_('Memory optimization (experimental)')}</span>
-          <div class="setting__control" data-focus-setting="content-visibility"></div>
-          <p class="setting__desc">
-            ${_('Saves memory by skipping rendering of off-screen notes. May cause minor scrollbar jumps when scrolling fast.')}
-          </p>
-        </div>
-      </section>
     `;
   }
 
@@ -282,25 +272,6 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           checked
             ? _('Post truncation disabled - all posts will be shown in full')
             : _('Post truncation enabled'),
-          'success'
-        );
-      }
-    );
-
-    // Memory optimization: content-visibility on off-screen note cards.
-    this.mountSwitch(
-      el.querySelector('[data-focus-setting="content-visibility"]'),
-      this.storage.get<boolean>(StorageKeys.CONTENT_VISIBILITY_AUTO, false),
-      checked => {
-        this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
-        document.documentElement.classList.toggle(
-          'content-visibility-auto',
-          checked
-        );
-        ToastService.show(
-          checked
-            ? _('Memory optimization enabled')
-            : _('Memory optimization disabled'),
           'success'
         );
       }

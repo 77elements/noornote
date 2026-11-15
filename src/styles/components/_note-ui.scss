@@ -32,9 +32,10 @@
   border: 2px solid $color-red;
 }
 
-// Memory optimization: skip rendering of off-screen notes
-// Toggled via UI Settings → applied as class on <html>
-html.content-visibility-auto .note-card {
+// Memory optimization: skip rendering of off-screen notes (always on —
+// the former UI switch is gone; contain-intrinsic-size remembers real
+// heights, so the only cost is a first-scroll estimate).
+.note-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 400px;
   contain: layout style paint;

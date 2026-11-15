@@ -87,7 +87,6 @@ export const StorageKeys = {
   // 1 = direct follows only; 2 = friends-of-friends; 3 = friends-of-friends-of-friends.
   ARTICLE_FEED_FOAF_DEGREE_MAIN: 'noornote_article_feed_foaf_degree_main_map',
   ARTICLE_FEED_FOAF_DEGREE_SCC: 'noornote_article_feed_foaf_degree_scc_map',
-  CONTENT_VISIBILITY_AUTO: 'noornote_content_visibility_auto_map', // boolean: enable CSS content-visibility:auto on note cards (memory optimization)
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
   // Navigation mode (per-account): false (default) = circular nav wheel in the
   // sidebar, true = the classic linear menu list. See helpers/navModeSetting.ts.
