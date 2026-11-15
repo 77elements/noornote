@@ -433,6 +433,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'new-note':
+        return {
+          factory: async () => {
+            const { NewNoteView } = await import(
+              '../components/views/NewNoteView'
+            );
+            const view = new NewNoteView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'edit-article':
         return {
           requiresParam: true,

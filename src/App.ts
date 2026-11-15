@@ -491,6 +491,13 @@ export class App {
     // land on the timeline in the classic interface too.
     this.registerRoute('/timeline', 'timeline', 'timeline', 'tv', true);
     this.registerRoute(
+      '/timeline/new-note',
+      'new-note',
+      'new-note',
+      'nnv',
+      true
+    );
+    this.registerRoute(
       '/notifications',
       'notifications',
       'notifications',

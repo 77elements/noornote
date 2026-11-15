@@ -17,6 +17,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
+import { openNoteComposer } from '../../helpers/composerHandoff';
 
 interface PendingSelection {
   text: string;
@@ -183,9 +184,6 @@ export class TextSelectionToolbar {
     window.getSelection()?.removeAllRanges();
     this.hide();
 
-    const { PostNoteModal } = await import('../post/PostNoteModal');
-    PostNoteModal.getInstance().show({
-      highlightSource: { selectedText, event },
-    });
+    openNoteComposer({ highlightSource: { selectedText, event } });
   }
 }

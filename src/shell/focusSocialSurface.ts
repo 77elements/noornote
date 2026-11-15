@@ -28,6 +28,17 @@ export const socialSurface = async (): Promise<FocusDomainSurface> => {
       );
       return new SingleNoteView(nevent);
     },
+    // The flat note composer (Write Note button → /timeline/new-note):
+    // a param-less second detail in the same column; post/cancel return
+    // to the timeline via the surface's back action.
+    secondary: {
+      navViewType: 'new-note',
+      route: '/timeline/new-note',
+      createDetail: async () => {
+        const { NewNoteView } = await import('../components/views/NewNoteView');
+        return new NewNoteView({ onClose: () => surface.back() });
+      },
+    },
     // The timeline manages its own internal scroll — no column-scroll
     // preservation needed around the swap.
   });

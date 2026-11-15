@@ -21,6 +21,7 @@ import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getTag } from '../../helpers/tagUtils';
 import { _ } from '../../i18n';
+import { openNoteComposer } from '../../helpers/composerHandoff';
 
 export class MarketplaceTimelineInjector {
   private static instance: MarketplaceTimelineInjector;
@@ -297,10 +298,7 @@ export class MarketplaceTimelineInjector {
         identifier: dTag,
         relays: writeRelays.slice(0, 2),
       })}`;
-      const { PostNoteModal } = await import(
-        '../../components/post/PostNoteModal'
-      );
-      PostNoteModal.getInstance().show(reference);
+      openNoteComposer(reference);
     }
   }
 

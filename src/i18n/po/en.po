@@ -410,7 +410,7 @@ msgstr "Accounts and threads you have muted."
 #: src/components/views/ArticleTimelineView.ts:37
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
-#: src/shell/focusDomains.ts:156
+#: src/shell/focusDomains.ts:162
 msgid "Articles"
 msgstr "Articles"
 
@@ -421,7 +421,7 @@ msgstr "Articles"
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4487
 #: src/lists/bookmarks.ts:4523
-#: src/shell/focusDomains.ts:173
+#: src/shell/focusDomains.ts:179
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
@@ -433,7 +433,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Curated public follow lists you subscribe to."
 
-#: src/components/views/TimelineView.ts:171
+#: src/components/views/TimelineView.ts:189
 msgid "Edit tribes"
 msgstr "Edit tribes"
 
@@ -456,7 +456,7 @@ msgstr "Export DiagLogs"
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:178
+#: src/shell/focusDomains.ts:184
 msgid "Follows"
 msgstr "Follows"
 
@@ -464,7 +464,7 @@ msgstr "Follows"
 msgid "Key Signer"
 msgstr "Key Signer"
 
-#: src/components/views/TimelineView.ts:219
+#: src/components/views/TimelineView.ts:237
 msgid "Last notes per follow"
 msgstr "Last notes per follow"
 
@@ -481,7 +481,7 @@ msgstr "Media"
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:179
+#: src/shell/focusDomains.ts:185
 msgid "Muted"
 msgstr "Muted"
 
@@ -493,7 +493,7 @@ msgstr "No notifications yet"
 msgid "Notification Priorities"
 msgstr "Notification Priorities"
 
-#: src/components/views/TimelineView.ts:122
+#: src/components/views/TimelineView.ts:123
 msgid "Please login to view timeline"
 msgstr "Please login to view timeline"
 
@@ -511,8 +511,8 @@ msgstr "Saved notes, sorted into folders."
 
 #: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:379
-#: src/shell/focusStage.ts:528
+#: src/shell/focusStage.ts:381
+#: src/shell/focusStage.ts:530
 msgid "Settings"
 msgstr "Settings"
 
@@ -525,7 +525,7 @@ msgid "The accounts you follow, with outbox relays."
 msgstr "The accounts you follow, with outbox relays."
 
 #: src/components/layout/MainLayout.ts:2091
-#: src/components/views/TimelineView.ts:211
+#: src/components/views/TimelineView.ts:229
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -535,7 +535,7 @@ msgstr "Timeline"
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2382
 #: src/lists/tribes.ts:2399
-#: src/shell/focusDomains.ts:177
+#: src/shell/focusDomains.ts:183
 msgid "Tribes"
 msgstr "Tribes"
 
@@ -590,6 +590,7 @@ msgstr "Zaps"
 #: src/components/views/MessagesView.ts:1042
 #: src/components/views/MessagesView.ts:706
 #: src/components/views/MessagesView.ts:751
+#: src/components/views/NewNoteView.ts:351
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -955,7 +956,7 @@ msgid "Failed to load app"
 msgstr "Failed to load app"
 
 #: src/addons/marketplace/ListingEditorView.ts:159
-#: src/addons/marketplace/ListingView.ts:367
+#: src/addons/marketplace/ListingView.ts:365
 #: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
 msgstr "Failed to load listing"
@@ -991,7 +992,7 @@ msgid "License"
 msgstr "License"
 
 #: src/addons/marketplace/ListingEditorView.ts:133
-#: src/addons/marketplace/ListingView.ts:354
+#: src/addons/marketplace/ListingView.ts:352
 #: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
 msgstr "Listing not found"
@@ -1010,9 +1011,9 @@ msgstr "Loading book…"
 msgid "Loading members..."
 msgstr "Loading members..."
 
-#: src/addons/marketplace/ListingView.ts:123
+#: src/addons/marketplace/ListingView.ts:124
 #: src/addons/marketplace/MarketplaceTimeline.ts:357
-#: src/addons/marketplace/MarketplaceTimelineInjector.ts:219
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/notifications/NotificationItem.ts:113
 #: src/components/ui/AccountSwitcher.ts:101
 #: src/components/ui/AccountSwitcher.ts:195
@@ -1075,7 +1076,7 @@ msgid "Size"
 msgstr "Size"
 
 #: src/addons/marketplace/ListingEditorView.ts:219
-#: src/addons/marketplace/ListingView.ts:106
+#: src/addons/marketplace/ListingView.ts:107
 #: src/addons/marketplace/MarketplaceTimeline.ts:333
 #: src/components/views/ListingReadView.ts:116
 msgid "Sold"
@@ -1175,8 +1176,8 @@ msgstr "Confirm booking"
 #: src/addons/calendar/CalendarCollectionsModal.ts:93
 #: src/addons/calendar/CalendarEventEditor.ts:162
 #: src/addons/calendar/CalendarEventEditor.ts:519
-#: src/addons/calendar/CalendarEventModal.ts:121
-#: src/addons/calendar/CalendarEventModal.ts:548
+#: src/addons/calendar/CalendarEventModal.ts:122
+#: src/addons/calendar/CalendarEventModal.ts:546
 #: src/addons/feedback-board/FeedbackBoardView.ts:303
 #: src/addons/feedback-board/FeedbackBoardView.ts:813
 #: src/addons/feedback-board/FeedbackBoardView.ts:896
@@ -1326,6 +1327,7 @@ msgstr "All messages marked as unread"
 
 #: src/components/post/PostNoteModal.ts:802
 #: src/components/views/ConversationView.ts:785
+#: src/components/views/NewNoteView.ts:783
 msgid "Apply"
 msgstr "Apply"
 
@@ -1368,6 +1370,7 @@ msgstr "Custom duration"
 
 #: src/components/post/PostNoteModal.ts:449
 #: src/components/views/ConversationView.ts:593
+#: src/components/views/NewNoteView.ts:395
 msgid "Custom…"
 msgstr "Custom…"
 
@@ -1530,7 +1533,7 @@ msgstr "Message options"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
-#: src/shell/focusDomains.ts:170
+#: src/shell/focusDomains.ts:176
 msgid "Messages"
 msgstr "Messages"
 
@@ -1559,6 +1562,7 @@ msgstr "Mute user publicly"
 
 #: src/components/post/PostNoteModal.ts:1081
 #: src/components/views/ConversationView.ts:951
+#: src/components/views/NewNoteView.ts:1044
 msgid "No"
 msgstr "No"
 
@@ -1711,6 +1715,7 @@ msgstr "Weeks"
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:1080
 #: src/components/views/ConversationView.ts:950
+#: src/components/views/NewNoteView.ts:1043
 msgid "Yes"
 msgstr "Yes"
 
@@ -1730,8 +1735,8 @@ msgstr "auto-generated, change only if you know what you're doing"
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:312
-#: src/shell/focusStage.ts:368
-#: src/shell/focusStage.ts:525
+#: src/shell/focusStage.ts:370
+#: src/shell/focusStage.ts:527
 msgid "Back"
 msgstr "Back"
 
@@ -1780,7 +1785,7 @@ msgstr "Distraction-free writing (Esc to exit)"
 
 #: src/addons/badges/BadgesView.ts:377
 #: src/addons/calendar/CalendarCollectionsModal.ts:60
-#: src/addons/calendar/CalendarEventModal.ts:120
+#: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/marketplace/ListingEditorView.ts:191
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
@@ -1880,6 +1885,10 @@ msgstr "Saving..."
 #: src/components/post/PostNoteModal.ts:536
 #: src/components/post/PostNoteModal.ts:555
 #: src/components/views/ArticleEditorView.ts:1080
+#: src/components/views/NewNoteView.ts:1082
+#: src/components/views/NewNoteView.ts:339
+#: src/components/views/NewNoteView.ts:482
+#: src/components/views/NewNoteView.ts:501
 #: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
 msgstr "Schedule"
@@ -1984,7 +1993,7 @@ msgstr "Award Badge"
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2239
 #: src/components/views/ProfileView.ts:748
-#: src/shell/focusDomains.ts:224
+#: src/shell/focusDomains.ts:230
 msgid "Badges"
 msgstr "Badges"
 
@@ -1999,7 +2008,7 @@ msgstr "by"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2174
 #: src/components/views/ProfileView.ts:747
-#: src/shell/focusDomains.ts:205
+#: src/shell/focusDomains.ts:211
 msgid "Calendar"
 msgstr "Calendar"
 
@@ -2203,7 +2212,7 @@ msgstr "User is already in tribe \"%s\""
 
 #: src/components/views/ProfileView.ts:2345
 #: src/components/views/ProfileView.ts:743
-#: src/shell/focusDomains.ts:163
+#: src/shell/focusDomains.ts:169
 msgid "Videos"
 msgstr "Videos"
 
@@ -2241,7 +2250,7 @@ msgstr "Added to private bookmarks"
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:220
+#: src/shell/focusDomains.ts:226
 msgid "Analytics"
 msgstr "Analytics"
 
@@ -2259,8 +2268,8 @@ msgstr "Bookmark"
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:364
-#: src/shell/focusStage.ts:524
+#: src/shell/focusStage.ts:366
+#: src/shell/focusStage.ts:526
 msgid "Close"
 msgstr "Close"
 
@@ -2290,7 +2299,7 @@ msgstr "Failed to add author to tribe"
 msgid "Failed to open editor"
 msgstr "Failed to open editor"
 
-#: src/addons/marketplace/ListingView.ts:320
+#: src/addons/marketplace/ListingView.ts:318
 #: src/components/ui/InteractionStatusLine.ts:536
 #: src/components/ui/NoteMenu.ts:807
 #: src/lists/bookmarks.ts:4879
@@ -2394,9 +2403,9 @@ msgstr "Reply"
 msgid "Report"
 msgstr "Report"
 
-#: src/addons/marketplace/ListingView.ts:156
 #: src/addons/marketplace/ListingView.ts:157
-#: src/addons/marketplace/MarketplaceTimelineInjector.ts:226
+#: src/addons/marketplace/ListingView.ts:158
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:227
 #: src/components/ui/InteractionStatusLine.ts:309
 #: src/components/ui/InteractionStatusLine.ts:372
 #: src/components/ui/InteractionStatusLine.ts:394
@@ -2461,7 +2470,7 @@ msgstr "You cannot zap your own notes"
 msgid "You will be notified about new articles"
 msgstr "You will be notified about new articles"
 
-#: src/addons/calendar/CalendarEventModal.ts:175
+#: src/addons/calendar/CalendarEventModal.ts:176
 #: src/addons/calendar/CalendarGridView.ts:434
 #: src/addons/calendar/CalendarGridView.ts:457
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:136
@@ -2490,12 +2499,12 @@ msgid_plural "Added %s custom emojis to your collection"
 msgstr[0] "Added %s custom emoji to your collection"
 msgstr[1] ""
 
-#: src/addons/calendar/CalendarEventModal.ts:486
+#: src/addons/calendar/CalendarEventModal.ts:484
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:185
 msgid "Added to your calendar grid"
 msgstr "Added to your calendar grid"
 
-#: src/addons/marketplace/ListingView.ts:446
+#: src/addons/marketplace/ListingView.ts:444
 #: src/components/analytics/AnalyticsModal.ts:243
 #: src/components/analytics/AnalyticsModal.ts:281
 #: src/components/navigation/SearchSpotlight.ts:363
@@ -2573,7 +2582,7 @@ msgstr "Could not load reposted note"
 msgid "Could not parse zap data"
 msgstr "Could not parse zap data"
 
-#: src/components/ui/TextSelectionToolbar.ts:174
+#: src/components/ui/TextSelectionToolbar.ts:175
 msgid "Could not resolve source note. Please reload and try again."
 msgstr "Could not resolve source note. Please reload and try again."
 
@@ -2686,11 +2695,11 @@ msgstr "Loading…"
 
 #: src/addons/addonI18n.ts:28
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
-#: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:221
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:195
+#: src/shell/focusDomains.ts:201
 msgid "Marketplace"
 msgstr "Marketplace"
 
@@ -2710,6 +2719,7 @@ msgstr "Move to..."
 
 #: src/components/post/PostNoteModal.ts:1344
 #: src/components/ui/note-features/NIP88PollRenderer.ts:112
+#: src/components/views/NewNoteView.ts:1290
 msgid "Multiple choice allowed"
 msgstr "Multiple choice allowed"
 
@@ -2755,7 +2765,7 @@ msgstr "Playlist"
 msgid "Poll option"
 msgstr "Poll option"
 
-#: src/components/ui/TextSelectionToolbar.ts:149
+#: src/components/ui/TextSelectionToolbar.ts:150
 msgid "Post highlight"
 msgstr "Post highlight"
 
@@ -2771,7 +2781,7 @@ msgstr "Pull Request Update"
 msgid "Quoted note (max depth reached)"
 msgstr "Quoted note (max depth reached)"
 
-#: src/addons/calendar/CalendarEventModal.ts:482
+#: src/addons/calendar/CalendarEventModal.ts:480
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:182
 msgid "Removed from your calendar"
 msgstr "Removed from your calendar"
@@ -2901,6 +2911,7 @@ msgid "Zap Stream"
 msgstr "Zap Stream"
 
 #: src/components/post/PostNoteModal.ts:803
+#: src/components/views/NewNoteView.ts:784
 msgid "Applying..."
 msgstr "Applying..."
 
@@ -2910,11 +2921,13 @@ msgstr "Bold"
 
 #: src/addons/note-taking/NoteEditorModal.ts:303
 #: src/components/post/PostNoteModal.ts:423
+#: src/components/views/NewNoteView.ts:369
 msgid "Clear"
 msgstr "Clear"
 
 #: src/components/post/composerShared.ts:79
 #: src/components/post/PostNoteModal.ts:1089
+#: src/components/views/NewNoteView.ts:1052
 msgid "Draft saved"
 msgstr "Draft saved"
 
@@ -2931,6 +2944,7 @@ msgid "Italic"
 msgstr "Italic"
 
 #: src/components/post/PostNoteModal.ts:1079
+#: src/components/views/NewNoteView.ts:1042
 msgid "Keep this unsent note in your drafts?"
 msgstr "Keep this unsent note in your drafts?"
 
@@ -2943,29 +2957,38 @@ msgid "New Note"
 msgstr "New Note"
 
 #: src/components/post/PostNoteModal.ts:1270
+#: src/components/views/NewNoteView.ts:1231
 msgid "Note could not be published"
 msgstr "Note could not be published"
 
 #: src/components/post/PostNoteModal.ts:812
 #: src/components/post/PostNoteModal.ts:839
+#: src/components/views/NewNoteView.ts:793
+#: src/components/views/NewNoteView.ts:820
 msgid "Only 50 tags permitted"
 msgstr "Only 50 tags permitted"
 
 #: src/components/post/PostNoteModal.ts:1120
 #: src/components/post/PostNoteModal.ts:394
 #: src/components/post/PostNoteModal.ts:536
+#: src/components/views/NewNoteView.ts:1082
+#: src/components/views/NewNoteView.ts:340
+#: src/components/views/NewNoteView.ts:482
 msgid "Post"
 msgstr "Post"
 
 #: src/components/post/PostNoteModal.ts:1310
 #: src/components/post/PostNoteModal.ts:1318
 #: src/components/post/PostNoteModal.ts:391
+#: src/components/views/NewNoteView.ts:1261
+#: src/components/views/NewNoteView.ts:1265
+#: src/components/views/NewNoteView.ts:337
 msgid "Post Highlight"
 msgstr "Post Highlight"
 
-#: src/addons/marketplace/ListingView.ts:159
 #: src/addons/marketplace/ListingView.ts:160
-#: src/addons/marketplace/MarketplaceTimelineInjector.ts:229
+#: src/addons/marketplace/ListingView.ts:161
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:230
 #: src/components/ui/InteractionStatusLine.ts:376
 #: src/components/ui/MarkdownToolbar.ts:63
 msgid "Quote"
@@ -2976,15 +2999,18 @@ msgid "Reply could not be published"
 msgstr "Reply could not be published"
 
 #: src/components/post/PostNoteModal.ts:1078
+#: src/components/views/NewNoteView.ts:1041
 msgid "Save as draft?"
 msgstr "Save as draft?"
 
 #: src/components/post/PostNoteModal.ts:404
 #: src/components/reply/ReplyModal.ts:432
+#: src/components/views/NewNoteView.ts:350
 msgid "Save draft"
 msgstr "Save draft"
 
 #: src/components/post/PostNoteModal.ts:551
+#: src/components/views/NewNoteView.ts:497
 msgid "Schedule Post"
 msgstr "Schedule Post"
 
@@ -2993,32 +3019,40 @@ msgid "Show in my timeline"
 msgstr "Show in my timeline"
 
 #: src/components/post/PostNoteModal.ts:801
+#: src/components/views/NewNoteView.ts:782
 msgid "Tag different users, separate by comma"
 msgstr "Tag different users, separate by comma"
 
 #: src/components/post/PostNoteModal.ts:760
 #: src/components/post/PostNoteModal.ts:800
+#: src/components/views/NewNoteView.ts:741
+#: src/components/views/NewNoteView.ts:781
 msgid "Tag users"
 msgstr "Tag users"
 
 #: src/components/post/PostNoteModal.ts:760
+#: src/components/views/NewNoteView.ts:741
 msgid "Tag users in this image"
 msgstr "Tag users in this image"
 
 #: src/components/post/PostNoteModal.ts:806
+#: src/components/views/NewNoteView.ts:787
 msgid "Tagged users will be publicly visible"
 msgstr "Tagged users will be publicly visible"
 
 #: src/components/post/PostNoteModal.ts:1121
 #: src/components/reply/ReplyModal.ts:695
+#: src/components/views/NewNoteView.ts:1083
 msgid "Waiting for signer approval…"
 msgstr "Waiting for signer approval…"
 
 #: src/components/post/PostNoteModal.ts:345
+#: src/components/views/NewNoteView.ts:291
 msgid "What's on your mind?"
 msgstr "What's on your mind?"
 
 #: src/components/post/PostNoteModal.ts:422
+#: src/components/views/NewNoteView.ts:368
 msgid "Will be published on"
 msgstr "Will be published on"
 
@@ -3027,6 +3061,7 @@ msgid "Write your reply..."
 msgstr "Write your reply..."
 
 #: src/components/post/PostNoteModal.ts:344
+#: src/components/views/NewNoteView.ts:290
 msgid "Write your thoughts about this highlight (optional)…"
 msgstr "Write your thoughts about this highlight (optional)…"
 
@@ -3783,9 +3818,9 @@ msgstr "Relay URL must start with wss:// or ws://"
 
 #: src/addons/calendar/BookingManager.ts:328
 #: src/addons/calendar/BookingManager.ts:600
-#: src/addons/calendar/CalendarEventModal.ts:126
-#: src/addons/calendar/CalendarEventModal.ts:476
-#: src/addons/calendar/CalendarEventModal.ts:493
+#: src/addons/calendar/CalendarEventModal.ts:127
+#: src/addons/calendar/CalendarEventModal.ts:474
+#: src/addons/calendar/CalendarEventModal.ts:491
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:98
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:222
 #: src/addons/follow-packs/FollowPackManager.ts:724
@@ -5217,7 +5252,7 @@ msgstr "Request timed out. Please try again."
 msgid "Signing failed"
 msgstr "Signing failed"
 
-#: src/App.ts:1024
+#: src/App.ts:1031
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "Stop NoorSigner Daemon?"
@@ -5369,7 +5404,7 @@ msgstr "Note"
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:167
+#: src/shell/focusDomains.ts:173
 msgid "Notifications"
 msgstr "Notifications"
 
@@ -5395,7 +5430,7 @@ msgstr "Product"
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:180
+#: src/shell/focusDomains.ts:186
 msgid "Profile"
 msgstr "Profile"
 
@@ -5404,7 +5439,7 @@ msgid "Profile: %s"
 msgstr "Profile: %s"
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:164
+#: src/shell/focusDomains.ts:170
 msgid "Recipes"
 msgstr "Recipes"
 
@@ -5418,8 +5453,8 @@ msgstr "Reload"
 #: src/components/layout/MainLayout.ts:2099
 #: src/components/layout/MainLayout.ts:2110
 #: src/components/layout/MainLayout.ts:2113
-#: src/shell/focusStage.ts:372
-#: src/shell/focusStage.ts:526
+#: src/shell/focusStage.ts:374
+#: src/shell/focusStage.ts:528
 msgid "Scroll to top"
 msgstr "Scroll to top"
 
@@ -5690,8 +5725,8 @@ msgstr "%s set to Always"
 msgid "%s starts %s"
 msgstr "%s starts %s"
 
-#: src/addons/calendar/CalendarEventModal.ts:126
-#: src/addons/calendar/CalendarEventModal.ts:493
+#: src/addons/calendar/CalendarEventModal.ts:127
+#: src/addons/calendar/CalendarEventModal.ts:491
 msgid "+ Add to my cal"
 msgstr "+ Add to my cal"
 
@@ -5708,7 +5743,7 @@ msgstr "+%s more"
 msgid "A description for this follow list..."
 msgstr "A description for this follow list..."
 
-#: src/addons/calendar/CalendarEventModal.ts:235
+#: src/addons/calendar/CalendarEventModal.ts:236
 msgid "a guest"
 msgstr "a guest"
 
@@ -5802,7 +5837,7 @@ msgstr "All"
 msgid "all day"
 msgstr "all day"
 
-#: src/addons/calendar/CalendarEventModal.ts:590
+#: src/addons/calendar/CalendarEventModal.ts:588
 #: src/addons/calendar/CalendarGridView.ts:598
 msgid "All day"
 msgstr "All day"
@@ -5815,7 +5850,7 @@ msgstr "also %s"
 msgid "Also search for \"%s\" without #"
 msgstr "Also search for \"%s\" without #"
 
-#: src/addons/calendar/CalendarEventModal.ts:103
+#: src/addons/calendar/CalendarEventModal.ts:104
 msgid "and %s more"
 msgstr "and %s more"
 
@@ -5868,8 +5903,8 @@ msgstr "auto-generated"
 msgid "auto-generated, do not change"
 msgstr "auto-generated, do not change"
 
-#: src/addons/marketplace/ListingView.ts:355
-#: src/addons/marketplace/ListingView.ts:368
+#: src/addons/marketplace/ListingView.ts:353
+#: src/addons/marketplace/ListingView.ts:366
 #: src/addons/marketplace/MyListingsView.ts:52
 msgid "Back to Marketplace"
 msgstr "Back to Marketplace"
@@ -5922,7 +5957,7 @@ msgstr "Blink the avatars of profiles you already interacted with."
 msgid "Bookable window"
 msgstr "Bookable window"
 
-#: src/addons/calendar/CalendarEventModal.ts:229
+#: src/addons/calendar/CalendarEventModal.ts:230
 msgid "booked"
 msgstr "booked"
 
@@ -5948,8 +5983,8 @@ msgstr "Booking page"
 msgid "Booking page link copied"
 msgstr "Booking page link copied"
 
-#: src/addons/marketplace/ListingView.ts:130
-#: src/addons/marketplace/ListingView.ts:300
+#: src/addons/marketplace/ListingView.ts:131
+#: src/addons/marketplace/ListingView.ts:298
 msgid "Bookmark listing"
 msgstr "Bookmark listing"
 
@@ -5961,7 +5996,7 @@ msgstr "Bookmark read-state sync disabled"
 msgid "Bookmark read-state sync enabled"
 msgstr "Bookmark read-state sync enabled"
 
-#: src/addons/marketplace/ListingView.ts:301
+#: src/addons/marketplace/ListingView.ts:299
 #: src/lists/bookmarks.ts:4788
 msgid "Bookmark removed"
 msgstr "Bookmark removed"
@@ -6025,7 +6060,7 @@ msgstr "Calendar default (%s)"
 msgid "Calendar default (never)"
 msgstr "Calendar default (never)"
 
-#: src/addons/calendar/CalendarEventModal.ts:142
+#: src/addons/calendar/CalendarEventModal.ts:143
 msgid "Calendar file downloaded"
 msgstr "Calendar file downloaded"
 
@@ -6039,8 +6074,8 @@ msgstr "Calibrating baseline (%s followers)…"
 
 #: src/addons/calendar/BookingManager.ts:398
 #: src/addons/calendar/BookingManager.ts:403
-#: src/addons/calendar/CalendarEventModal.ts:510
-#: src/addons/calendar/CalendarEventModal.ts:517
+#: src/addons/calendar/CalendarEventModal.ts:508
+#: src/addons/calendar/CalendarEventModal.ts:515
 msgid "Cancel booking"
 msgstr "Cancel booking"
 
@@ -6117,7 +6152,7 @@ msgstr "Configure how follows, mutes, bookmarks and tribes sync to relays."
 msgid "Conflicts with Data Saver"
 msgstr "Conflicts with Data Saver"
 
-#: src/addons/marketplace/ListingView.ts:129
+#: src/addons/marketplace/ListingView.ts:130
 msgid "Contact Seller"
 msgstr "Contact Seller"
 
@@ -6126,7 +6161,7 @@ msgid "Could not accept invitation"
 msgstr "Could not accept invitation"
 
 #: src/addons/calendar/CalendarEventEditor.ts:546
-#: src/addons/calendar/CalendarEventModal.ts:575
+#: src/addons/calendar/CalendarEventModal.ts:573
 msgid "Could not delete the event"
 msgstr "Could not delete the event"
 
@@ -6134,7 +6169,7 @@ msgstr "Could not delete the event"
 msgid "Could not delete the event calendar"
 msgstr "Could not delete the event calendar"
 
-#: src/addons/calendar/CalendarEventModal.ts:148
+#: src/addons/calendar/CalendarEventModal.ts:149
 msgid "Could not export event"
 msgstr "Could not export event"
 
@@ -6158,8 +6193,8 @@ msgstr "Could not load regions"
 msgid "Could not publish to the dhikr relays"
 msgstr "Could not publish to the dhikr relays"
 
-#: src/addons/calendar/CalendarEventModal.ts:310
-#: src/addons/calendar/CalendarEventModal.ts:430
+#: src/addons/calendar/CalendarEventModal.ts:311
+#: src/addons/calendar/CalendarEventModal.ts:431
 msgid "Could not publish your response"
 msgstr "Could not publish your response"
 
@@ -6240,7 +6275,7 @@ msgstr "Create your first product listing"
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:51
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:52
 #: src/addons/custom-emojis/CustomEmojisView.ts:25
-#: src/shell/focusDomains.ts:183
+#: src/shell/focusDomains.ts:189
 msgid "Custom Emojis"
 msgstr "Custom Emojis"
 
@@ -6285,13 +6320,13 @@ msgstr ""
 msgid "Days before"
 msgstr "Days before"
 
-#: src/addons/calendar/CalendarEventModal.ts:245
-#: src/addons/calendar/CalendarEventModal.ts:394
+#: src/addons/calendar/CalendarEventModal.ts:246
+#: src/addons/calendar/CalendarEventModal.ts:395
 msgid "declined"
 msgstr "declined"
 
 #: src/addons/calendar/CalendarEventEditor.ts:514
-#: src/addons/calendar/CalendarEventModal.ts:543
+#: src/addons/calendar/CalendarEventModal.ts:541
 msgid "Delete \"%s\"%s? A deletion request is published to relays."
 msgstr "Delete \"%s\"%s? A deletion request is published to relays."
 
@@ -6300,7 +6335,7 @@ msgid "Delete dhikr"
 msgstr "Delete dhikr"
 
 #: src/addons/calendar/CalendarEventEditor.ts:513
-#: src/addons/calendar/CalendarEventModal.ts:542
+#: src/addons/calendar/CalendarEventModal.ts:540
 msgid "Delete event"
 msgstr "Delete event"
 
@@ -6430,7 +6465,7 @@ msgstr "Display sidebar widget"
 msgid "District"
 msgstr "District"
 
-#: src/addons/calendar/CalendarEventModal.ts:132
+#: src/addons/calendar/CalendarEventModal.ts:133
 msgid "Download .ics"
 msgstr "Download .ics"
 
@@ -6658,7 +6693,7 @@ msgid "Event calendar updated"
 msgstr "Event calendar updated"
 
 #: src/addons/calendar/CalendarEventEditor.ts:538
-#: src/addons/calendar/CalendarEventModal.ts:567
+#: src/addons/calendar/CalendarEventModal.ts:565
 msgid "Event deleted"
 msgstr "Event deleted"
 
@@ -6704,7 +6739,7 @@ msgid "Export calendar (.ics)"
 msgstr "Export calendar (.ics)"
 
 #: src/addons/addonI18n.ts:22
-#: src/shell/focusDomains.ts:246
+#: src/shell/focusDomains.ts:252
 msgid "Extended Follows"
 msgstr "Extended Follows"
 
@@ -6824,7 +6859,7 @@ msgstr "Follow Pack updated"
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:201
+#: src/shell/focusDomains.ts:207
 msgid "Follow Packs"
 msgstr "Follow Packs"
 
@@ -6832,12 +6867,12 @@ msgstr "Follow Packs"
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:252
+#: src/shell/focusDomains.ts:258
 msgid "Follower Notification"
 msgstr "Follower Notification"
 
 #: src/addons/calendar/CalendarEventEditor.ts:517
-#: src/addons/calendar/CalendarEventModal.ts:546
+#: src/addons/calendar/CalendarEventModal.ts:544
 msgid "for everyone"
 msgstr "for everyone"
 
@@ -6871,14 +6906,14 @@ msgstr ""
 "background; each new follower is verified against their own contact list, "
 "so there are no false alarms."
 
-#: src/addons/calendar/CalendarEventModal.ts:245
-#: src/addons/calendar/CalendarEventModal.ts:394
+#: src/addons/calendar/CalendarEventModal.ts:246
+#: src/addons/calendar/CalendarEventModal.ts:395
 msgid "going"
 msgstr "going"
 
 #: src/addons/addonI18n.ts:54
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:258
+#: src/shell/focusDomains.ts:264
 msgid "Group Chats"
 msgstr "Group Chats"
 
@@ -6902,7 +6937,7 @@ msgstr "guest"
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:233
+#: src/shell/focusDomains.ts:239
 msgid "Hashtag Subscriptions"
 msgstr "Hashtag Subscriptions"
 
@@ -7114,7 +7149,7 @@ msgstr "List Name"
 msgid "List Sync Mode"
 msgstr "List Sync Mode"
 
-#: src/addons/marketplace/ListingView.ts:307
+#: src/addons/marketplace/ListingView.ts:305
 msgid "Listing bookmarked"
 msgstr "Listing bookmarked"
 
@@ -7140,7 +7175,7 @@ msgid "Loading Follow Packs..."
 msgstr "Loading Follow Packs..."
 
 #: src/addons/marketplace/ListingEditorView.ts:124
-#: src/addons/marketplace/ListingView.ts:52
+#: src/addons/marketplace/ListingView.ts:53
 msgid "Loading listing..."
 msgstr "Loading listing..."
 
@@ -7156,11 +7191,11 @@ msgstr "Loading more transactions…"
 msgid "Loading notes..."
 msgstr "Loading notes..."
 
-#: src/addons/calendar/CalendarEventModal.ts:113
+#: src/addons/calendar/CalendarEventModal.ts:114
 msgid "Loading responses…"
 msgstr "Loading responses…"
 
-#: src/addons/marketplace/ListingView.ts:165
+#: src/addons/marketplace/ListingView.ts:166
 msgid "Loading reviews…"
 msgstr "Loading reviews…"
 
@@ -7203,7 +7238,7 @@ msgstr "Location"
 msgid "Log in to back up notes"
 msgstr "Log in to back up notes"
 
-#: src/addons/marketplace/ListingView.ts:281
+#: src/addons/marketplace/ListingView.ts:279
 msgid "Log in to bookmark listings"
 msgstr "Log in to bookmark listings"
 
@@ -7239,8 +7274,8 @@ msgstr ""
 "Marks ALL bookmarks as unread again (also on your other devices after their "
 "next sync)."
 
-#: src/addons/calendar/CalendarEventModal.ts:245
-#: src/addons/calendar/CalendarEventModal.ts:394
+#: src/addons/calendar/CalendarEventModal.ts:246
+#: src/addons/calendar/CalendarEventModal.ts:395
 msgid "maybe"
 msgstr "maybe"
 
@@ -7395,8 +7430,8 @@ msgstr "No recent notes from this pack"
 msgid "No recipients yet"
 msgstr "No recipients yet"
 
-#: src/addons/calendar/CalendarEventModal.ts:246
-#: src/addons/calendar/CalendarEventModal.ts:395
+#: src/addons/calendar/CalendarEventModal.ts:247
+#: src/addons/calendar/CalendarEventModal.ts:396
 msgid "No responses yet"
 msgstr "No responses yet"
 
@@ -7456,7 +7491,7 @@ msgstr "Note saved"
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:208
+#: src/shell/focusDomains.ts:214
 msgid "Note taking"
 msgstr "Note taking"
 
@@ -7738,7 +7773,7 @@ msgstr "Publishing the deletions failed: %s"
 msgid "Publishing…"
 msgstr "Publishing…"
 
-#: src/addons/marketplace/ListingView.ts:462
+#: src/addons/marketplace/ListingView.ts:460
 msgid "quoted this listing:"
 msgstr "quoted this listing:"
 
@@ -7759,7 +7794,7 @@ msgid "Re-include"
 msgstr "Re-include"
 
 #: src/addons/calendar/BookingManager.ts:400
-#: src/addons/calendar/CalendarEventModal.ts:514
+#: src/addons/calendar/CalendarEventModal.ts:512
 #: src/components/views/ProfileBookingView.ts:318
 msgid "Reason (optional)"
 msgstr "Reason (optional)"
@@ -7828,8 +7863,8 @@ msgstr "Reminder Settings"
 msgid "Reminder: %s"
 msgstr "Reminder: %s"
 
-#: src/addons/marketplace/ListingView.ts:130
-#: src/addons/marketplace/ListingView.ts:306
+#: src/addons/marketplace/ListingView.ts:131
+#: src/addons/marketplace/ListingView.ts:304
 #: src/lists/bookmarks.ts:3202
 #: src/lists/bookmarks.ts:3293
 msgid "Remove bookmark"
@@ -7839,7 +7874,7 @@ msgstr "Remove bookmark"
 msgid "Remove community"
 msgstr "Remove community"
 
-#: src/addons/calendar/CalendarEventModal.ts:474
+#: src/addons/calendar/CalendarEventModal.ts:472
 msgid "Remove from your calendar"
 msgstr "Remove from your calendar"
 
@@ -7904,13 +7939,13 @@ msgstr "Reset read state"
 msgid "Resolving…"
 msgstr "Resolving…"
 
-#: src/addons/calendar/CalendarEventModal.ts:300
-#: src/addons/calendar/CalendarEventModal.ts:419
+#: src/addons/calendar/CalendarEventModal.ts:301
+#: src/addons/calendar/CalendarEventModal.ts:420
 msgid "Response published"
 msgstr "Response published"
 
-#: src/addons/calendar/CalendarEventModal.ts:201
-#: src/addons/calendar/CalendarEventModal.ts:357
+#: src/addons/calendar/CalendarEventModal.ts:202
+#: src/addons/calendar/CalendarEventModal.ts:358
 msgid "Responses could not be loaded."
 msgstr "Responses could not be loaded."
 
@@ -7922,7 +7957,7 @@ msgstr "Restore notes"
 msgid "Restored %s notes"
 msgstr "Restored %s notes"
 
-#: src/addons/marketplace/ListingView.ts:425
+#: src/addons/marketplace/ListingView.ts:423
 msgid "Reviews & Quotes (%s)"
 msgstr "Reviews & Quotes (%s)"
 
@@ -7981,7 +8016,7 @@ msgstr "Scheduled post cancelled"
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:51
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:52
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:62
-#: src/shell/focusDomains.ts:214
+#: src/shell/focusDomains.ts:220
 msgid "Scheduled Posts"
 msgstr "Scheduled Posts"
 
@@ -8097,7 +8132,7 @@ msgstr "Select your city to see prayer times."
 msgid "Select your location to see prayer times."
 msgstr "Select your location to see prayer times."
 
-#: src/addons/marketplace/ListingView.ts:121
+#: src/addons/marketplace/ListingView.ts:122
 msgid "Seller"
 msgstr "Seller"
 
@@ -8142,8 +8177,8 @@ msgid "Share"
 msgstr "Share"
 
 #: src/addons/calendar/CalendarEventEditor.ts:109
-#: src/addons/calendar/CalendarEventModal.ts:122
-#: src/addons/calendar/CalendarEventModal.ts:128
+#: src/addons/calendar/CalendarEventModal.ts:123
+#: src/addons/calendar/CalendarEventModal.ts:129
 #: src/addons/follow-packs/FollowPackManager.ts:327
 msgid "Share in TL"
 msgstr "Share in TL"
@@ -8310,7 +8345,7 @@ msgstr ""
 msgid "The cancellation was not accepted by any relay. Try again."
 msgstr "The cancellation was not accepted by any relay. Try again."
 
-#: src/addons/calendar/CalendarEventModal.ts:511
+#: src/addons/calendar/CalendarEventModal.ts:509
 msgid ""
 "The guest and all participants will be informed about the cancellation by "
 "DM."
@@ -8339,7 +8374,7 @@ msgid "This calendar has no events yet."
 msgstr "This calendar has no events yet."
 
 #: src/addons/calendar/CalendarEventEditor.ts:516
-#: src/addons/calendar/CalendarEventModal.ts:545
+#: src/addons/calendar/CalendarEventModal.ts:543
 msgid "this event"
 msgstr "this event"
 
@@ -8496,7 +8531,7 @@ msgstr "Vacation to"
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:264
+#: src/shell/focusDomains.ts:270
 msgid "Wallet Balance"
 msgstr "Wallet Balance"
 
@@ -8536,7 +8571,7 @@ msgstr "When:"
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:270
+#: src/shell/focusDomains.ts:276
 msgid "Word Filter"
 msgstr "Word Filter"
 
@@ -10853,7 +10888,7 @@ msgstr "Original note not found"
 msgid "Paid ✓"
 msgstr "Paid ✓"
 
-#: src/addons/calendar/CalendarEventModal.ts:98
+#: src/addons/calendar/CalendarEventModal.ts:99
 msgid "Participants:"
 msgstr "Participants:"
 
@@ -11039,7 +11074,7 @@ msgstr "Usually not needed - uses your default relays"
 msgid "Watch on YouTube"
 msgstr "Watch on YouTube"
 
-#: src/addons/calendar/CalendarEventModal.ts:88
+#: src/addons/calendar/CalendarEventModal.ts:89
 msgid "Where:"
 msgstr "Where:"
 
@@ -11115,12 +11150,12 @@ msgid "Delete tribe \"%s\"? 1 member will be deleted."
 msgstr "Delete tribe \"%s\"? 1 member will be deleted."
 
 #: src/addons/calendar/BookingManager.ts:427
-#: src/addons/calendar/CalendarEventModal.ts:529
+#: src/addons/calendar/CalendarEventModal.ts:527
 msgid "failed DM: 1"
 msgstr "failed DM: 1"
 
 #: src/addons/calendar/BookingManager.ts:427
-#: src/addons/calendar/CalendarEventModal.ts:529
+#: src/addons/calendar/CalendarEventModal.ts:527
 msgid "failed DMs: %s"
 msgstr "failed DMs: %s"
 
@@ -11200,7 +11235,7 @@ msgstr "Author added to %s"
 msgid "Cancel failed: %s"
 msgstr "Cancel failed: %s"
 
-#: src/components/ui/ImageViewer.ts:159
+#: src/components/ui/ImageViewer.ts:160
 msgid "Cannot share: Image source not available"
 msgstr "Cannot share: Image source not available"
 
@@ -11216,7 +11251,7 @@ msgstr "Failed to check for changes"
 msgid "Failed to open share editor"
 msgstr "Failed to open share editor"
 
-#: src/components/ui/ImageViewer.ts:144
+#: src/components/ui/ImageViewer.ts:145
 msgid "Failed to save image"
 msgstr "Failed to save image"
 
@@ -11405,7 +11440,7 @@ msgid "Enable Feedback Board"
 msgstr "Enable Feedback Board"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:227
+#: src/shell/focusDomains.ts:233
 msgid "Feedback Board"
 msgstr "Feedback Board"
 
@@ -11656,7 +11691,7 @@ msgstr "Article feed source, main view"
 msgid "Article feed source, secondary column"
 msgstr "Article feed source, secondary column"
 
-#: src/addons/calendar/CalendarEventModal.ts:238
+#: src/addons/calendar/CalendarEventModal.ts:239
 msgid "Booked appointment, guest:"
 msgstr "Booked appointment, guest:"
 
@@ -11665,7 +11700,7 @@ msgstr "Booked appointment, guest:"
 msgid "Booking cancelled, 1 recipient informed"
 msgstr "Booking cancelled, 1 recipient informed"
 
-#: src/addons/calendar/CalendarEventModal.ts:530
+#: src/addons/calendar/CalendarEventModal.ts:528
 msgid "Booking cancelled, guest and participants informed"
 msgstr "Booking cancelled, guest and participants informed"
 
@@ -11846,7 +11881,7 @@ msgstr ""
 msgid "pilot translation (partial, untranslated text stays English)"
 msgstr "pilot translation (partial, untranslated text stays English)"
 
-#: src/addons/calendar/CalendarEventModal.ts:113
+#: src/addons/calendar/CalendarEventModal.ts:114
 msgid "Private, encrypted"
 msgstr "Private, encrypted"
 
@@ -11963,7 +11998,7 @@ msgstr ""
 "The daily ayah could not be loaded. Check your connection, it will retry "
 "automatically."
 
-#: src/addons/calendar/CalendarEventModal.ts:287
+#: src/addons/calendar/CalendarEventModal.ts:288
 msgid "The response could not be published, no relay accepted it"
 msgstr "The response could not be published, no relay accepted it"
 
@@ -12299,7 +12334,7 @@ msgstr "Live"
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:189
+#: src/shell/focusDomains.ts:195
 msgid "Live Streams"
 msgstr "Live Streams"
 
@@ -12312,6 +12347,7 @@ msgid "Loading stream…"
 msgstr "Loading stream…"
 
 #: src/components/post/PostNoteModal.ts:444
+#: src/components/views/NewNoteView.ts:390
 msgid "Never expires"
 msgstr "Never expires"
 
@@ -12356,6 +12392,7 @@ msgid "Post expires on %s"
 msgstr "Post expires on %s"
 
 #: src/components/post/PostNoteModal.ts:480
+#: src/components/views/NewNoteView.ts:426
 msgid "Set expiry"
 msgstr "Set expiry"
 
@@ -12450,16 +12487,16 @@ msgstr "Bottom panel"
 msgid "Top panel"
 msgstr "Top panel"
 
-#: src/shell/focusDomains.ts:243
+#: src/shell/focusDomains.ts:249
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
-#: src/components/views/TimelineView.ts:135
-#: src/shell/focusDomains.ts:147
+#: src/components/views/TimelineView.ts:141
+#: src/shell/focusDomains.ts:153
 msgid "Social Media"
 msgstr "Social Media"
 
-#: src/shell/focusDomains.ts:239
+#: src/shell/focusDomains.ts:245
 msgid "Bulk Delete"
 msgstr "Bulk Delete"
 
@@ -12480,8 +12517,8 @@ msgstr "Tablet Mode"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
-#: src/shell/focusStage.ts:1192
-#: src/shell/focusStage.ts:1211
+#: src/shell/focusStage.ts:1194
+#: src/shell/focusStage.ts:1213
 msgid "Distribute circles evenly"
 msgstr "Distribute circles evenly"
 
@@ -12504,20 +12541,20 @@ msgstr "Hides reposts of users' own notes from your timeline."
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
 
-#: src/shell/focusStage.ts:1208
+#: src/shell/focusStage.ts:1210
 msgid "Move all circles"
 msgstr "Move all circles"
 
-#: src/shell/focusStage.ts:1188
+#: src/shell/focusStage.ts:1190
 msgid "Move all circles to the left column"
 msgstr "Move all circles to the left column"
 
-#: src/shell/focusStage.ts:1187
+#: src/shell/focusStage.ts:1189
 msgid "Move all circles to the right column"
 msgstr "Move all circles to the right column"
 
-#: src/shell/focusStage.ts:359
-#: src/shell/focusStage.ts:523
+#: src/shell/focusStage.ts:361
+#: src/shell/focusStage.ts:525
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -12542,6 +12579,10 @@ msgid ""
 msgstr ""
 "Whose articles appear in the main article feed — higher degrees broaden the "
 "feed but take longer to build."
+
+#: src/components/views/TimelineView.ts:146
+msgid "Write Note"
+msgstr "Write Note"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

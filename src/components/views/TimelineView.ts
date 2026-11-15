@@ -23,6 +23,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { isTribesEnabled } from '../../addons/tribes/index';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 
 type TabType = 'timeline' | 'last-notes' | 'tribe';
 
@@ -130,10 +131,27 @@ export class TimelineView extends View {
     // screen-reader-only in v1 — the hiding is scoped per interface in
     // SCSS (see .timeline-view__title in _timeline-view.scss), not via
     // the .visually-hidden class (that would hide it in v2 as well).
+    // In v2 the heading row carries the Write Note button (right side);
+    // v1 keeps the +New Post dropup, so the button is CSS-hidden there.
+    const titleRow = document.createElement('div');
+    titleRow.className = 'l-row--split timeline-view__title-row';
+
     const pageHeading = document.createElement('h1');
     pageHeading.className = 'timeline-view__title';
     pageHeading.textContent = _('Social Media');
-    this.container.appendChild(pageHeading);
+    titleRow.appendChild(pageHeading);
+
+    const writeNoteBtn = document.createElement('button');
+    writeNoteBtn.className = 'btn timeline-view__write-btn';
+    writeNoteBtn.textContent = _('Write Note');
+    writeNoteBtn.addEventListener('click', () => {
+      // Focus UI: the composer opens as the social surface's flat detail
+      // (/timeline/new-note). Classic: nothing (button is hidden in v1).
+      delegateToFocusUi('new-note');
+    });
+    titleRow.appendChild(writeNoteBtn);
+
+    this.container.appendChild(titleRow);
 
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
     await this.buildTabs();

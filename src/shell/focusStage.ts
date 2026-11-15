@@ -55,10 +55,12 @@ const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
 
-/** A view type handed across objects: open this detail in the new column. */
+/** A view type handed across objects: open this detail in the new column.
+ *  param is optional — param-less view types (e.g. the composer) route to
+ *  the target surface's secondary detail. */
 interface FocusHandoff {
   viewType: string;
-  param: string;
+  param?: string;
 }
 
 /**
@@ -340,10 +342,10 @@ export class FocusStage {
       const surface = this.surfaces.get(this.activeId);
       if (surface?.view?.handleFocusNav?.(viewType, param)) return true;
     }
-    if (!param || this.morphing) return false;
+    if (this.morphing) return false;
     const def = FOCUS_DOMAINS.find(d => d.viewTypes?.includes(viewType));
     if (!def?.createSurface) return false;
-    void this.switchTo(def, { viewType, param });
+    void this.switchTo(def, param ? { viewType, param } : { viewType });
     return true;
   }
 

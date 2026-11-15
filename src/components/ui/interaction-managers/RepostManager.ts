@@ -11,7 +11,7 @@ import type { PostsModuleApi } from '../../../modules/posts/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { _ } from '../../../i18n';
 import { ToastService } from '../../../services/ToastService';
-import { PostNoteModal } from '../../post/PostNoteModal';
+import { openNoteComposer } from '../../../helpers/composerHandoff';
 import { getRepostsOriginalEvent } from '../../../helpers/getRepostsOriginalEvent';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
@@ -289,8 +289,8 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         );
       }
 
-      // Open post modal with pre-filled content
-      PostNoteModal.getInstance().show(reference);
+      // Open the note composer with the quoted reference pre-filled
+      openNoteComposer(reference);
     } catch (error) {
       console.error('Failed to open quoted repost editor:', error);
       ToastService.show(_('Failed to open editor'), 'error');

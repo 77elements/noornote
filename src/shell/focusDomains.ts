@@ -37,9 +37,10 @@ export interface FocusDomainSurfaceView {
    * Open the surface's detail for a seam param, resolving once the
    * detail element is mounted (FocusListDetailSurface provides it). The
    * stage awaits this on cross-object handoffs so the morph lands on
-   * the final content instead of an intermediate list.
+   * the final content instead of an intermediate list. Param-less calls
+   * route to the surface's secondary detail when one is configured.
    */
-  openDetail?(param: string): Promise<void>;
+  openDetail?(param?: string): Promise<void>;
   /**
    * Return to the surface's root list state: destroy any in-column
    * detail and re-attach the list. Called when the surface is detached
@@ -52,6 +53,11 @@ export interface FocusDomainSurfaceView {
    * object's back action button — only shown while a detail is open).
    */
   back?(): void;
+  /**
+   * Optional back-veto: return false to defer the back (e.g. the
+   * composer asks "Save as draft?" and re-triggers back afterwards).
+   */
+  confirmBack?(): boolean;
   /**
    * Sync the browser URL with the surface's current state (list ↔
    * detail). Called by the stage when a surface (re)mounts, so a
@@ -147,7 +153,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Social Media'),
     icon: 'icon-home',
     route: '/timeline',
-    viewTypes: ['single-note'],
+    viewTypes: ['single-note', 'new-note'],
     createSurface: socialSurface,
     createSettings: socialSettings,
   },
