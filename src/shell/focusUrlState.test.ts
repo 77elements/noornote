@@ -49,6 +49,24 @@ describe('parseFocusUrl', () => {
       defId: 'media',
       kind: 'secondary',
     });
+    expect(parseFocusUrl('/marketplace')).toEqual({
+      defId: 'marketplace',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/marketplace/post')).toEqual({
+      defId: 'marketplace',
+      kind: 'secondary',
+    });
+    expect(parseFocusUrl('/marketplace/edit/naddr1abc')).toEqual({
+      defId: 'marketplace',
+      kind: 'secondary',
+      param: 'naddr1abc',
+    });
+    expect(parseFocusUrl('/listing/naddr1abc')).toEqual({
+      defId: 'marketplace',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
     expect(parseFocusUrl('/profile')).toEqual({
       defId: 'profile',
       kind: 'list',

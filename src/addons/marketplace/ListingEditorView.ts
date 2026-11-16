@@ -49,6 +49,16 @@ const FREQUENCY_OPTIONS = [
 
 type TabMode = 'edit' | 'preview';
 
+/** Optional exit seam: Focus UI (v2) closes the composer column instead of a classic router navigation. */
+export interface ListingEditorViewOptions {
+  /**
+   * Called on publish success (with the listing's naddr — the surface
+   * opens the published listing as its detail) instead of the classic
+   * navigation to /listing/:naddr.
+   */
+  onClose?: (naddr?: string) => void;
+}
+
 export class ListingEditorView extends View {
   private container: HTMLElement;
   private router: Router;
@@ -90,10 +100,12 @@ export class ListingEditorView extends View {
   // Edit mode
   private editNaddr: string | null;
   private isEditMode: boolean = false;
+  private readonly onClose: ((naddr?: string) => void) | null;
 
-  constructor(naddr?: string) {
+  constructor(naddr?: string, options?: ListingEditorViewOptions) {
     super();
     this.editNaddr = naddr || null;
+    this.onClose = options?.onClose ?? null;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--listing-editor';
     this.router = Router.getInstance();
@@ -183,7 +195,6 @@ export class ListingEditorView extends View {
         <div class="article-editor">
           <header class="l-spread">
             <h1>${this.isEditMode ? _('Edit Listing') : _('New Listing')}</h1>
-            <button class="btn btn--passive btn--medium" data-action="back">${_('Back')}</button>
           </header>
 
           <div class="article-editor__toolbar">
@@ -200,7 +211,7 @@ export class ListingEditorView extends View {
 
           <footer class="article-editor__footer">
             ${this.toolbar.render()}
-            <div class="article-editor__actions">
+            <div class="article-editor__actions l-row--right">
               <button class="btn" data-action="publish">${this.isEditMode ? _('Update Listing') : _('Publish Listing')}</button>
             </div>
           </footer>
@@ -365,13 +376,6 @@ export class ListingEditorView extends View {
   }
 
   private setupEventListeners(): void {
-    // Back
-    this.container
-      .querySelector('[data-action="back"]')
-      ?.addEventListener('click', () => {
-        this.router.navigate('/marketplace');
-      });
-
     // Tabs, accordion, relay selector, footer toolbar (shared editor chrome)
     setupEditorChrome({
       container: this.container,
@@ -714,7 +718,8 @@ export class ListingEditorView extends View {
         ModuleLoader.getInstance()
           .getApi<ProfileModuleApi>('profile')
           ?.invalidateCarouselCacheForCurrentUser();
-        this.router.navigate(`/listing/${naddr}`);
+        if (this.onClose) this.onClose(naddr);
+        else this.router.navigate(`/listing/${naddr}`);
       }
     } finally {
       this.isPublishing = false;

@@ -533,6 +533,11 @@ html:not(.ui--focus) .focus-view-header__action {
   }
 }
 
+// Marketplace: same composer clearance for the listing editor.
+.focus-surface--marketplace .article-editor {
+  padding-bottom: $gap;
+}
+
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in
 // the shell. Covers the ED-t panel area (not the tab) and centers the
 // switch vertically, left-aligned.

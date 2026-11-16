@@ -19,6 +19,7 @@ import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
+import { marketplaceSurface } from './focusMarketplaceSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -306,6 +307,11 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Marketplace'),
     icon: 'icon-shopping-bag',
     addon: true,
+    route: '/marketplace',
+    viewTypes: ['listing', 'write-listing', 'edit-listing'],
+    createSurface: marketplaceSurface,
+    // list = the listing feed, detail = a listing (/listing/:naddr),
+    // secondary = the listing composer (/marketplace/post).
   },
   {
     id: 'follow-packs',

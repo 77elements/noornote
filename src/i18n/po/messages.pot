@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
-#: src/components/views/ArticleEditorView.ts:901
+#: src/components/views/ArticleEditorView.ts:934
 msgid " and "
 msgstr ""
 
@@ -676,7 +676,7 @@ msgstr ""
 msgid "Activate the <a class=\"live-stream-card__hint-link\" href=\"/addons/live-streams\">Live Streams</a> addon to see this live stream."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:218
+#: src/addons/marketplace/ListingEditorView.ts:229
 #: src/components/views/AddonsOverviewView.ts:110
 msgid "Active"
 msgstr ""
@@ -752,7 +752,7 @@ msgstr ""
 msgid "Add private note. Only readable by you under this npub."
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:71
+#: src/addons/marketplace/MarketplaceTimeline.ts:72
 #: src/addons/marketplace/MyListingsView.ts:53
 msgid "Add Product"
 msgstr ""
@@ -781,7 +781,7 @@ msgstr ""
 msgid "Add to Tribe"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:258
+#: src/addons/marketplace/ListingEditorView.ts:269
 msgid "Add URL"
 msgstr ""
 
@@ -882,7 +882,7 @@ msgstr ""
 msgid "all"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:240
+#: src/addons/marketplace/MarketplaceTimeline.ts:245
 #: src/addons/note-taking/NoteTakingView.ts:198
 #: src/addons/note-taking/NoteTakingView.ts:301
 #: src/components/views/NotificationsView.ts:115
@@ -1018,7 +1018,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:340
+#: src/shell/focusDomains.ts:346
 msgid "Analytics"
 msgstr ""
 
@@ -1157,7 +1157,7 @@ msgstr ""
 msgid "Article feed source, secondary column"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:209
+#: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:107
 msgid "Article not found"
 msgstr ""
@@ -1174,18 +1174,18 @@ msgstr ""
 msgid "Article scheduled for %s"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1344
-#: src/components/views/ArticleEditorView.ts:360
+#: src/components/views/ArticleEditorView.ts:1378
+#: src/components/views/ArticleEditorView.ts:393
 msgid "Article title..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:237
 #: src/components/layout/MainLayout.ts:2112
 #: src/components/settings/NotificationPrioritySection.ts:85
-#: src/components/views/ArticleTimelineView.ts:37
+#: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2369
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:201
+#: src/shell/focusDomains.ts:202
 msgid "Articles"
 msgstr ""
 
@@ -1233,15 +1233,15 @@ msgstr ""
 msgid "Author excluded"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:314
+#: src/addons/marketplace/ListingEditorView.ts:325
 msgid "auto-generated"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:473
+#: src/components/views/ArticleEditorView.ts:506
 msgid "auto-generated, change only if you know what you're doing"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:314
+#: src/addons/marketplace/ListingEditorView.ts:325
 msgid "auto-generated, do not change"
 msgstr ""
 
@@ -1291,9 +1291,8 @@ msgstr ""
 msgid "awarded you a badge"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
-#: src/components/views/ArticleEditorView.ts:312
+#: src/components/views/ArticleEditorView.ts:345
 #: src/shell/focusStage.ts:418
 #: src/shell/focusStage.ts:563
 msgid "Back"
@@ -1396,7 +1395,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2281
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:344
+#: src/shell/focusDomains.ts:350
 msgid "Badges"
 msgstr ""
 
@@ -1406,7 +1405,7 @@ msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:79
 #: src/addons/group-chats/GroupChatsSettings.ts:84
-#: src/components/views/ArticleEditorView.ts:332
+#: src/components/views/ArticleEditorView.ts:365
 msgid "beta"
 msgstr ""
 
@@ -1585,7 +1584,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:235
+#: src/shell/focusDomains.ts:236
 msgid "Bookmarks"
 msgstr ""
 
@@ -1613,11 +1612,11 @@ msgstr ""
 msgid "Bottom panel"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:286
+#: src/addons/marketplace/ListingEditorView.ts:297
 msgid "Brief description for listing cards..."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:410
+#: src/components/views/ArticleEditorView.ts:443
 msgid "Brief description of your article..."
 msgstr ""
 
@@ -1668,7 +1667,7 @@ msgstr ""
 msgid "Bulk delete"
 msgstr ""
 
-#: src/shell/focusDomains.ts:359
+#: src/shell/focusDomains.ts:365
 msgid "Bulk Delete"
 msgstr ""
 
@@ -1716,7 +1715,7 @@ msgstr ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2216
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:316
+#: src/shell/focusDomains.ts:322
 msgid "Calendar"
 msgstr ""
 
@@ -2010,11 +2009,11 @@ msgstr ""
 msgid "Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>\"Create keystore\"</strong>"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:264
+#: src/components/views/VideoEditorView.ts:260
 msgid "Click or drag & drop to upload video"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:445
+#: src/components/views/ArticleEditorView.ts:478
 msgid "click to add to Tags"
 msgstr ""
 
@@ -2228,8 +2227,8 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1347
-#: src/components/views/ArticleEditorView.ts:367
+#: src/components/views/ArticleEditorView.ts:1381
+#: src/components/views/ArticleEditorView.ts:400
 msgid "Content (Markdown)"
 msgstr ""
 
@@ -2436,7 +2435,7 @@ msgid "Country"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:487
-#: src/components/views/ArticleEditorView.ts:388
+#: src/components/views/ArticleEditorView.ts:421
 msgid "Cover Image"
 msgstr ""
 
@@ -2535,7 +2534,7 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:63
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:285
+#: src/shell/focusDomains.ts:286
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2569,7 +2568,7 @@ msgstr ""
 msgid "Danger Zone"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:70
+#: src/addons/marketplace/MarketplaceTimeline.ts:71
 msgid "Dashboard"
 msgstr ""
 
@@ -2771,8 +2770,8 @@ msgstr ""
 msgid "Delete draft"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1138
-#: src/components/views/ArticleEditorView.ts:331
+#: src/components/views/ArticleEditorView.ts:1171
+#: src/components/views/ArticleEditorView.ts:364
 msgid "Delete Draft"
 msgstr ""
 
@@ -2911,11 +2910,11 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/marketplace/ListingEditorView.ts:271
+#: src/addons/marketplace/ListingEditorView.ts:282
 msgid "Describe your product..."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:177
+#: src/components/views/VideoEditorView.ts:173
 msgid "Describe your video..."
 msgstr ""
 
@@ -2925,13 +2924,13 @@ msgstr ""
 #: src/addons/feedback-board/FeedbackBoardView.ts:629
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
-#: src/components/views/VideoEditorView.ts:173
+#: src/components/views/VideoEditorView.ts:169
 #: src/lists/bookmarks.ts:3781
 #: src/lists/bookmarks.ts:3965
 msgid "Description"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:270
+#: src/addons/marketplace/ListingEditorView.ts:281
 msgid "Description (Markdown)"
 msgstr ""
 
@@ -2939,10 +2938,10 @@ msgstr ""
 msgid "Description (optional)"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:277
+#: src/addons/marketplace/ListingEditorView.ts:288
 #: src/components/layout/MainLayout.ts:2210
-#: src/components/views/ArticleEditorView.ts:380
-#: src/components/views/VideoEditorView.ts:185
+#: src/components/views/ArticleEditorView.ts:413
+#: src/components/views/VideoEditorView.ts:181
 msgid "Details"
 msgstr ""
 
@@ -3025,7 +3024,7 @@ msgstr ""
 
 #: src/addons/calendar/CalendarImportExport.ts:103
 #: src/addons/calendar/CalendarImportExport.ts:463
-#: src/components/views/ArticleEditorView.ts:1010
+#: src/components/views/ArticleEditorView.ts:1043
 #: src/components/views/ProfileEditView.ts:80
 msgid "Discard"
 msgstr ""
@@ -3050,7 +3049,7 @@ msgstr ""
 msgid "discovered"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:444
+#: src/components/views/ArticleEditorView.ts:477
 msgid "Discovery tags"
 msgstr ""
 
@@ -3073,7 +3072,7 @@ msgstr ""
 msgid "Display sidebar widget"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:320
+#: src/components/views/ArticleEditorView.ts:353
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
@@ -3237,10 +3236,10 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:377
 #: src/addons/calendar/CalendarCollectionsModal.ts:60
 #: src/addons/calendar/CalendarEventModal.ts:121
-#: src/addons/marketplace/ListingEditorView.ts:191
+#: src/addons/marketplace/ListingEditorView.ts:202
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
-#: src/components/views/ArticleEditorView.ts:317
+#: src/components/views/ArticleEditorView.ts:350
 #: src/lists/bookmarks.ts:3285
 msgid "Edit"
 msgstr ""
@@ -3257,7 +3256,7 @@ msgstr ""
 msgid "Edit article"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:311
+#: src/components/views/ArticleEditorView.ts:344
 msgid "Edit Article"
 msgstr ""
 
@@ -3298,7 +3297,7 @@ msgstr ""
 msgid "Edit listing"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:185
+#: src/addons/marketplace/ListingEditorView.ts:197
 msgid "Edit Listing"
 msgstr ""
 
@@ -3316,7 +3315,7 @@ msgstr ""
 msgid "Edit Profile"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:229
+#: src/components/views/TimelineView.ts:222
 msgid "Edit tribes"
 msgstr ""
 
@@ -3324,7 +3323,7 @@ msgstr ""
 msgid "Edit your profile"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:296
+#: src/addons/marketplace/ListingEditorView.ts:307
 msgid "electronics, vintage (comma separated)"
 msgstr ""
 
@@ -3839,7 +3838,7 @@ msgid "Failed to load app"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:582
-#: src/components/views/ArticleEditorView.ts:242
+#: src/components/views/ArticleEditorView.ts:275
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
 msgstr ""
@@ -3856,13 +3855,13 @@ msgstr ""
 msgid "Failed to load follows"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:159
+#: src/addons/marketplace/ListingEditorView.ts:171
 #: src/addons/marketplace/ListingView.ts:365
 #: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:457
+#: src/addons/marketplace/MarketplaceTimeline.ts:462
 #: src/addons/marketplace/MyListingsView.ts:123
 msgid "Failed to load listings"
 msgstr ""
@@ -4117,7 +4116,7 @@ msgid "Failed: %s"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:347
+#: src/shell/focusDomains.ts:353
 msgid "Feedback Board"
 msgstr ""
 
@@ -4210,7 +4209,7 @@ msgstr ""
 msgid "First initial run, gathering your data from relays. This takes a moment; subsequent visits load instantly from cache and refresh incrementally."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:320
+#: src/components/views/ArticleEditorView.ts:353
 msgid "Focus mode"
 msgstr ""
 
@@ -4290,7 +4289,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:312
+#: src/shell/focusDomains.ts:318
 msgid "Follow Packs"
 msgstr ""
 
@@ -4327,7 +4326,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:366
+#: src/shell/focusDomains.ts:372
 msgid "Follower Notification"
 msgstr ""
 
@@ -4373,7 +4372,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:255
+#: src/shell/focusDomains.ts:256
 msgid "Follows"
 msgstr ""
 
@@ -4526,7 +4525,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:372
+#: src/shell/focusDomains.ts:378
 msgid "Group Chats"
 msgstr ""
 
@@ -4566,7 +4565,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:353
+#: src/shell/focusDomains.ts:359
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4726,9 +4725,9 @@ msgstr ""
 msgid "https://..."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:257
-#: src/components/views/ArticleEditorView.ts:394
-#: src/components/views/VideoEditorView.ts:198
+#: src/addons/marketplace/ListingEditorView.ts:268
+#: src/components/views/ArticleEditorView.ts:427
+#: src/components/views/VideoEditorView.ts:194
 msgid "https://... or upload"
 msgstr ""
 
@@ -4803,7 +4802,7 @@ msgstr ""
 msgid "Image URL"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:240
+#: src/addons/marketplace/ListingEditorView.ts:251
 msgid "Images"
 msgstr ""
 
@@ -4904,7 +4903,7 @@ msgstr ""
 msgid "inactive"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:220
+#: src/addons/marketplace/ListingEditorView.ts:231
 #: src/components/views/AddonsOverviewView.ts:110
 msgid "Inactive"
 msgstr ""
@@ -4928,7 +4927,7 @@ msgstr ""
 msgid "Insert Image"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:439
+#: src/components/views/ArticleEditorView.ts:472
 msgid "Insert recipe template"
 msgstr ""
 
@@ -5051,7 +5050,7 @@ msgstr ""
 msgid "Keep editing"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1011
+#: src/components/views/ArticleEditorView.ts:1044
 msgid "Keep Editing"
 msgstr ""
 
@@ -5118,8 +5117,8 @@ msgstr ""
 msgid "Known"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:238
-#: src/components/views/VideoEditorView.ts:533
+#: src/components/views/VideoEditorView.ts:234
+#: src/components/views/VideoEditorView.ts:522
 msgid "Landscape"
 msgstr ""
 
@@ -5139,7 +5138,7 @@ msgstr ""
 msgid "Last checked %s."
 msgstr ""
 
-#: src/components/views/TimelineView.ts:300
+#: src/components/views/TimelineView.ts:293
 msgid "Last notes per follow"
 msgstr ""
 
@@ -5306,7 +5305,7 @@ msgstr ""
 msgid "Listing frequency: %s"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:133
+#: src/addons/marketplace/ListingEditorView.ts:145
 #: src/addons/marketplace/ListingView.ts:352
 #: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
@@ -5338,7 +5337,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:300
+#: src/shell/focusDomains.ts:301
 msgid "Live Streams"
 msgstr ""
 
@@ -5368,7 +5367,7 @@ msgstr ""
 msgid "Loading app..."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:190
+#: src/components/views/ArticleEditorView.ts:223
 #: src/components/views/ArticleView.ts:90
 msgid "Loading article..."
 msgstr ""
@@ -5432,7 +5431,7 @@ msgstr ""
 msgid "Loading items…"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:124
+#: src/addons/marketplace/ListingEditorView.ts:136
 #: src/addons/marketplace/ListingView.ts:53
 msgid "Loading listing..."
 msgstr ""
@@ -5468,7 +5467,7 @@ msgstr ""
 msgid "Loading more follows..."
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:57
+#: src/addons/marketplace/MarketplaceTimeline.ts:58
 msgid "Loading more listings..."
 msgstr ""
 
@@ -5602,7 +5601,7 @@ msgid "Loading your notes..."
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:124
-#: src/addons/marketplace/MarketplaceTimeline.ts:357
+#: src/addons/marketplace/MarketplaceTimeline.ts:362
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/notifications/NotificationItem.ts:113
 #: src/components/ui/AccountSwitcher.ts:101
@@ -5682,7 +5681,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:131
-#: src/addons/marketplace/ListingEditorView.ts:290
+#: src/addons/marketplace/ListingEditorView.ts:301
 msgid "Location"
 msgstr ""
 
@@ -5838,7 +5837,8 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:306
+#: src/shell/focusDomains.ts:307
+#: src/shell/focusMarketplaceSurface.ts:36
 msgid "Marketplace"
 msgstr ""
 
@@ -5850,7 +5850,7 @@ msgstr ""
 msgid "Marketplace enabled"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:449
+#: src/addons/marketplace/MarketplaceTimeline.ts:454
 msgid "Marketplace listings will appear here"
 msgstr ""
 
@@ -5883,7 +5883,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:210
+#: src/shell/focusDomains.ts:211
 #: src/shell/focusMediaSurface.ts:42
 msgid "Media"
 msgstr ""
@@ -5895,7 +5895,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:128
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:294
 #: src/addons/follow-packs/FollowPackManager.ts:553
-#: src/components/views/VideoEditorView.ts:392
+#: src/components/views/VideoEditorView.ts:381
 msgid "Media module not available"
 msgstr ""
 
@@ -5986,7 +5986,7 @@ msgstr ""
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:227
+#: src/shell/focusDomains.ts:228
 msgid "Messages"
 msgstr ""
 
@@ -6150,7 +6150,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:266
+#: src/shell/focusDomains.ts:267
 msgid "Muted"
 msgstr ""
 
@@ -6288,7 +6288,7 @@ msgstr ""
 msgid "New keypair generated"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:185
+#: src/addons/marketplace/ListingEditorView.ts:197
 msgid "New Listing"
 msgstr ""
 
@@ -6442,7 +6442,7 @@ msgstr ""
 msgid "No company, no single point of failure"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1231
+#: src/components/views/ArticleEditorView.ts:1265
 msgid "No content yet..."
 msgstr ""
 
@@ -6518,7 +6518,7 @@ msgstr ""
 msgid "No likes yet"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:448
+#: src/addons/marketplace/MarketplaceTimeline.ts:453
 msgid "No listings found"
 msgstr ""
 
@@ -6840,7 +6840,7 @@ msgstr ""
 msgid "Nostr illustration by @awayuki"
 msgstr ""
 
-#: src/shell/focusDomains.ts:363
+#: src/shell/focusDomains.ts:369
 msgid "Nostr Majlis"
 msgstr ""
 
@@ -6863,11 +6863,11 @@ msgstr ""
 msgid "Nostr-Majlis"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:421
+#: src/components/views/ArticleEditorView.ts:454
 msgid "nostr, bitcoin, technology (comma separated)"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:215
+#: src/components/views/VideoEditorView.ts:211
 msgid "nostr, music, tutorial (comma separated)"
 msgstr ""
 
@@ -6975,7 +6975,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:319
+#: src/shell/focusDomains.ts:325
 msgid "Note taking"
 msgstr ""
 
@@ -7026,7 +7026,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:219
+#: src/shell/focusDomains.ts:220
 msgid "Notifications"
 msgstr ""
 
@@ -7054,7 +7054,7 @@ msgstr ""
 msgid "Notify on new articles"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:492
+#: src/components/views/ArticleEditorView.ts:525
 msgid "Now (on publish)"
 msgstr ""
 
@@ -7389,7 +7389,7 @@ msgstr ""
 msgid "Pick another label or “%s”."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:464
+#: src/components/views/ArticleEditorView.ts:497
 msgid "Pick date"
 msgstr ""
 
@@ -7521,7 +7521,7 @@ msgstr ""
 msgid "Please log in to view your mute list."
 msgstr ""
 
-#: src/components/views/TimelineView.ts:138
+#: src/components/views/TimelineView.ts:139
 msgid "Please login to view timeline"
 msgstr ""
 
@@ -7595,8 +7595,8 @@ msgstr ""
 msgid "Poll: %s"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:238
-#: src/components/views/VideoEditorView.ts:533
+#: src/components/views/VideoEditorView.ts:234
+#: src/components/views/VideoEditorView.ts:522
 msgid "Portrait"
 msgstr ""
 
@@ -7630,8 +7630,12 @@ msgstr ""
 msgid "Post Highlight"
 msgstr ""
 
+#: src/shell/focusMarketplaceSurface.ts:37
+msgid "Post Listing"
+msgstr ""
+
 #: src/components/layout/MainLayout.ts:2180
-#: src/components/views/VideoEditorView.ts:127
+#: src/components/views/VideoEditorView.ts:123
 #: src/shell/focusMediaSurface.ts:43
 msgid "Post Media"
 msgstr ""
@@ -7698,8 +7702,8 @@ msgstr ""
 msgid "Prayer times, dhikr and holiday reminders."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:192
-#: src/components/views/ArticleEditorView.ts:318
+#: src/addons/marketplace/ListingEditorView.ts:203
+#: src/components/views/ArticleEditorView.ts:351
 msgid "Preview"
 msgstr ""
 
@@ -7722,7 +7726,7 @@ msgstr ""
 msgid "Previous year"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:231
+#: src/addons/marketplace/ListingEditorView.ts:242
 msgid "Price *"
 msgstr ""
 
@@ -7811,7 +7815,7 @@ msgstr ""
 msgid "Product"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:227
+#: src/addons/marketplace/ListingEditorView.ts:238
 msgid "Product name..."
 msgstr ""
 
@@ -7830,7 +7834,7 @@ msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:274
+#: src/shell/focusDomains.ts:275
 msgid "Profile"
 msgstr ""
 
@@ -7910,8 +7914,8 @@ msgstr ""
 msgid "Public petname — stored in your contact list (NIP-02), visible to everyone. Click to edit."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:334
-#: src/components/views/VideoEditorView.ts:141
+#: src/components/views/ArticleEditorView.ts:367
+#: src/components/views/VideoEditorView.ts:137
 msgid "Publish"
 msgstr ""
 
@@ -7921,7 +7925,7 @@ msgid_plural "Publish %s events"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/views/ArticleEditorView.ts:430
+#: src/components/views/ArticleEditorView.ts:463
 msgid "Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients list this article. Content should follow the recipe template (Details / Ingredients / Directions)."
 msgstr ""
 
@@ -7943,12 +7947,12 @@ msgstr ""
 msgid "Publish imports"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:204
+#: src/addons/marketplace/ListingEditorView.ts:215
 msgid "Publish Listing"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:458
-#: src/components/views/ArticleEditorView.ts:529
+#: src/components/views/ArticleEditorView.ts:491
+#: src/components/views/ArticleEditorView.ts:562
 msgid "Published at"
 msgstr ""
 
@@ -8004,10 +8008,10 @@ msgid "Publishing to relays..."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:773
-#: src/addons/marketplace/ListingEditorView.ts:685
+#: src/addons/marketplace/ListingEditorView.ts:689
 #: src/components/onboarding/AccountSetupWizard.ts:3060
-#: src/components/views/ArticleEditorView.ts:1172
-#: src/components/views/VideoEditorView.ts:580
+#: src/components/views/ArticleEditorView.ts:1205
+#: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
 msgstr ""
 
@@ -8234,20 +8238,20 @@ msgstr ""
 msgid "Recent changes (%s)"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:822
+#: src/components/views/ArticleEditorView.ts:855
 msgid "Recipe (zap.cooking)"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:899
+#: src/components/views/ArticleEditorView.ts:932
 msgid "Recipe hint: add a %s section so recipe clients can parse it."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:892
+#: src/components/views/ArticleEditorView.ts:925
 msgid "Recipe hint: add a cover image, recipe clients expect one."
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:216
+#: src/shell/focusDomains.ts:217
 msgid "Recipes"
 msgstr ""
 
@@ -8363,8 +8367,8 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:98
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:238
 #: src/addons/follow-packs/FollowPackManager.ts:724
-#: src/addons/marketplace/ListingEditorView.ts:248
-#: src/addons/marketplace/ListingEditorView.ts:601
+#: src/addons/marketplace/ListingEditorView.ts:259
+#: src/addons/marketplace/ListingEditorView.ts:605
 #: src/components/profile/ProfileSearchComponent.ts:308
 #: src/components/settings/RelaySettingsSection.ts:536
 #: src/components/user-search/UserSearchInput.ts:397
@@ -8430,7 +8434,7 @@ msgstr ""
 msgid "Remove Relay"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:244
+#: src/components/views/VideoEditorView.ts:240
 msgid "Remove video"
 msgstr ""
 
@@ -8597,8 +8601,8 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:689
 #: src/addons/calendar/CalendarImportExport.ts:118
 #: src/addons/calendar/CalendarImportExport.ts:131
-#: src/components/views/ArticleEditorView.ts:465
-#: src/components/views/ArticleEditorView.ts:517
+#: src/components/views/ArticleEditorView.ts:498
+#: src/components/views/ArticleEditorView.ts:550
 #: src/shell/focusSettings.ts:494
 msgid "Reset"
 msgstr ""
@@ -8728,7 +8732,7 @@ msgstr ""
 msgid "Restored from file (added %s, removed %s)"
 msgstr ""
 
-#: src/addons/marketplace/MarketplaceTimeline.ts:458
+#: src/addons/marketplace/MarketplaceTimeline.ts:463
 #: src/components/gif/GifPicker.ts:497
 #: src/components/relay-browser/RelayBrowser.ts:308
 #: src/components/system/OfflineOverlay.ts:49
@@ -8819,7 +8823,7 @@ msgstr ""
 msgid "Save draft"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:332
+#: src/components/views/ArticleEditorView.ts:365
 msgid "Save Draft"
 msgstr ""
 
@@ -8882,7 +8886,7 @@ msgid "Saving to file..."
 msgstr ""
 
 #: src/components/profile/ProfileEditor.ts:122
-#: src/components/views/ArticleEditorView.ts:1172
+#: src/components/views/ArticleEditorView.ts:1205
 #: src/lists/bookmarks.ts:5403
 #: src/lists/follows.ts:1878
 #: src/lists/mutes.ts:1993
@@ -8905,7 +8909,7 @@ msgstr ""
 #: src/components/post/PostNoteModal.ts:393
 #: src/components/post/PostNoteModal.ts:536
 #: src/components/post/PostNoteModal.ts:555
-#: src/components/views/ArticleEditorView.ts:1080
+#: src/components/views/ArticleEditorView.ts:1113
 #: src/components/views/NewNoteView.ts:1231
 #: src/components/views/NewNoteView.ts:432
 #: src/components/views/NewNoteView.ts:577
@@ -8914,7 +8918,7 @@ msgstr ""
 msgid "Schedule"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1076
+#: src/components/views/ArticleEditorView.ts:1109
 msgid "Schedule Article"
 msgstr ""
 
@@ -8935,7 +8939,7 @@ msgstr ""
 msgid "Schedule Post"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:333
+#: src/components/views/ArticleEditorView.ts:366
 msgid "Schedule Publish"
 msgstr ""
 
@@ -8951,7 +8955,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:325
+#: src/shell/focusDomains.ts:331
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -8969,7 +8973,7 @@ msgstr ""
 msgid "Scheduled time must be at least 1 minute in the future"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1092
+#: src/components/views/ArticleEditorView.ts:1125
 msgid "Scheduling..."
 msgstr ""
 
@@ -9271,7 +9275,7 @@ msgstr ""
 msgid "Set a password for this account"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:459
+#: src/components/views/ArticleEditorView.ts:492
 msgid "set a past date for older articles you're re-publishing"
 msgstr ""
 
@@ -9279,7 +9283,7 @@ msgstr ""
 msgid "Set a PIN"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:534
+#: src/components/views/ArticleEditorView.ts:567
 msgid "Set date"
 msgstr ""
 
@@ -9654,8 +9658,8 @@ msgstr ""
 msgid "Slug (unique identifier)"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:313
-#: src/components/views/ArticleEditorView.ts:472
+#: src/addons/marketplace/ListingEditorView.ts:324
+#: src/components/views/ArticleEditorView.ts:505
 msgid "Slug / Identifier"
 msgstr ""
 
@@ -9663,8 +9667,8 @@ msgstr ""
 msgid "Slug and Name are required"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:156
-#: src/shell/focusDomains.ts:192
+#: src/components/views/TimelineView.ts:154
+#: src/shell/focusDomains.ts:193
 msgid "Social Media"
 msgstr ""
 
@@ -9690,9 +9694,9 @@ msgstr ""
 msgid "Soft muted, their interactions no longer notify you"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:219
+#: src/addons/marketplace/ListingEditorView.ts:230
 #: src/addons/marketplace/ListingView.ts:107
-#: src/addons/marketplace/MarketplaceTimeline.ts:333
+#: src/addons/marketplace/MarketplaceTimeline.ts:338
 #: src/components/views/ListingReadView.ts:116
 msgid "Sold"
 msgstr ""
@@ -9793,7 +9797,7 @@ msgstr ""
 msgid "Starts"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:303
+#: src/addons/marketplace/ListingEditorView.ts:314
 msgid "Status"
 msgstr ""
 
@@ -9845,7 +9849,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:1062
+#: src/App.ts:1084
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9931,8 +9935,8 @@ msgstr[1] ""
 msgid "Suggest more usernames"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:285
-#: src/components/views/ArticleEditorView.ts:406
+#: src/addons/marketplace/ListingEditorView.ts:296
+#: src/components/views/ArticleEditorView.ts:439
 msgid "Summary"
 msgstr ""
 
@@ -9949,7 +9953,7 @@ msgstr ""
 msgid "Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in every list to control sync from/to relays and local backups). Also unlocks the Danger Zone for resetting corrupted list data."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:241
+#: src/components/views/VideoEditorView.ts:237
 msgid "Switch orientation"
 msgstr ""
 
@@ -10096,9 +10100,9 @@ msgstr ""
 msgid "tagged you in an image"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:295
-#: src/components/views/ArticleEditorView.ts:416
-#: src/components/views/VideoEditorView.ts:210
+#: src/addons/marketplace/ListingEditorView.ts:306
+#: src/components/views/ArticleEditorView.ts:449
+#: src/components/views/VideoEditorView.ts:206
 msgid "Tags"
 msgstr ""
 
@@ -10444,7 +10448,7 @@ msgstr ""
 msgid "Threads you muted to stop notifications from replies."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:193
+#: src/components/views/VideoEditorView.ts:189
 msgid "Thumbnail"
 msgstr ""
 
@@ -10497,7 +10501,7 @@ msgid "Time unit"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2091
-#: src/components/views/TimelineView.ts:292
+#: src/components/views/TimelineView.ts:285
 msgid "Timeline"
 msgstr ""
 
@@ -10529,13 +10533,13 @@ msgstr ""
 #: src/addons/calendar/CalendarEventEditor.ts:98
 #: src/addons/feedback-board/FeedbackBoardView.ts:621
 #: src/addons/note-taking/NoteEditorModal.ts:55
-#: src/components/views/ArticleEditorView.ts:1343
-#: src/components/views/ArticleEditorView.ts:355
-#: src/components/views/VideoEditorView.ts:161
+#: src/components/views/ArticleEditorView.ts:1377
+#: src/components/views/ArticleEditorView.ts:388
+#: src/components/views/VideoEditorView.ts:157
 msgid "Title"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:226
+#: src/addons/marketplace/ListingEditorView.ts:237
 msgid "Title *"
 msgstr ""
 
@@ -10566,10 +10570,10 @@ msgid "Toggle balance visibility"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:464
-#: src/addons/marketplace/ListingEditorView.ts:279
+#: src/addons/marketplace/ListingEditorView.ts:290
 #: src/components/settings/SettingsSection.ts:43
-#: src/components/views/ArticleEditorView.ts:382
-#: src/components/views/VideoEditorView.ts:187
+#: src/components/views/ArticleEditorView.ts:415
+#: src/components/views/VideoEditorView.ts:183
 msgid "Toggle section"
 msgstr ""
 
@@ -10641,7 +10645,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:243
+#: src/shell/focusDomains.ts:244
 msgid "Tribes"
 msgstr ""
 
@@ -10720,7 +10724,7 @@ msgstr ""
 msgid "Unfollowing..."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:482
+#: src/components/views/ArticleEditorView.ts:515
 msgid "Unique identifier for this article. Changing this after publishing creates a new article instead of updating."
 msgstr ""
 
@@ -10776,7 +10780,7 @@ msgstr ""
 msgid "Unpin from profile"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1008
+#: src/components/views/ArticleEditorView.ts:1041
 msgid "Unsaved Changes"
 msgstr ""
 
@@ -10802,7 +10806,7 @@ msgstr ""
 msgid "Unsubscribed from calendar"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:343
+#: src/addons/marketplace/ListingEditorView.ts:354
 #: src/components/article/ArticleTimeline.ts:589
 #: src/components/ui/note-rendering/CurationSetItems.ts:89
 msgid "Untitled"
@@ -10833,7 +10837,7 @@ msgstr ""
 msgid "Upcoming"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:334
+#: src/components/views/ArticleEditorView.ts:367
 msgid "Update"
 msgstr ""
 
@@ -10851,7 +10855,7 @@ msgstr ""
 msgid "Update Follow Pack"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:204
+#: src/addons/marketplace/ListingEditorView.ts:215
 msgid "Update Listing"
 msgstr ""
 
@@ -10859,7 +10863,7 @@ msgstr ""
 msgid "Updated"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:685
+#: src/addons/marketplace/ListingEditorView.ts:689
 msgid "Updating..."
 msgstr ""
 
@@ -10883,8 +10887,8 @@ msgid "Upload failed. Please try again."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:492
-#: src/addons/marketplace/ListingEditorView.ts:261
-#: src/components/views/ArticleEditorView.ts:398
+#: src/addons/marketplace/ListingEditorView.ts:272
+#: src/components/views/ArticleEditorView.ts:431
 msgid "Upload image"
 msgstr ""
 
@@ -10897,7 +10901,7 @@ msgstr ""
 msgid "Upload media"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:202
+#: src/components/views/VideoEditorView.ts:198
 msgid "Upload thumbnail"
 msgstr ""
 
@@ -10913,7 +10917,7 @@ msgstr ""
 msgid "Uploading to media server…"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:256
+#: src/components/views/VideoEditorView.ts:252
 msgid "Uploading video..."
 msgstr ""
 
@@ -11046,7 +11050,7 @@ msgstr ""
 msgid "video"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:156
+#: src/components/views/VideoEditorView.ts:152
 msgid "Video"
 msgstr ""
 
@@ -11070,11 +11074,11 @@ msgstr ""
 msgid "Video published successfully!"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:166
+#: src/components/views/VideoEditorView.ts:162
 msgid "Video title (optional)"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:402
+#: src/components/views/VideoEditorView.ts:391
 msgid "Video upload failed"
 msgstr ""
 
@@ -11161,7 +11165,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:378
+#: src/shell/focusDomains.ts:384
 msgid "Wallet Balance"
 msgstr ""
 
@@ -11346,7 +11350,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:384
+#: src/shell/focusDomains.ts:390
 msgid "Word Filter"
 msgstr ""
 
@@ -11359,7 +11363,8 @@ msgstr ""
 msgid "Write anything you want to remember about this user…"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:311
+#: src/components/views/ArticleEditorView.ts:344
+#: src/components/views/ArticleTimelineView.ts:44
 msgid "Write Article"
 msgstr ""
 
@@ -11367,7 +11372,7 @@ msgstr ""
 msgid "Write new note"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:161
+#: src/components/views/TimelineView.ts:156
 msgid "Write Note"
 msgstr ""
 
@@ -11375,8 +11380,8 @@ msgstr ""
 msgid "Write private, encrypted notes that stay yours alone."
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1349
-#: src/components/views/ArticleEditorView.ts:372
+#: src/components/views/ArticleEditorView.ts:1383
+#: src/components/views/ArticleEditorView.ts:405
 msgid "Write your article in Markdown..."
 msgstr ""
 
@@ -11437,7 +11442,7 @@ msgstr ""
 msgid "You have already reposted this note"
 msgstr ""
 
-#: src/components/views/ArticleEditorView.ts:1009
+#: src/components/views/ArticleEditorView.ts:1042
 msgid "You have unsaved changes. Discard them?"
 msgstr ""
 

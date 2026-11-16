@@ -51,6 +51,14 @@ export function parseFocusUrl(
       }
       case 'article':
         return { defId: 'articles', kind: 'detail', param: tail };
+      case 'listing':
+        return { defId: 'marketplace', kind: 'detail', param: tail };
+      case 'marketplace':
+        // '/marketplace/post' is the listing composer (secondary detail).
+        if (tail === 'post') {
+          return { defId: 'marketplace', kind: 'secondary' };
+        }
+        return null;
       case 'articles':
         // '/articles/post' is the article composer (secondary detail);
         // no other two-segment articles route exists.
@@ -79,6 +87,15 @@ export function parseFocusUrl(
     }
   }
 
+  // Three-segment param routes (composer edit flows).
+  if (segments.length === 3) {
+    const [head, tail, param] = segments as [string, string, string];
+    if (head === 'marketplace' && tail === 'edit') {
+      return { defId: 'marketplace', kind: 'secondary', param };
+    }
+    return null;
+  }
+
   // One-segment routes: the objects' list states.
   if (segments.length === 1) {
     switch (segments[0]) {
@@ -98,6 +115,8 @@ export function parseFocusUrl(
         return { defId: 'follows', kind: 'list' };
       case 'media':
         return { defId: 'media', kind: 'list' };
+      case 'marketplace':
+        return { defId: 'marketplace', kind: 'list' };
       case 'profile':
         return { defId: 'profile', kind: 'list' };
       default:

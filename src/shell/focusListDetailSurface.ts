@@ -51,17 +51,25 @@ export interface FocusListDetailSurfaceConfig {
   /** Create the detail view for a focus-navigation param. */
   createDetail?: (param: string) => Promise<SurfaceViewHandle>;
   /**
-   * Optional second, param-less detail this surface answers to in the
-   * focus navigation seam (e.g. the social composer at
-   * /timeline/new-note). Opened via handleFocusNav for its view type.
+   * Optional composer detail this surface answers to in the focus
+   * navigation seam (e.g. the social composer at /timeline/new-note).
+   * Opened via handleFocusNav for its view type. A param-aware composer
+   * (e.g. the marketplace edit-listing flow) additionally carries
+   * `paramRoute` — openSecondaryDetail(param) then pushes the param URL
+   * and the factory receives it (edit mode).
    */
   secondary?: {
-    /** View type this secondary detail answers to. */
-    navViewType: string;
-    /** URL route while the secondary detail is shown. */
+    /**
+     * View type(s) this secondary detail answers to (e.g. the marketplace
+     * composer answers to both write-listing and edit-listing).
+     */
+    navViewType: string | string[];
+    /** URL route while the secondary detail is shown (param-less). */
     route: string;
-    /** Create the secondary detail view. */
-    createDetail: () => Promise<SurfaceViewHandle>;
+    /** URL route for a param-carrying open (edit flows). */
+    paramRoute?: (param: string) => string;
+    /** Create the secondary detail view (param = edit mode when set). */
+    createDetail: (param?: string) => Promise<SurfaceViewHandle>;
     /**
      * Per-object settings for the ED-b while THIS secondary detail is
      * shown (the gear swaps its panel content). Dynamic import so the
@@ -86,8 +94,10 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
   private detail: SurfaceViewHandle | null = null;
   /** The param of the detail currently shown (null = list state). */
   private detailParam: string | null = null;
-  /** True while the secondary (param-less) detail is shown. */
+  /** True while the secondary (composer) detail is shown. */
   private detailIsSecondary = false;
+  /** The param of the composer (edit mode), null = param-less open. */
+  private secondaryParam: string | null = null;
   private savedListScroll = 0;
 
   /** The focus column's scroll container (the stage's surface slot). */
@@ -126,9 +136,12 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     }
     if (
       this.config.secondary &&
-      viewType === this.config.secondary.navViewType
+      (Array.isArray(this.config.secondary.navViewType)
+        ? this.config.secondary.navViewType
+        : [this.config.secondary.navViewType]
+      ).includes(viewType)
     ) {
-      void this.openSecondaryDetail();
+      void this.openSecondaryDetail(param);
       return true;
     }
     return false;
@@ -193,8 +206,8 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     return this.config.secondary.settings();
   }
 
-  /** Open the configured secondary (param-less) detail in the column. */
-  async openSecondaryDetail(): Promise<void> {
+  /** Open the configured secondary (composer) detail in the column. */
+  async openSecondaryDetail(param?: string): Promise<void> {
     const secondary = this.config.secondary;
     if (!secondary) return;
     // Same list-creation guarantee as openDetail (see above).
@@ -204,14 +217,19 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.savedListScroll = this.scrollSlot?.scrollTop ?? 0;
     }
     this.detail?.destroy();
-    this.detail = await secondary.createDetail();
+    this.detail = await secondary.createDetail(param);
     this.detailIsSecondary = true;
+    this.secondaryParam = param ?? null;
     this.frame.swapToDetail(this.detail.getElement());
     if (this.config.preserveListScroll && this.scrollSlot) {
       this.scrollSlot.scrollTop = 0;
     }
     this.frame.setBackVisible(true);
-    pushFocusUrl(secondary.route);
+    pushFocusUrl(
+      param && secondary.paramRoute
+        ? secondary.paramRoute(param)
+        : secondary.route
+    );
   }
 
   private showList(): void {
@@ -220,6 +238,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     this.detail = null;
     this.detailParam = null;
     this.detailIsSecondary = false;
+    this.secondaryParam = null;
     this.frame.swapToList(this.list.getElement());
     if (this.config.preserveListScroll && this.scrollSlot) {
       this.scrollSlot.scrollTop = this.savedListScroll;
@@ -235,6 +254,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     this.detail = null;
     this.detailParam = null;
     this.detailIsSecondary = false;
+    this.secondaryParam = null;
     if (this.list) {
       this.frame.swapToList(this.list.getElement());
       if (this.config.preserveListScroll && this.scrollSlot) {
@@ -262,7 +282,11 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
    *  Router.pushUrl makes boot/restores no-ops. */
   syncUrl(): void {
     if (this.detail && this.detailIsSecondary && this.config.secondary) {
-      pushFocusUrl(this.config.secondary.route);
+      pushFocusUrl(
+        this.secondaryParam && this.config.secondary.paramRoute
+          ? this.config.secondary.paramRoute(this.secondaryParam)
+          : this.config.secondary.route
+      );
       return;
     }
     pushFocusUrl(
@@ -283,8 +307,14 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       return;
     }
     if (state.kind === 'secondary') {
-      if (this.detail && this.detailIsSecondary) return;
-      await this.openSecondaryDetail();
+      if (
+        this.detail &&
+        this.detailIsSecondary &&
+        this.secondaryParam === (state.param ?? null)
+      ) {
+        return;
+      }
+      await this.openSecondaryDetail(state.param);
       return;
     }
     if (

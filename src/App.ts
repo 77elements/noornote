@@ -528,6 +528,28 @@ export class App {
       'vev',
       true
     );
+    // /marketplace/post: the Focus UI (v2) shows this URL while the
+    // listing composer is open in the Marketplace domain. Classic HAS the
+    // listing editor (at /write-listing) — map the alias to it so a
+    // reload/direct link lands in the same composer.
+    this.registerRoute(
+      '/marketplace/post',
+      'write-listing',
+      'write-listing',
+      'lev',
+      true
+    );
+    // /marketplace/edit/:naddr: the Focus UI (v2) shows this URL while the
+    // listing composer is in edit mode in the Marketplace domain. Classic
+    // maps it to the full-page editor (same as /write-listing/:naddr).
+    this.registerRoute(
+      '/marketplace/edit/:naddr',
+      'edit-listing',
+      'edit-listing',
+      'elv',
+      true,
+      params => params.naddr
+    );
     // Explicit /follow-list alias: the Focus UI (v2) shows this URL while the
     // Follows domain holds the focus — a reload or direct link must not fall
     // through to the nip19 catch-all; classic lands on the lists overview

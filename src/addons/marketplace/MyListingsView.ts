@@ -6,6 +6,7 @@
 import { View } from '../../components/views/View';
 import { Router } from '../../services/Router';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { NostrTransport } from '../../services/transport/NostrTransport';
@@ -210,10 +211,14 @@ export class MyListingsView extends View {
         );
       });
 
-    // Edit
+    // Edit: the Focus UI (v2) opens the listing composer as the marketplace
+    // surface's edit detail (/marketplace/edit/:naddr); classic routes to
+    // the full-page editor.
     row.querySelector('[data-action="edit"]')?.addEventListener('click', e => {
       e.stopPropagation();
-      this.router.navigate(`/write-listing/${naddr}`);
+      if (!delegateToFocusUi('edit-listing', naddr)) {
+        this.router.navigate(`/write-listing/${naddr}`);
+      }
     });
 
     // Delete
