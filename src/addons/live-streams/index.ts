@@ -53,3 +53,30 @@ export function setLiveStreamsSidebarWidget(enabled: boolean): void {
     enabled
   );
 }
+
+/**
+ * A background stream is pinned (the play widget's reason to stay loaded).
+ * Safe outside a session — reads the per-account key with a fallback.
+ */
+export function hasLiveStreamsBackgroundPin(): boolean {
+  try {
+    return (
+      PerAccountLocalStorage.getInstance().get<string | null>(
+        StorageKeys.LIVE_STREAMS_PINNED,
+        null
+      ) !== null
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The addon's release guards: when the addon is enabled (the TV renders
+ * embedded live-stream players) or a background stream is pinned, the
+ * runtime must STAY loaded after an on-demand path closes. Otherwise the
+ * caller may unload (deactivateOnDemand).
+ */
+export function isLiveStreamsAutoLoaded(): boolean {
+  return isLiveStreamsEnabled() || hasLiveStreamsBackgroundPin();
+}

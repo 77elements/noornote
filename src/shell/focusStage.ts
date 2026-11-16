@@ -28,6 +28,12 @@ import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
 import { Router } from '../services/Router';
 import { NavigationDispatcher } from '../services/NavigationDispatcher';
+import { AddonLoader, type AddonRuntime } from '../addons/AddonLoader';
+import { TypedEventBus } from '../core/TypedEventBus';
+import {
+  isLiveStreamsSidebarWidget,
+  hasLiveStreamsBackgroundPin,
+} from '../addons/live-streams/index';
 import { parseFocusUrl, type FocusUrlState } from './focusUrlState';
 import { isSelfNav, pushFocusUrl } from './focusHistorySync';
 import {
@@ -57,6 +63,18 @@ const MORPH_MIN_WIDTH = 1100;
 const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
+
+/**
+ * Widgets mounted into the FV side stacks (v2). Only ids listed here get
+ * a slot; the widget instance comes from the addon runtime (structural
+ * contract, see FocusWidgetLike).
+ */
+const WIDGET_IDS = ['live-streams', 'live-streams-mini-player'] as const;
+
+/** Structural widget contract for the FV side-stack slots (v2). */
+interface FocusWidgetLike {
+  setFocusHost(host: HTMLElement | null): void;
+}
 
 /** A view type handed across objects: open this detail in the new column.
  *  param is optional — param-less view types (e.g. the composer) route to
@@ -102,10 +120,31 @@ export class FocusStage {
    */
   private columnLayout: { left: string[]; right: string[] } | null =
     this.loadColumnLayout();
+  /**
+   * Widget placement in the focused layout (FV): { [widgetId]: { side,
+   * index } }, index into the side stack's item flow (0 = above all
+   * circles). Unlisted widgets render at the default spot (right stack,
+   * top). Persisted per account (FOCUS_UI_WIDGET_LAYOUT); set by drag &
+   * drop on the widgets' move handles. Separate from columnLayout —
+   * domain ids collide with widget ids ('live-streams' is both).
+   */
+  private widgetLayout: Record<
+    string,
+    { side: 'left' | 'right'; index: number }
+  > = this.loadWidgetLayout();
+  /** Widget hosts currently mounted in the side stacks (see placeWidgets). */
+  private widgetHosts = new Map<
+    string,
+    { widget: FocusWidgetLike; host: HTMLElement }
+  >();
   /** Unread-diode drivers (v1 badge managers over the shell's diodes). */
   private badgeManagers: Array<{
     destroy(): void;
   }> = [];
+  /** live-streams:widget-toggle subscription (mount → destroy contract). */
+  private widgetToggleSubId: string | null = null;
+  /** live-streams:background-player subscription (mini player widget). */
+  private pinSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
@@ -174,6 +213,21 @@ export class FocusStage {
     }
     this.root.appendChild(this.grid);
     window.addEventListener('resize', this.onResize);
+    // "Show Live Streams Widget" toggled in the addon object: place (or
+    // remove) the widget live while stacks exist — next focus would
+    // otherwise only pick the new setting up.
+    this.widgetToggleSubId = TypedEventBus.getInstance().on(
+      'live-streams:widget-toggle',
+      data => this.onWidgetToggle(!!data?.enabled)
+    );
+    // Background pin gained/lost: the mini player widget appears/disappears
+    // live (its only enable condition — independent of any setting).
+    this.pinSubId = TypedEventBus.getInstance().on(
+      'live-streams:background-player',
+      data => {
+        this.setWidgetAvailable('live-streams-mini-player', !!data?.pinned);
+      }
+    );
     this.setupBadgeManagers();
   }
 
@@ -246,6 +300,42 @@ export class FocusStage {
   }
 
   /**
+   * The persisted FV widget placement, sanitized against WIDGET_IDS:
+   * unknown ids dropped, malformed spots fall back to the default,
+   * indexes clamped to ≥ 0.
+   */
+  private loadWidgetLayout(): Record<
+    string,
+    { side: 'left' | 'right'; index: number }
+  > {
+    const stored = PerAccountLocalStorage.getInstance().get<Record<
+      string,
+      { side: 'left' | 'right'; index: number }
+    > | null>(StorageKeys.FOCUS_UI_WIDGET_LAYOUT, null);
+    if (!stored) return {};
+    const clean: Record<string, { side: 'left' | 'right'; index: number }> = {};
+    for (const id of WIDGET_IDS) {
+      const spot = stored[id];
+      if (!spot || (spot.side !== 'left' && spot.side !== 'right')) continue;
+      clean[id] = {
+        side: spot.side,
+        index:
+          typeof spot.index === 'number' && Number.isFinite(spot.index)
+            ? Math.max(0, Math.floor(spot.index))
+            : 0,
+      };
+    }
+    return clean;
+  }
+
+  private persistWidgetLayout(): void {
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_WIDGET_LAYOUT,
+      this.widgetLayout
+    );
+  }
+
+  /**
    * The arrangement to render RIGHT NOW: the persisted column layout or,
    * when none is stored, alternating 50/50 — with registry additions since
    * the layout was saved interleaved by their SV position (even index →
@@ -269,6 +359,14 @@ export class FocusStage {
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    if (this.widgetToggleSubId) {
+      TypedEventBus.getInstance().off(this.widgetToggleSubId);
+      this.widgetToggleSubId = null;
+    }
+    if (this.pinSubId) {
+      TypedEventBus.getInstance().off(this.pinSubId);
+      this.pinSubId = null;
+    }
     window.removeEventListener(
       'router:history-changed',
       this.onRouterHistoryChanged
@@ -1099,6 +1197,7 @@ export class FocusStage {
       this.sideStacks[1],
       this.activeId
     );
+    this.reapplyWidgets();
   }
 
   /**
@@ -1178,6 +1277,7 @@ export class FocusStage {
       this.sideStacks[1],
       activeId
     );
+    this.reapplyWidgets();
   }
 
   /**
@@ -1196,6 +1296,325 @@ export class FocusStage {
       this.sideStacks[0],
       this.sideStacks[1],
       this.activeId
+    );
+    this.reapplyWidgets();
+  }
+
+  // ========== FV side-stack widgets (v2) ==========
+
+  /**
+   * The widget switch in the Live Streams object flipped: place the
+   * widget immediately (default spot) or remove its host — while stacks
+   * exist. Without stacks the next focus picks the setting up anyway.
+   */
+  private onWidgetToggle(enabled: boolean): void {
+    this.setWidgetAvailable('live-streams', enabled);
+  }
+
+  /**
+   * A widget's availability flipped (setting toggle, background pin):
+   * place it immediately (default spot) or remove its host — while
+   * stacks exist. Without stacks the next focus picks the state up.
+   */
+  private setWidgetAvailable(id: string, available: boolean): void {
+    if (!this.sideStacks) return;
+    if (available) {
+      this.placeWidgets(this.sideStacks[0], this.sideStacks[1]);
+      return;
+    }
+    const entry = this.widgetHosts.get(id);
+    if (!entry) return;
+    entry.widget.setFocusHost(null);
+    entry.host.remove();
+    this.widgetHosts.delete(id);
+  }
+
+  /**
+   * The widget instance for a registered widget id — or null when its
+   * runtime is not loaded yet (login race). The widget's enabled flag is
+   * an always-on reason, so on first miss the runtime is loaded on
+   * demand and the stacks re-applied as soon as it is up.
+   */
+  private widgetFor(id: string): FocusWidgetLike | null {
+    if (id === 'live-streams') {
+      if (!isLiveStreamsSidebarWidget()) return null;
+    } else if (id === 'live-streams-mini-player') {
+      // Shows only while a background stream is pinned — independent of
+      // the sidebar-widget setting.
+      if (!hasLiveStreamsBackgroundPin()) return null;
+    } else {
+      return null;
+    }
+    const loader = AddonLoader.getInstance();
+    const runtime = loader.getRuntime<
+      AddonRuntime & {
+        widget: FocusWidgetLike | null;
+        miniPlayer?: FocusWidgetLike | null;
+      }
+    >('live-streams');
+    if (runtime) {
+      return id === 'live-streams-mini-player'
+        ? (runtime.miniPlayer ?? null)
+        : (runtime.widget ?? null);
+    }
+    void loader.ensureLoaded('live-streams').then(() => {
+      if (this.sideStacks) this.reapplyWidgets();
+    });
+    return null;
+  }
+
+  /**
+   * Mount the activated widgets into the freshly built side stacks:
+   * persisted FOCUS_UI_WIDGET_LAYOUT spot or the default (right stack,
+   * top — above all circles). Each host wraps the widget's DOM plus its
+   * move handle.
+   */
+  private placeWidgets(left: HTMLElement, right: HTMLElement): void {
+    for (const id of WIDGET_IDS) {
+      const widget = this.widgetFor(id);
+      if (!widget || this.widgetHosts.has(id)) continue;
+      const host = this.createWidgetHost(id);
+      const spot = this.widgetLayout[id] ?? {
+        side: 'right' as const,
+        index: 0,
+      };
+      this.insertWidgetAt(
+        spot.side === 'left' ? left : right,
+        host,
+        spot.index,
+        host
+      );
+      this.widgetHosts.set(id, { widget, host });
+      widget.setFocusHost(host);
+    }
+  }
+
+  /** Re-insert the mounted hosts per their stored spot (circles moved). */
+  private reapplyWidgets(): void {
+    if (!this.sideStacks) return;
+    const [left, right] = this.sideStacks;
+    for (const [id, entry] of this.widgetHosts) {
+      const spot = this.widgetLayout[id] ?? {
+        side: 'right' as const,
+        index: 0,
+      };
+      this.insertWidgetAt(
+        spot.side === 'left' ? left : right,
+        entry.host,
+        spot.index,
+        entry.host
+      );
+    }
+    // Mount widgets that became available in the meantime (widgetFor
+    // fires ensureLoaded on the first miss; its guard skips ids that
+    // already have a host).
+    this.placeWidgets(left, right);
+  }
+
+  /** The widget's stage slot: move handle (drag) + the widget's DOM. */
+  private createWidgetHost(id: string): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'focus-widget-slot';
+    host.dataset.focusWidget = id;
+    const move = document.createElement('button');
+    move.type = 'button';
+    move.className = 'focus-widget-slot__move';
+    move.setAttribute('data-focus-widget-move', '');
+    move.setAttribute('aria-label', _('Move widget'));
+    move.innerHTML =
+      '<svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>';
+    move.addEventListener('pointerdown', ev =>
+      this.startWidgetDrag(ev, id, host)
+    );
+    move.addEventListener('click', ev => ev.stopPropagation());
+    Tooltip.attach(move, _('Move widget'));
+    host.appendChild(move);
+    return host;
+  }
+
+  /** The stack's item flow: circles + widget slots, in DOM order. */
+  private stackItems(stack: HTMLElement, exclude?: HTMLElement): HTMLElement[] {
+    return ([...stack.children] as HTMLElement[]).filter(
+      el =>
+        el !== exclude &&
+        (el.hasAttribute('data-domain-id') ||
+          el.hasAttribute('data-focus-widget'))
+    );
+  }
+
+  /**
+   * Insert a widget host at the given position in the stack's item flow
+   * (index 0 = directly under the tools). `exclude` keeps the dragged
+   * host from holding a position in its own target calculation.
+   */
+  private insertWidgetAt(
+    stack: HTMLElement,
+    host: HTMLElement,
+    index: number,
+    exclude?: HTMLElement
+  ): void {
+    const items = this.stackItems(stack, exclude);
+    const ref = items[index] ?? null;
+    if (ref) stack.insertBefore(host, ref);
+    else stack.appendChild(host);
+  }
+
+  /**
+   * Drag a widget to another position: fixed lift (escapes the stack's
+   * overflow clipping), a drop-line marks the exact insertion point in
+   * BOTH stacks (between any two items — circles and widget slots), the
+   * drop persists FOCUS_UI_WIDGET_LAYOUT and re-inserts. Same dead-zone
+   * mechanics as startColumnDrag.
+   */
+  private startWidgetDrag(
+    e: PointerEvent,
+    id: string,
+    host: HTMLElement
+  ): void {
+    if (this.morphing || !this.sideStacks) return;
+    e.stopPropagation();
+    e.preventDefault(); // no text selection / native drag while moving
+    const rect = host.getBoundingClientRect();
+    const grabX = e.clientX - rect.left;
+    const grabY = e.clientY - rect.top;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragging = false;
+    let line: HTMLElement | null = null;
+    let target: { stack: HTMLElement; index: number } | null = null;
+
+    // Insertion line into the target stack at the boundary of `index`
+    // (same content-space math as the circle drag).
+    const placeLine = (t: { stack: HTMLElement; index: number }): void => {
+      const stackRect = t.stack.getBoundingClientRect();
+      const scrollTop = t.stack.scrollTop;
+      const items = this.stackItems(t.stack, host);
+      const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
+      let y: number;
+      if (items.length === 0) {
+        const tools = t.stack.querySelector(
+          '[data-focus-stack-tools]'
+        ) as HTMLElement | null;
+        y = tools
+          ? tools.getBoundingClientRect().bottom -
+            stackRect.top +
+            scrollTop +
+            halfGap
+          : halfGap;
+      } else if (t.index >= items.length) {
+        const last = items[items.length - 1];
+        if (!last) return;
+        const r = last.getBoundingClientRect();
+        y = r.bottom - stackRect.top + scrollTop + halfGap;
+      } else {
+        const next = items[t.index];
+        if (!next) return;
+        const r = next.getBoundingClientRect();
+        y = r.top - stackRect.top + scrollTop - halfGap;
+      }
+      if (!line) {
+        line = document.createElement('div');
+        line.className = 'focus-side-stack__drop-line';
+      }
+      line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
+      if (line.parentElement !== t.stack) t.stack.appendChild(line);
+    };
+
+    const onMove = (ev: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+        dragging = true;
+        host.classList.add('is-drag-source');
+        host.style.position = 'fixed';
+        host.style.left = `${rect.left}px`;
+        host.style.top = `${rect.top}px`;
+        host.style.width = `${rect.width}px`;
+        host.style.height = `${rect.height}px`;
+      }
+      host.style.left = `${ev.clientX - grabX}px`;
+      host.style.top = `${ev.clientY - grabY}px`;
+      const next = this.widgetDropTarget(ev.clientX, ev.clientY, host);
+      if (
+        !!next !== !!target ||
+        (next &&
+          target &&
+          (next.stack !== target.stack || next.index !== target.index))
+      ) {
+        line?.remove();
+        line = null;
+        if (next) placeLine(next);
+        target = next;
+      }
+    };
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      host.classList.remove('is-drag-source');
+      host.style.position = '';
+      host.style.left = '';
+      host.style.top = '';
+      host.style.width = '';
+      host.style.height = '';
+      line?.remove();
+      line = null;
+    };
+    const onUp = (): void => {
+      const t = target;
+      cleanup();
+      if (!t || !this.sideStacks) return;
+      const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+      this.moveWidgetTo(id, side, t.index);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', cleanup);
+  }
+
+  /**
+   * Which side stack the pointer is over and at which position the drop
+   * would insert (0 = above all items of that column). Null outside both
+   * stacks. The dragged host holds no drop position.
+   */
+  private widgetDropTarget(
+    x: number,
+    y: number,
+    dragHost: HTMLElement
+  ): { stack: HTMLElement; index: number } | null {
+    if (!this.sideStacks) return null;
+    const hit = document.elementFromPoint(x, y);
+    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
+    if (
+      !stack ||
+      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
+    )
+      return null;
+    const items = this.stackItems(stack, dragHost);
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      const r = item.getBoundingClientRect();
+      if (y < r.top + r.height / 2) return { stack, index: i };
+    }
+    return { stack, index: items.length };
+  }
+
+  /** Move ONE widget to an exact position in a column and persist. */
+  private moveWidgetTo(
+    id: string,
+    side: 'left' | 'right',
+    index: number
+  ): void {
+    if (!this.sideStacks) return;
+    this.widgetLayout[id] = { side, index };
+    this.persistWidgetLayout();
+    const entry = this.widgetHosts.get(id);
+    if (!entry) return;
+    this.insertWidgetAt(
+      side === 'left' ? this.sideStacks[0] : this.sideStacks[1],
+      entry.host,
+      index,
+      entry.host
     );
   }
 
@@ -1281,6 +1700,7 @@ export class FocusStage {
       for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
     }
     this.distributeSideCircles(left, right, activeId);
+    this.placeWidgets(left, right);
     const active = this.objects.get(activeId) as HTMLElement;
     this.grid.insertBefore(left, active);
     this.grid.insertBefore(right, active.nextSibling);
@@ -1336,6 +1756,11 @@ export class FocusStage {
       const circle = this.objects.get(def.id);
       if (circle) this.grid.appendChild(circle);
     }
+    for (const [, entry] of this.widgetHosts) {
+      entry.widget.setFocusHost(null);
+      entry.host.remove();
+    }
+    this.widgetHosts.clear();
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
   }

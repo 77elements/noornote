@@ -144,7 +144,7 @@ msgstr ""
 #: src/addons/group-chats/GroupChatsSettings.ts:105
 #: src/addons/group-chats/GroupChatsSettings.ts:118
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/addons/live-streams/LiveStreamsAddonView.ts:73
+#: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:169
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:106
@@ -177,7 +177,7 @@ msgstr[1] ""
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/group-chats/GroupChatsSettings.ts:104
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
-#: src/addons/live-streams/LiveStreamsAddonView.ts:72
+#: src/addons/live-streams/LiveStreamsAddonView.ts:77
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:168
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
@@ -675,7 +675,7 @@ msgid "Add private note. Only readable by you under this npub."
 msgstr ""
 
 #: src/addons/marketplace/MarketplaceTimeline.ts:72
-#: src/addons/marketplace/MyListingsView.ts:53
+#: src/addons/marketplace/MyListingsView.ts:54
 msgid "Add Product"
 msgstr ""
 
@@ -932,7 +932,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:346
+#: src/shell/focusDomains.ts:382
 msgid "Analytics"
 msgstr ""
 
@@ -1076,7 +1076,7 @@ msgstr ""
 #: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2369
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:202
+#: src/shell/focusDomains.ts:208
 msgid "Articles"
 msgstr ""
 
@@ -1185,14 +1185,14 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:345
-#: src/shell/focusStage.ts:418
-#: src/shell/focusStage.ts:563
+#: src/shell/focusStage.ts:488
+#: src/shell/focusStage.ts:638
 msgid "Back"
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:353
 #: src/addons/marketplace/ListingView.ts:366
-#: src/addons/marketplace/MyListingsView.ts:52
+#: src/addons/marketplace/MyListingsView.ts:53
 msgid "Back to Marketplace"
 msgstr ""
 
@@ -1275,7 +1275,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2281
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:350
+#: src/shell/focusDomains.ts:386
 msgid "Badges"
 msgstr ""
 
@@ -1433,7 +1433,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:236
+#: src/shell/focusDomains.ts:242
 msgid "Bookmarks"
 msgstr ""
 
@@ -1548,7 +1548,7 @@ msgstr ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2216
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:322
+#: src/shell/focusDomains.ts:352
 msgid "Calendar"
 msgstr ""
 
@@ -1599,7 +1599,7 @@ msgstr ""
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
 #: src/addons/feedback-board/FeedbackBoardView.ts:634
 #: src/addons/follow-packs/FollowPackManager.ts:465
-#: src/addons/marketplace/MyListingsView.ts:244
+#: src/addons/marketplace/MyListingsView.ts:249
 #: src/addons/note-taking/NoteEditorModal.ts:365
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:119
 #: src/components/auth/AuthComponent.ts:495
@@ -1841,8 +1841,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:414
-#: src/shell/focusStage.ts:562
+#: src/shell/focusStage.ts:483
+#: src/shell/focusStage.ts:637
 msgid "Close"
 msgstr ""
 
@@ -2280,7 +2280,7 @@ msgstr ""
 msgid "Create poll"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:136
+#: src/addons/marketplace/MyListingsView.ts:137
 msgid "Create your first product listing"
 msgstr ""
 
@@ -2316,7 +2316,7 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:63
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:286
+#: src/shell/focusDomains.ts:293
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2464,7 +2464,7 @@ msgstr ""
 #: src/addons/feedback-board/FeedbackBoardView.ts:813
 #: src/addons/feedback-board/FeedbackBoardView.ts:896
 #: src/addons/feedback-board/FeedbackBoardView.ts:938
-#: src/addons/marketplace/MyListingsView.ts:242
+#: src/addons/marketplace/MyListingsView.ts:247
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
@@ -2544,11 +2544,11 @@ msgstr ""
 msgid "Delete folder (items move to root)"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:196
+#: src/addons/marketplace/MyListingsView.ts:197
 msgid "Delete listing"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:238
+#: src/addons/marketplace/MyListingsView.ts:243
 msgid "Delete Listing"
 msgstr ""
 
@@ -3036,7 +3036,7 @@ msgstr ""
 msgid "Edit List"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:193
+#: src/addons/marketplace/MyListingsView.ts:194
 msgid "Edit listing"
 msgstr ""
 
@@ -3172,7 +3172,7 @@ msgid "Enable Scheduled Posts"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:73
-#: src/shell/focusBookmarksSurface.ts:35
+#: src/shell/focusBookmarksSurface.ts:47
 msgid "Enable the Bookmarks addon in Settings → Addons."
 msgstr ""
 
@@ -3516,8 +3516,8 @@ msgstr ""
 msgid "Failed to delete folder"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:268
-#: src/addons/marketplace/MyListingsView.ts:272
+#: src/addons/marketplace/MyListingsView.ts:273
+#: src/addons/marketplace/MyListingsView.ts:277
 msgid "Failed to delete listing"
 msgstr ""
 
@@ -3586,7 +3586,7 @@ msgid "Failed to load listing"
 msgstr ""
 
 #: src/addons/marketplace/MarketplaceTimeline.ts:462
-#: src/addons/marketplace/MyListingsView.ts:123
+#: src/addons/marketplace/MyListingsView.ts:124
 msgid "Failed to load listings"
 msgstr ""
 
@@ -3991,7 +3991,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:318
+#: src/shell/focusDomains.ts:348
 msgid "Follow Packs"
 msgstr ""
 
@@ -4030,7 +4030,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:372
+#: src/shell/focusDomains.ts:408
 msgid "Follower Notification"
 msgstr ""
 
@@ -4076,7 +4076,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:256
+#: src/shell/focusDomains.ts:262
 msgid "Follows"
 msgstr ""
 
@@ -4232,7 +4232,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:378
+#: src/shell/focusDomains.ts:414
 msgid "Group Chats"
 msgstr ""
 
@@ -4274,7 +4274,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:359
+#: src/shell/focusDomains.ts:395
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4989,7 +4989,7 @@ msgstr ""
 msgid "Listing bookmarked"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:258
+#: src/addons/marketplace/MyListingsView.ts:263
 msgid "Listing deletion requested"
 msgstr ""
 
@@ -5247,7 +5247,7 @@ msgstr ""
 msgid "Loading websites…"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:58
+#: src/addons/marketplace/MyListingsView.ts:59
 msgid "Loading your listings..."
 msgstr ""
 
@@ -5489,8 +5489,8 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:307
-#: src/shell/focusMarketplaceSurface.ts:36
+#: src/shell/focusDomains.ts:337
+#: src/shell/focusMarketplaceSurface.ts:35
 msgid "Marketplace"
 msgstr ""
 
@@ -5539,8 +5539,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:211
-#: src/shell/focusMediaSurface.ts:42
+#: src/shell/focusDomains.ts:217
+#: src/shell/focusMediaSurface.ts:43
 msgid "Media"
 msgstr "Médias"
 
@@ -5634,7 +5634,7 @@ msgstr ""
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:228
+#: src/shell/focusDomains.ts:234
 msgid "Messages"
 msgstr ""
 
@@ -5782,7 +5782,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:267
+#: src/shell/focusDomains.ts:273
+#: src/shell/focusMutesSurface.ts:36
 msgid "Muted"
 msgstr ""
 
@@ -5831,7 +5832,7 @@ msgstr ""
 msgid "My Emojis"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:50
+#: src/addons/marketplace/MyListingsView.ts:51
 msgid "My Listings"
 msgstr ""
 
@@ -6104,7 +6105,7 @@ msgstr ""
 msgid "No listings found"
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:135
+#: src/addons/marketplace/MyListingsView.ts:136
 msgid "No listings yet"
 msgstr ""
 
@@ -6529,7 +6530,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:325
+#: src/shell/focusDomains.ts:355
 msgid "Note taking"
 msgstr ""
 
@@ -6574,7 +6575,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:220
+#: src/shell/focusDomains.ts:226
 msgid "Notifications"
 msgstr ""
 
@@ -7329,7 +7330,7 @@ msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:275
+#: src/shell/focusDomains.ts:282
 msgid "Profile"
 msgstr ""
 
@@ -7703,7 +7704,7 @@ msgid "Recipe hint: add a %s section so recipe clients can parse it."
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:217
+#: src/shell/focusDomains.ts:223
 msgid "Recipes"
 msgstr ""
 
@@ -8389,7 +8390,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:331
+#: src/shell/focusDomains.ts:361
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -8417,8 +8418,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2099
 #: src/components/layout/MainLayout.ts:2110
 #: src/components/layout/MainLayout.ts:2113
-#: src/shell/focusStage.ts:422
-#: src/shell/focusStage.ts:564
+#: src/shell/focusStage.ts:493
+#: src/shell/focusStage.ts:639
 msgid "Scroll to top"
 msgstr ""
 
@@ -8754,8 +8755,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:429
-#: src/shell/focusStage.ts:566
+#: src/shell/focusStage.ts:500
+#: src/shell/focusStage.ts:641
 msgid "Settings"
 msgstr ""
 
@@ -9199,7 +9200,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:1084
+#: src/App.ts:1100
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9917,7 +9918,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:244
+#: src/shell/focusDomains.ts:250
 msgid "Tribes"
 msgstr ""
 
@@ -10092,10 +10093,10 @@ msgstr ""
 msgid "Untitled calendar"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:268
-#: src/addons/live-streams/LiveStreamsAddonView.ts:280
+#: src/addons/live-streams/LiveStreamsAddonView.ts:281
+#: src/addons/live-streams/LiveStreamsAddonView.ts:293
 #: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:53
-#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:136
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:156
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
 msgid "Untitled Stream"
 msgstr ""
@@ -10436,7 +10437,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:384
+#: src/shell/focusDomains.ts:420
 msgid "Wallet Balance"
 msgstr ""
 
@@ -10622,7 +10623,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:390
+#: src/shell/focusDomains.ts:426
 msgid "Word Filter"
 msgstr ""
 
@@ -11157,7 +11158,7 @@ msgid "Enable Feedback Board"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:353
+#: src/shell/focusDomains.ts:389
 msgid "Feedback Board"
 msgstr ""
 
@@ -11800,7 +11801,7 @@ msgid ""
 "page to bring everything back."
 msgstr ""
 
-#: src/addons/marketplace/MyListingsView.ts:239
+#: src/addons/marketplace/MyListingsView.ts:244
 msgid ""
 "This will send a deletion request to relays. Deletion is not guaranteed, "
 "relays may choose to ignore deletion requests."
@@ -11874,15 +11875,15 @@ msgstr ""
 msgid "Classic interface active"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:157
+#: src/addons/live-streams/LiveStreamsAddonView.ts:170
 msgid "Currently live"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:86
+#: src/addons/live-streams/LiveStreamsAddonView.ts:91
 msgid "Enable Live Streams"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:254
+#: src/addons/live-streams/LiveStreamsAddonView.ts:267
 msgid "Ended"
 msgstr ""
 
@@ -11903,7 +11904,7 @@ msgstr ""
 msgid "Expiry notices shown"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:236
+#: src/addons/live-streams/LiveStreamsAddonView.ts:249
 msgid "Failed to load live streams"
 msgstr ""
 
@@ -11920,20 +11921,20 @@ msgstr ""
 msgid "Highlight of v%s"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:252
-#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:141
+#: src/addons/live-streams/LiveStreamsAddonView.ts:265
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:161
 msgid "Live"
 msgstr ""
 
 #: src/addons/addonI18n.ts:40
-#: src/addons/live-streams/LiveStreamsAddonView.ts:72
-#: src/addons/live-streams/LiveStreamsAddonView.ts:73
-#: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:301
+#: src/addons/live-streams/LiveStreamsAddonView.ts:77
+#: src/addons/live-streams/LiveStreamsAddonView.ts:78
+#: src/addons/live-streams/LiveStreamsAddonView.ts:88
+#: src/shell/focusDomains.ts:314
 msgid "Live Streams"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:174
+#: src/addons/live-streams/LiveStreamsAddonView.ts:187
 msgid "Loading more streams..."
 msgstr ""
 
@@ -11946,7 +11947,7 @@ msgstr ""
 msgid "Never expires"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:161
+#: src/addons/live-streams/LiveStreamsAddonView.ts:174
 msgid "No live streams found."
 msgstr ""
 
@@ -11966,7 +11967,7 @@ msgstr ""
 msgid "Pin to profile"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:255
+#: src/addons/live-streams/LiveStreamsAddonView.ts:268
 msgid "Planned"
 msgstr ""
 
@@ -11991,7 +11992,7 @@ msgstr ""
 msgid "Set expiry"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:153
+#: src/addons/live-streams/LiveStreamsAddonView.ts:166
 msgid ""
 "Show a widget in the sidebar with the currently-live streams of people you "
 "follow (max 3). The widget is hidden when nobody you follow is live."
@@ -12002,12 +12003,12 @@ msgstr ""
 msgid "Show expiry notice"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:151
+#: src/addons/live-streams/LiveStreamsAddonView.ts:164
 msgid "Show Live Streams Widget"
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:282
-#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:137
+#: src/addons/live-streams/LiveStreamsAddonView.ts:295
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:157
 msgid "Started %s"
 msgstr ""
 
@@ -12055,7 +12056,7 @@ msgid ""
 "it from the browser)."
 msgstr ""
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:88
+#: src/addons/live-streams/LiveStreamsAddonView.ts:93
 msgid ""
 "Play NIP-53 live streams inline right from the timeline, no need to leave "
 "NoorNote. Uses hls.js; large providers like zap.stream are supported out of "
@@ -12070,16 +12071,16 @@ msgstr ""
 msgid "Top panel"
 msgstr ""
 
-#: src/shell/focusDomains.ts:369
+#: src/shell/focusDomains.ts:405
 msgid "Nostr Majlis"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:154
-#: src/shell/focusDomains.ts:193
+#: src/shell/focusDomains.ts:199
 msgid "Social Media"
 msgstr ""
 
-#: src/shell/focusDomains.ts:365
+#: src/shell/focusDomains.ts:401
 msgid "Bulk Delete"
 msgstr ""
 
@@ -12100,8 +12101,8 @@ msgstr "Mode tablette"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Mode tablette (2 colonnes, centrées)"
 
-#: src/shell/focusStage.ts:1263
-#: src/shell/focusStage.ts:1282
+#: src/shell/focusStage.ts:1624
+#: src/shell/focusStage.ts:1644
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -12126,20 +12127,20 @@ msgstr ""
 "Les longues publications sont toujours affichées intégralement, sans "
 "boutons « Afficher plus »."
 
-#: src/shell/focusStage.ts:1279
+#: src/shell/focusStage.ts:1641
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:1259
+#: src/shell/focusStage.ts:1620
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:1258
+#: src/shell/focusStage.ts:1619
 msgid "Move all circles to the right column"
 msgstr ""
 
-#: src/shell/focusStage.ts:409
-#: src/shell/focusStage.ts:561
+#: src/shell/focusStage.ts:478
+#: src/shell/focusStage.ts:636
 msgid "Reorder"
 msgstr ""
 
@@ -12211,13 +12212,18 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2180
 #: src/components/views/VideoEditorView.ts:123
-#: src/shell/focusMediaSurface.ts:43
+#: src/shell/focusMediaSurface.ts:44
 msgid "Post Media"
 msgstr "Publier un média"
 
-#: src/shell/focusMarketplaceSurface.ts:37
+#: src/shell/focusMarketplaceSurface.ts:36
 msgid "Post Listing"
 msgstr "Publier une annonce"
+
+#: src/shell/focusStage.ts:1351
+#: src/shell/focusStage.ts:1358
+msgid "Move widget"
+msgstr ""
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

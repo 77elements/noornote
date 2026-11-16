@@ -75,6 +75,12 @@ interface AddonLoaderEntry {
   id: string;
   isEnabled: () => boolean;
   load: RuntimeLoader;
+  /**
+   * Login auto-load gate (default: load whenever enabled). An addon may
+   * narrow this to "only when its UI surfaces are actually in use" —
+   * on-demand paths (ensureLoaded) are unaffected.
+   */
+  bootLoad?: () => boolean;
   /** Current runtime instance, or null when not loaded. */
   instance: AddonRuntime | null;
   /** Pubkey the current instance was initialized for (for account-switch detection). */
@@ -112,6 +118,8 @@ export class AddonLoader {
     id: string;
     isEnabled: () => boolean;
     load: RuntimeLoader;
+    /** Narrow the login auto-load (default: always when enabled). */
+    bootLoad?: () => boolean;
   }): void {
     if (this.entries.has(entry.id)) {
       diagLog('addons', 'addons_register_duplicate', { id: entry.id });
@@ -121,6 +129,7 @@ export class AddonLoader {
       id: entry.id,
       isEnabled: entry.isEnabled,
       load: entry.load,
+      ...(entry.bootLoad && { bootLoad: entry.bootLoad }),
       instance: null,
       loadedForPubkey: null,
       unloadPending: false,
@@ -247,10 +256,13 @@ export class AddonLoader {
       });
     }
     // For every enabled addon, ensure it is loaded for the current pubkey.
+    // bootLoad narrows the auto-load (e.g. live-streams: only with its
+    // widget on or a pinned background stream — otherwise pure on-demand).
     // For every loaded addon that was initialized for a different pubkey,
     // destroy and re-init.
     for (const entry of this.entries.values()) {
-      const enabled = this.safeIsEnabled(entry);
+      const enabled =
+        this.safeIsEnabled(entry) && (entry.bootLoad ? entry.bootLoad() : true);
 
       if (!enabled) {
         if (entry.instance) {

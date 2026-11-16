@@ -56,6 +56,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'live-streams',
     isEnabled: isLiveStreamsEnabled,
+    // Always-on whenever the addon is enabled — the TV renders notes with
+    // embedded live-stream players. The widget switch / a background pin
+    // do NOT gate the runtime (see isLiveStreamsAutoLoaded for the
+    // on-demand release guards).
     load: () => import('./live-streams/runtime').then(m => m.default),
   });
 

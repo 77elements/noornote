@@ -18,6 +18,8 @@ import {
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { AddonLoader } from '../AddonLoader';
+import { isLiveStreamsAutoLoaded } from './index';
 
 export interface PinnedStream {
   naddr: string;
@@ -71,8 +73,14 @@ export class BackgroundPlayer {
     this.emit();
   }
 
-  /** Pin a stream and start playing immediately (must run in a click handler). */
+  /**
+   * Pin a stream and start playing immediately (must run in a click handler).
+   * The pin is the play widget's on-demand reason — the runtime (sidebar
+   * mini player) loads with it even when the addon has no other reason to
+   * be on.
+   */
   public async pin(stream: PinnedStream): Promise<void> {
+    void AddonLoader.getInstance().ensureLoaded('live-streams');
     const sameStream = this.pinned?.naddr === stream.naddr;
     this.stopPlayback();
 
@@ -121,6 +129,12 @@ export class BackgroundPlayer {
       StorageKeys.LIVE_STREAMS_PINNED
     );
     this.emit();
+    // The play widget's x removed the last on-demand reason (the object
+    // itself is closed — the widget lives in the classic sidebar). With
+    // the addon disabled and no other reason the runtime unloads again.
+    if (!isLiveStreamsAutoLoaded()) {
+      void AddonLoader.getInstance().deactivateOnDemand('live-streams');
+    }
   }
 
   public getState(): BackgroundPlayerState {

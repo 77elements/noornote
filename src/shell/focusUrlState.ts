@@ -87,11 +87,15 @@ export function parseFocusUrl(
     }
   }
 
-  // Three-segment param routes (composer edit flows).
+  // Three-segment param routes (composer edit flows + stream detail).
   if (segments.length === 3) {
     const [head, tail, param] = segments as [string, string, string];
     if (head === 'marketplace' && tail === 'edit') {
       return { defId: 'marketplace', kind: 'secondary', param };
+    }
+    // '/live-streams/stream/:naddr' is a stream detail (inline player).
+    if (head === 'live-streams' && tail === 'stream') {
+      return { defId: 'live-streams', kind: 'detail', param };
     }
     return null;
   }
@@ -117,6 +121,8 @@ export function parseFocusUrl(
         return { defId: 'media', kind: 'list' };
       case 'muted':
         return { defId: 'muted', kind: 'list' };
+      case 'live-streams':
+        return { defId: 'live-streams', kind: 'list' };
       case 'marketplace':
         return { defId: 'marketplace', kind: 'list' };
       case 'profile':

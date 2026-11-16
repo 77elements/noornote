@@ -109,6 +109,12 @@ export const StorageKeys = {
   // grid order is NOT affected. Future secondary objects (widgets) join
   // the same lists; stale/unknown ids are filtered on load.
   FOCUS_UI_COLUMN_LAYOUT: 'noornote_focus_ui_column_layout_map',
+  // Focus UI (per-account): widget placement in the FOCUSED layout —
+  // { [widgetId]: { side: 'left' | 'right', index: number } }, index into
+  // the side stack's item flow (0 = above all circles). Default when a
+  // widget is activated: right stack, top. Set by drag & drop on the
+  // widgets' move handles; unlisted widgets render at the default spot.
+  FOCUS_UI_WIDGET_LAYOUT: 'noornote_focus_ui_widget_layout_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',

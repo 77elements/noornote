@@ -445,6 +445,65 @@ html.ui--focus {
   z-index: $z-back-bar;
 }
 
+// FV side-stack widget slot (v2): wraps a widget's DOM plus its move
+// handle; an item in the stack flow like the circles. Hidden entirely
+// while the widget has no content (the Live Streams widget renders
+// NOTHING when nobody followed is live) — no floating orphan handle.
+.focus-widget-slot {
+  position: relative; // anchor for the move handle
+  display: none; // empty slot (widget has no content) shows NOTHING
+
+  &:has(> .sidebar-widget) {
+    display: grid;
+  }
+}
+
+// v2 only: extra right padding keeps the widget content clear of the
+// move handle that appears top-right on hover.
+.ui--focus .sidebar-widget {
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+}
+
+.focus-widget-slot__move {
+  position: absolute;
+  top: 5px;
+  right: 0;
+  display: none; // hover affordance only (see below)
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: grab;
+  touch-action: none; // the pointer drag must not scroll the page
+  z-index: $z-back-bar;
+
+  // Reorder affordance: shown while hovering the widget slot (during a
+  // drag the lifted host stays under the pointer → handle stays visible).
+  .focus-widget-slot:hover & {
+    display: grid;
+  }
+
+  // Grab cursor while the host is lifted (fixed overlay follows the
+  // pointer; pointer-events off so elementFromPoint sees the drop zone).
+  .focus-widget-slot.is-drag-source & {
+    pointer-events: none;
+    cursor: grabbing;
+  }
+}
+
+// Lifted widget slot during a drag: must not shadow the drop zone in
+// elementFromPoint (same as the circle column drag) — without this the
+// fixed overlay keeps resolving to its SOURCE stack and cross-column
+// drops are impossible. Rides above the sticky stack tools.
+.focus-widget-slot.is-drag-source {
+  pointer-events: none;
+  z-index: $z-fullscreen-overlay;
+}
+
 // Surface slot: the focused domain's view mounts here (after the morph).
 // Definite height (fills the active object) — the view's own .view-content
 // (height: 100%) resolves against it exactly like in the classic layout.

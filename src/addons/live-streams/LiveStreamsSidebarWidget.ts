@@ -32,6 +32,12 @@ export interface LiveStreamsSidebarWidgetOptions {
 export class LiveStreamsSidebarWidget {
   private opts: LiveStreamsSidebarWidgetOptions;
   private el: HTMLElement | null = null;
+  /**
+   * Focus UI (v2) host: when set, the widget renders into the stage's
+   * side-stack slot instead of the classic sidebar slot (the shell is
+   * hidden while the Focus UI is active). null = classic slot.
+   */
+  private focusHost: HTMLElement | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private fetching = false;
   private destroyed = false;
@@ -44,6 +50,20 @@ export class LiveStreamsSidebarWidget {
 
   public mount(): void {
     this.start();
+  }
+
+  /**
+   * Focus UI (v2): render into the stage's side-stack slot while it
+   * exists (null on stack teardown — the widget returns to the classic
+   * slot). The next render re-parents the DOM.
+   */
+  public setFocusHost(host: HTMLElement | null): void {
+    this.focusHost = host;
+    if (this.el && this.el.parentElement !== (host ?? this.opts.container())) {
+      this.el.remove();
+      this.el = null;
+    }
+    void this.render();
   }
 
   /** Re-fetch + re-render (also used by the addon view after setting changes). */
@@ -117,7 +137,7 @@ export class LiveStreamsSidebarWidget {
   }
 
   private renderItems(items: Array<import('./streams').LiveStreamItem>): void {
-    const container = this.opts.container();
+    const container = this.focusHost ?? this.opts.container();
     if (!container) return;
 
     if (!this.el) {

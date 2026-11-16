@@ -49,6 +49,15 @@ describe('parseFocusUrl', () => {
       defId: 'muted',
       kind: 'list',
     });
+    expect(parseFocusUrl('/live-streams')).toEqual({
+      defId: 'live-streams',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/live-streams/stream/naddr1abc')).toEqual({
+      defId: 'live-streams',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
     expect(parseFocusUrl('/media/post')).toEqual({
       defId: 'media',
       kind: 'secondary',

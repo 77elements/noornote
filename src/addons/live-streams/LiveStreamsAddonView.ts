@@ -23,12 +23,15 @@ import {
 } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { AddonLoader } from '../AddonLoader';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import {
   isLiveStreamsEnabled,
   setLiveStreamsEnabled,
   isLiveStreamsSidebarWidget,
   setLiveStreamsSidebarWidget,
+  isLiveStreamsAutoLoaded,
 } from './index';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { fetchLiveStreamsPage, type LiveStreamItem } from './streams';
 import type { LiveStreamsRuntime } from './runtime';
 import { _ } from '../../i18n';
@@ -50,6 +53,9 @@ export class LiveStreamsAddonView extends View {
   private nextUntil: number | undefined;
   private loading = false;
   private hasEnded = false;
+
+  /** v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -103,6 +109,14 @@ export class LiveStreamsAddonView extends View {
       void this.mountContent();
     }
 
+    // v2 on-demand: the object loads the addon regardless of the stored
+    // preference — the widget switch (the always-on reason) and the list
+    // render either way. Released again in destroy().
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('live-streams');
+      if (!enabled) void this.mountContent();
+    }
+
     this.toggleSubId = TypedEventBus.getInstance().on(
       'live-streams:addon-toggle',
       (payload: { enabled: boolean }) => {
@@ -137,6 +151,10 @@ export class LiveStreamsAddonView extends View {
     );
     if (!card) return;
     e.preventDefault();
+    // v2 Focus UI: the shell renders the stream detail in its focused
+    // column (short route /live-streams/stream/:naddr). Classic falls
+    // through to the real route.
+    if (delegateToFocusUi('live-stream-detail', card.dataset.naddr)) return;
     Router.getInstance().navigate(
       `/addons/live-streams/stream/${card.dataset.naddr}`
     );
@@ -188,6 +206,9 @@ export class LiveStreamsAddonView extends View {
       checked: isLiveStreamsSidebarWidget(),
       onChange: checked => {
         setLiveStreamsSidebarWidget(checked);
+        TypedEventBus.getInstance().emit('live-streams:widget-toggle', {
+          enabled: checked,
+        });
         AddonLoader.getInstance()
           .getRuntime<LiveStreamsRuntime>('live-streams')
           ?.widget?.refresh();
@@ -314,5 +335,10 @@ export class LiveStreamsAddonView extends View {
     this.unmountContent();
     this.contentEl = null;
     this.container.innerHTML = '';
+    // v2 on-demand: leaving the object releases the addon — unless an
+    // always-on reason survives (sidebar widget on, background pin).
+    if (this.v2OnDemand && !isLiveStreamsAutoLoaded()) {
+      void AddonLoader.getInstance().deactivateOnDemand('live-streams');
+    }
   }
 }

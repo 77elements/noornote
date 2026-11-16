@@ -786,6 +786,23 @@ export class App {
       'adv',
       true
     );
+    // Short aliases (v2 Focus UI URLs): /live-streams must be a REAL route,
+    // else the nip19 catch-all (/:entity) hijacks it and navigates home.
+    this.registerRoute(
+      '/live-streams',
+      'addon-live-streams',
+      'addon-live-streams',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/live-streams/stream/:naddr',
+      'live-stream-detail',
+      'live-stream-detail',
+      'lsd',
+      true,
+      params => params.naddr
+    );
     this.registerRoute(
       '/addons/live-streams/stream/:naddr',
       'live-stream-detail',

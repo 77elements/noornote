@@ -20,6 +20,7 @@ import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
 import { marketplaceSurface } from './focusMarketplaceSurface';
+import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -314,6 +315,15 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Live Streams'),
     icon: 'icon-play',
     addon: true,
+    route: '/live-streams',
+    viewTypes: ['live-stream-detail'],
+    // On-demand addon object (ephemeral surface): entering the object
+    // loads the addon, leaving it unloads again — unless the sidebar
+    // widget is on or a background stream stays pinned (always-on
+    // reasons, see live-streams/index.ts isLiveStreamsAutoLoaded).
+    // list = the addon view (switches + live feed), detail = a stream
+    // (/live-streams/stream/:naddr, inline player + background pin).
+    createSurface: focusLiveStreamsSurface,
   },
   {
     id: 'marketplace',
