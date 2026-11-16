@@ -27,7 +27,10 @@ import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
 import { isBulkDeleteEnabled } from './bulk-delete/index';
-import { isNostrMajlisEnabled } from './nostr-majlis/index';
+import {
+  isNostrMajlisEnabled,
+  isNostrMajlisAutoLoaded,
+} from './nostr-majlis/index';
 import { isGroupChatsEnabled } from './group-chats/index';
 import { isAnalyticsEnabled } from './analytics/index';
 import { isCalendarEnabled } from './calendar/index';
@@ -133,6 +136,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'nostr-majlis',
     isEnabled: isNostrMajlisEnabled,
+    // On-demand in the Focus UI: loaded only when the object is entered
+    // (or a widget is active — the always-on reasons, see
+    // isNostrMajlisAutoLoaded). The v2 object releases it on leave.
+    bootLoad: () => isNostrMajlisAutoLoaded(),
     load: () => import('./nostr-majlis/runtime').then(m => m.default),
   });
 

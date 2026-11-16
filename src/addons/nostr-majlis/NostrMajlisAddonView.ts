@@ -13,7 +13,6 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
-import { AddonLoader } from '../AddonLoader';
 import type { NostrMajlisRuntime } from './runtime';
 import {
   NnDropdown,
@@ -35,11 +34,14 @@ import type { DhikrService } from './DhikrService';
 import type { DhikrRound } from './dhikr';
 import {
   isNostrMajlisEnabled,
+  isNostrMajlisAutoLoaded,
   setNostrMajlisEnabled,
   getNostrMajlisSettings,
   setNostrMajlisSettings,
   type ReminderPrayers,
 } from './index';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import {
   DiyanetService,
   type DiyanetPlace,
@@ -144,6 +146,8 @@ export class NostrMajlisAddonView extends View {
 
   private renderToken = 0;
   private disposed = false;
+  /** v2 on-demand object lifecycle (see LiveStreamsAddonView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor(initialTab?: string) {
     super();
@@ -151,6 +155,12 @@ export class NostrMajlisAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-nostr-majlis';
     this.initialTab = initialTab ?? 'salah';
+    // v2 on-demand: the object loads the addon regardless of the stored
+    // preference — the enable switch and the tabs render either way.
+    // Released again in destroy().
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('nostr-majlis');
+    }
     this.render();
   }
 
@@ -227,7 +237,9 @@ export class NostrMajlisAddonView extends View {
 
   private stale(token: number): boolean {
     return (
-      this.disposed || token !== this.renderToken || !isNostrMajlisEnabled()
+      this.disposed ||
+      token !== this.renderToken ||
+      (!isNostrMajlisEnabled() && !this.v2OnDemand)
     );
   }
 
@@ -247,7 +259,7 @@ export class NostrMajlisAddonView extends View {
     const tabsBar = this.container.querySelector(
       '[data-el="majlis-tabs"]'
     ) as HTMLElement | null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       if (tabsBar) tabsBar.hidden = true;
       slot.innerHTML = '';
       return;
@@ -300,7 +312,7 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLElement | null;
     if (!slot) return;
     this.disposeHolidayReminders();
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -411,7 +423,7 @@ export class NostrMajlisAddonView extends View {
     if (!slot) return;
     this.notifySwitch?.destroy();
     this.notifySwitch = null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -457,7 +469,7 @@ export class NostrMajlisAddonView extends View {
     const token = ++this.quranToken;
     this.quranSwitch?.destroy();
     this.quranSwitch = null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -1377,6 +1389,11 @@ export class NostrMajlisAddonView extends View {
     this.enableSwitch = null;
     this.notifySwitch?.destroy();
     this.notifySwitch = null;
+    // v2 on-demand: leaving the object releases the addon — unless an
+    // always-on reason survives (one of the two widgets active).
+    if (this.v2OnDemand && !isNostrMajlisAutoLoaded()) {
+      void AddonLoader.getInstance().deactivateOnDemand('nostr-majlis');
+    }
     this.container.innerHTML = '';
   }
 }

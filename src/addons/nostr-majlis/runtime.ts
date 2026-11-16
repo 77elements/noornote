@@ -19,6 +19,7 @@ import { DiyanetService } from './DiyanetService';
 import { NostrMajlisReminderService } from './NostrMajlisReminderService';
 import { NostrMajlisNativeReminders } from './NostrMajlisNativeReminders';
 import { NostrMajlisSidebarWidget } from './NostrMajlisSidebarWidget';
+import { NostrMajlisQuranWidget } from './NostrMajlisQuranWidget';
 import { DhikrService } from './DhikrService';
 
 export class NostrMajlisRuntime implements AddonRuntime {
@@ -26,6 +27,8 @@ export class NostrMajlisRuntime implements AddonRuntime {
   private native: NostrMajlisNativeReminders | null = null;
   /** Public so the settings view can refresh it live via AddonLoader.getRuntime(). */
   public widget: NostrMajlisSidebarWidget | null = null;
+  /** v2 stage widget: the daily ayah as its own side-stack slot. */
+  public quranWidget: NostrMajlisQuranWidget | null = null;
   /** Public so the Community Dhikr tab can read/subscribe via AddonLoader.getRuntime(). */
   public dhikr: DhikrService | null = null;
 
@@ -44,9 +47,15 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.widget = new NostrMajlisSidebarWidget();
     this.widget.mount();
 
+    this.quranWidget = new NostrMajlisQuranWidget();
+    this.quranWidget.mount();
+
     this.dhikr = new DhikrService();
     void this.dhikr.start();
 
+    // On/off console marker (parity with live streams/custom-emojis).
+    // eslint-disable-next-line no-console -- TEMP, remove before release
+    console.log('Nostr Majlis: on');
     diagLog('addons', 'nostr-majlis: runtime init', {
       npub: ctx.npub?.slice(0, 12),
     });
@@ -57,6 +66,8 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.initialized = false;
     this.widget?.destroy();
     this.widget = null;
+    this.quranWidget?.destroy();
+    this.quranWidget = null;
     if (this.native) {
       await this.native.destroy();
       this.native = null;
@@ -64,6 +75,8 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.dhikr?.destroy();
     this.dhikr = null;
     DiyanetService.getInstance().destroy();
+    // eslint-disable-next-line no-console -- TEMP, remove before release
+    console.log('Nostr Majlis: off');
     diagLog('addons', 'nostr-majlis: runtime destroy');
   }
 }

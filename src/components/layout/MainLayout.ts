@@ -2141,6 +2141,7 @@ export class MainLayout {
           </ul>
             <div class="sidebar-widget-container" data-sidebar-widget="btc-price"></div>
             <div class="sidebar-widget-container" data-sidebar-widget="nostr-majlis"></div>
+            <div class="sidebar-widget-container" data-sidebar-widget="nostr-majlis-quran"></div>
             <div class="sidebar-widget-container" data-sidebar-widget="live-streams"></div>
             <div class="sidebar-widget-container" data-sidebar-widget="live-streams-mini-player"></div>
             <div class="data-saver-toggle"></div>

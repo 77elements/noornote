@@ -34,6 +34,7 @@ import {
   isLiveStreamsSidebarWidget,
   hasLiveStreamsBackgroundPin,
 } from '../addons/live-streams/index';
+import { getNostrMajlisSettings } from '../addons/nostr-majlis/index';
 import { parseFocusUrl, type FocusUrlState } from './focusUrlState';
 import { isSelfNav, pushFocusUrl } from './focusHistorySync';
 import {
@@ -69,7 +70,12 @@ const SCROLL_TOP_THRESHOLD = 100;
  * a slot; the widget instance comes from the addon runtime (structural
  * contract, see FocusWidgetLike).
  */
-const WIDGET_IDS = ['live-streams', 'live-streams-mini-player'] as const;
+const WIDGET_IDS = [
+  'live-streams',
+  'live-streams-mini-player',
+  'nostr-majlis',
+  'nostr-majlis-quran',
+] as const;
 
 /** Structural widget contract for the FV side-stack slots (v2). */
 interface FocusWidgetLike {
@@ -145,6 +151,8 @@ export class FocusStage {
   private widgetToggleSubId: string | null = null;
   /** live-streams:background-player subscription (mini player widget). */
   private pinSubId: string | null = null;
+  /** nostr-majlis:settings-changed subscription (majlis widgets). */
+  private majlisSettingsSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
@@ -226,6 +234,17 @@ export class FocusStage {
       'live-streams:background-player',
       data => {
         this.setWidgetAvailable('live-streams-mini-player', !!data?.pinned);
+      }
+    );
+    // A majlis widget switch flipped in the addon object: re-evaluate
+    // BOTH majlis widgets live (the flipped one appears/disappears, the
+    // other just re-renders — same re-evaluation, no per-widget branch).
+    this.majlisSettingsSubId = TypedEventBus.getInstance().on(
+      'nostr-majlis:settings-changed',
+      () => {
+        const settings = getNostrMajlisSettings();
+        this.setWidgetAvailable('nostr-majlis', settings.sidebarWidget);
+        this.setWidgetAvailable('nostr-majlis-quran', settings.quranDaily);
       }
     );
     this.setupBadgeManagers();
@@ -366,6 +385,10 @@ export class FocusStage {
     if (this.pinSubId) {
       TypedEventBus.getInstance().off(this.pinSubId);
       this.pinSubId = null;
+    }
+    if (this.majlisSettingsSubId) {
+      TypedEventBus.getInstance().off(this.majlisSettingsSubId);
+      this.majlisSettingsSubId = null;
     }
     window.removeEventListener(
       'router:history-changed',
@@ -1336,12 +1359,19 @@ export class FocusStage {
    * demand and the stacks re-applied as soon as it is up.
    */
   private widgetFor(id: string): FocusWidgetLike | null {
+    let addonId = 'live-streams';
     if (id === 'live-streams') {
       if (!isLiveStreamsSidebarWidget()) return null;
     } else if (id === 'live-streams-mini-player') {
       // Shows only while a background stream is pinned — independent of
       // the sidebar-widget setting.
       if (!hasLiveStreamsBackgroundPin()) return null;
+    } else if (id === 'nostr-majlis') {
+      addonId = 'nostr-majlis';
+      if (!getNostrMajlisSettings().sidebarWidget) return null;
+    } else if (id === 'nostr-majlis-quran') {
+      addonId = 'nostr-majlis';
+      if (!getNostrMajlisSettings().quranDaily) return null;
     } else {
       return null;
     }
@@ -1350,14 +1380,20 @@ export class FocusStage {
       AddonRuntime & {
         widget: FocusWidgetLike | null;
         miniPlayer?: FocusWidgetLike | null;
+        quranWidget?: FocusWidgetLike | null;
       }
-    >('live-streams');
+    >(addonId);
     if (runtime) {
+      if (addonId === 'nostr-majlis') {
+        return id === 'nostr-majlis-quran'
+          ? (runtime.quranWidget ?? null)
+          : (runtime.widget ?? null);
+      }
       return id === 'live-streams-mini-player'
         ? (runtime.miniPlayer ?? null)
         : (runtime.widget ?? null);
     }
-    void loader.ensureLoaded('live-streams').then(() => {
+    void loader.ensureLoaded(addonId).then(() => {
       if (this.sideStacks) this.reapplyWidgets();
     });
     return null;

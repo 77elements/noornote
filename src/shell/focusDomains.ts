@@ -21,6 +21,7 @@ import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
 import { marketplaceSurface } from './focusMarketplaceSurface';
 import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
+import { focusMajlisSurface } from './focusMajlisSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -395,7 +396,17 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-trash',
     addon: true,
   },
-  { id: 'majlis', label: _('Nostr Majlis'), icon: 'icon-globe', addon: true },
+  {
+    id: 'majlis',
+    label: _('Nostr Majlis'),
+    icon: 'icon-globe',
+    addon: true,
+    // On-demand addon object (ephemeral surface): entering the object
+    // loads the addon, leaving it unloads again — unless one of the two
+    // majlis widgets is active (always-on reasons, see
+    // nostr-majlis/index.ts isNostrMajlisAutoLoaded).
+    createSurface: focusMajlisSurface,
+  },
   {
     id: 'follower-notification',
     label: _('Follower Notification'),

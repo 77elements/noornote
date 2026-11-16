@@ -261,7 +261,7 @@ msgstr "Konten und Threads, die du stummgeschaltet hast."
 #: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2369
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:208
+#: src/shell/focusDomains.ts:210
 msgid "Articles"
 msgstr "Artikel"
 
@@ -272,7 +272,7 @@ msgstr "Artikel"
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:242
+#: src/shell/focusDomains.ts:244
 msgid "Bookmarks"
 msgstr "Lesezeichen"
 
@@ -308,7 +308,7 @@ msgstr "DiagLogs exportieren"
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:262
+#: src/shell/focusDomains.ts:264
 msgid "Follows"
 msgstr "Follows"
 
@@ -327,7 +327,7 @@ msgstr "Listen"
 
 #: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:217
+#: src/shell/focusDomains.ts:219
 #: src/shell/focusMediaSurface.ts:43
 msgid "Media"
 msgstr "Medien"
@@ -335,7 +335,7 @@ msgstr "Medien"
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:273
+#: src/shell/focusDomains.ts:275
 #: src/shell/focusMutesSurface.ts:36
 msgid "Muted"
 msgstr "Stummgeschaltet"
@@ -366,8 +366,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:500
-#: src/shell/focusStage.ts:641
+#: src/shell/focusStage.ts:554
+#: src/shell/focusStage.ts:695
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -390,7 +390,7 @@ msgstr "Timeline"
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:250
+#: src/shell/focusDomains.ts:252
 msgid "Tribes"
 msgstr "Tribes"
 
@@ -909,7 +909,7 @@ msgstr "Größe"
 msgid "Sold"
 msgstr "Verkauft"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:776
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:788
 #: src/components/views/ZapstoreAppView.ts:301
 msgid "Source"
 msgstr "Quelle"
@@ -1001,8 +1001,8 @@ msgstr "Buchung bestätigen"
 #: src/addons/feedback-board/FeedbackBoardView.ts:896
 #: src/addons/feedback-board/FeedbackBoardView.ts:938
 #: src/addons/marketplace/MyListingsView.ts:247
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:599
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:675
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
 #: src/components/views/MessagesView.ts:716
@@ -1318,7 +1318,7 @@ msgstr "Nachrichten-Optionen"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:234
+#: src/shell/focusDomains.ts:236
 msgid "Messages"
 msgstr "Nachrichten"
 
@@ -1508,8 +1508,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:345
-#: src/shell/focusStage.ts:488
-#: src/shell/focusStage.ts:638
+#: src/shell/focusStage.ts:542
+#: src/shell/focusStage.ts:692
 msgid "Back"
 msgstr "Zurück"
 
@@ -1561,7 +1561,7 @@ msgstr "Ablenkungsfreies Schreiben (Esc zum Verlassen)"
 #: src/addons/calendar/CalendarCollectionsModal.ts:60
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/marketplace/ListingEditorView.ts:202
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:596
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:350
 #: src/lists/bookmarks.ts:3285
@@ -1744,7 +1744,7 @@ msgstr "Abzeichen verleihen"
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2281
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:386
+#: src/shell/focusDomains.ts:380
 msgid "Badges"
 msgstr "Abzeichen"
 
@@ -1759,7 +1759,7 @@ msgstr "von"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2216
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:352
+#: src/shell/focusDomains.ts:346
 msgid "Calendar"
 msgstr "Kalender"
 
@@ -1925,7 +1925,7 @@ msgstr "Zu privaten Lesezeichen hinzugefügt"
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:382
+#: src/shell/focusDomains.ts:376
 msgid "Analytics"
 msgstr "Statistik"
 
@@ -1943,8 +1943,8 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:483
-#: src/shell/focusStage.ts:637
+#: src/shell/focusStage.ts:537
+#: src/shell/focusStage.ts:691
 msgid "Close"
 msgstr "Schließen"
 
@@ -2359,8 +2359,8 @@ msgstr "Repostete Notiz wird geladen…"
 #: src/addons/analytics/AnalyticsAddonView.ts:395
 #: src/addons/badges/BadgesView.ts:374
 #: src/addons/badges/BadgesView.ts:69
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1130
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:850
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1142
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:862
 #: src/components/settings/RelaySettingsSection.ts:368
 #: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
 msgid "Loading…"
@@ -2372,7 +2372,7 @@ msgstr "Lädt…"
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:337
+#: src/shell/focusDomains.ts:331
 #: src/shell/focusMarketplaceSurface.ts:35
 msgid "Marketplace"
 msgstr "Marktplatz"
@@ -2536,9 +2536,9 @@ msgstr "Ohne Titel"
 msgid "Untitled App"
 msgstr "Unbetitelte App"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:281
-#: src/addons/live-streams/LiveStreamsAddonView.ts:293
-#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:53
+#: src/addons/live-streams/LiveStreamsAddonView.ts:289
+#: src/addons/live-streams/LiveStreamsAddonView.ts:301
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:79
 #: src/addons/live-streams/LiveStreamsSidebarWidget.ts:156
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
 msgid "Untitled Stream"
@@ -4801,7 +4801,7 @@ msgstr "Zeitüberschreitung der Anfrage. Bitte versuche es erneut."
 msgid "Signing failed"
 msgstr "Signierung fehlgeschlagen"
 
-#: src/App.ts:1100
+#: src/App.ts:1117
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "NoorSigner-Daemon stoppen?"
@@ -4953,7 +4953,7 @@ msgstr "Notiz"
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:226
+#: src/shell/focusDomains.ts:228
 msgid "Notifications"
 msgstr "Mitteilungen"
 
@@ -4979,7 +4979,7 @@ msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:282
+#: src/shell/focusDomains.ts:284
 msgid "Profile"
 msgstr "Profil"
 
@@ -4988,7 +4988,7 @@ msgid "Profile: %s"
 msgstr "Profil: %s"
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:223
+#: src/shell/focusDomains.ts:225
 msgid "Recipes"
 msgstr "Rezepte"
 
@@ -5002,8 +5002,8 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2099
 #: src/components/layout/MainLayout.ts:2110
 #: src/components/layout/MainLayout.ts:2113
-#: src/shell/focusStage.ts:493
-#: src/shell/focusStage.ts:639
+#: src/shell/focusStage.ts:547
+#: src/shell/focusStage.ts:693
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
@@ -5117,7 +5117,7 @@ msgid_plural "%s channels tracked"
 msgstr[0] "%s Kanal verfolgt"
 msgstr[1] "%s Kanäle verfolgt"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:369
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:381
 msgid "%s day before"
 msgid_plural "%s days before"
 msgstr[0] "%s Tag vorher"
@@ -5139,8 +5139,8 @@ msgstr "%s Tage"
 #: src/addons/group-chats/GroupChatsSettings.ts:105
 #: src/addons/group-chats/GroupChatsSettings.ts:118
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/addons/live-streams/LiveStreamsAddonView.ts:78
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:169
+#: src/addons/live-streams/LiveStreamsAddonView.ts:79
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:179
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:106
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
@@ -5168,8 +5168,8 @@ msgstr[1] "%s Emojis"
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/group-chats/GroupChatsSettings.ts:104
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
-#: src/addons/live-streams/LiveStreamsAddonView.ts:77
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:168
+#: src/addons/live-streams/LiveStreamsAddonView.ts:78
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:178
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
@@ -5409,7 +5409,7 @@ msgstr "Artikel-Kurzfassungs-Limit in der sekundären Inhaltsspalte"
 msgid "Audio Compression"
 msgstr "Audiokomprimierung"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:685
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:697
 msgid "Author excluded"
 msgstr "Autor ausgeschlossen"
 
@@ -5634,7 +5634,7 @@ msgstr ""
 msgid "Classic Menu"
 msgstr "Klassisches Menü"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:552
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:564
 msgid "Commit"
 msgstr "Zusage"
 
@@ -5646,7 +5646,7 @@ msgstr "eine Dhikr-Zusage geben"
 msgid "Commit to this dhikr"
 msgstr "Dhikr-Zusage geben"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:192
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:202
 msgid "Community Dhikr"
 msgstr "Community-Dhikr"
 
@@ -5693,19 +5693,19 @@ msgstr "Ereigniskalender konnte nicht gelöscht werden"
 msgid "Could not export event"
 msgstr "Ereignis konnte nicht exportiert werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1114
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1126
 msgid "Could not fetch prayer times"
 msgstr "Gebetszeiten konnten nicht abgerufen werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1136
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1148
 msgid "Could not load city data."
 msgstr "Stadtdaten konnten nicht geladen werden."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1033
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1045
 msgid "Could not load districts"
 msgstr "Bezirke konnten nicht geladen werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1002
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1014
 msgid "Could not load regions"
 msgstr "Regionen konnten nicht geladen werden"
 
@@ -5718,7 +5718,7 @@ msgstr "Konnte nicht an die Dhikr-Relays veröffentlicht werden"
 msgid "Could not publish your response"
 msgstr "Deine Rückmeldung konnte nicht veröffentlicht werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:857
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:869
 msgid ""
 "Could not reach the Diyanet service. Check your connection and reopen this "
 "page."
@@ -5738,13 +5738,13 @@ msgstr "Ereignis konnte nicht gespeichert werden"
 msgid "Could not save the event calendar"
 msgstr "Ereigniskalender konnte nicht gespeichert werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:698
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:710
 msgid "Could not update moderation"
 msgstr "Moderation konnte nicht aktualisiert werden"
 
 #: src/addons/nostr-majlis/DhikrModal.ts:55
 #: src/addons/nostr-majlis/DhikrModal.ts:67
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 msgid "Count"
 msgstr "Anzahl"
 
@@ -5752,8 +5752,8 @@ msgstr "Anzahl"
 msgid "Count a follow as &quot;new&quot; for (days)"
 msgstr "Folgung gilt für (Tage) als &quot;neu&quot;"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1152
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:871
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1164
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:883
 msgid "Country"
 msgstr "Land"
 
@@ -5779,7 +5779,7 @@ msgstr "Follow-Pack erstellen"
 
 #: src/addons/nostr-majlis/DhikrModal.ts:51
 #: src/addons/nostr-majlis/DhikrModal.ts:92
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:433
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:445
 msgid "Create new dhikr"
 msgstr "Neuen Dhikr erstellen"
 
@@ -5795,7 +5795,7 @@ msgstr "Umfrage erstellen"
 msgid "Custom Server URL:"
 msgstr "Eigene Server-URL:"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:483
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:495
 msgid "Daily Quran ayah"
 msgstr "Täglicher Quran-Ayah"
 
@@ -5814,7 +5814,7 @@ msgstr ""
 "Folgenden (einige MB), danach kleine Hintergrundprüfungen alle paar "
 "Stunden. Trotzdem aktivieren?"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 #: src/helpers/datePickerModal.ts:321
 #: src/helpers/datePickerModal.ts:84
 #: src/lists/follows.ts:2154
@@ -5926,7 +5926,7 @@ msgstr "Beschreibung (optional)"
 msgid "Device info stripping"
 msgstr "Entfernung von Geräte-Infos"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:667
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:679
 msgid "Dhikr hidden"
 msgstr "Dhikr ausgeblendet"
 
@@ -6087,7 +6087,7 @@ msgstr "Follower-Benachrichtigung aktivieren"
 msgid "Enable Hashtag Subscriptions"
 msgstr "Hashtag-Abos aktivieren"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:184
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:194
 msgid "Enable Nostr-Majlis"
 msgstr "Nostr-Majlis aktivieren"
 
@@ -6107,7 +6107,7 @@ msgstr "Profil-Erkennung aktivieren"
 msgid "Enable Scheduled Posts"
 msgstr "Geplante Beiträge aktivieren"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:497
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:509
 msgid "Enable the daily ayah to see it here."
 msgstr "Aktiviere den täglichen Ayah, um ihn hier zu sehen."
 
@@ -6199,22 +6199,22 @@ msgstr "Ereignis aktualisiert"
 msgid "Events could not be loaded."
 msgstr "Ereignisse konnten nicht geladen werden."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:679
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:691
 msgid "Exclude"
 msgstr "Ausschließen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:675
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:687
 msgid "Exclude %s? Their dhikrs disappear and all their submissions stop counting."
 msgstr ""
 "%s ausschließen? Dessen Dhikrs verschwinden und alle Übermittlungen zählen "
 "nicht mehr."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:590
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:674
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:686
 msgid "Exclude author"
 msgstr "Autor ausschließen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:553
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:565
 msgid "excluded"
 msgstr "ausgeschlossen"
 
@@ -6300,12 +6300,12 @@ msgstr "Cancel-Challenge konnte nicht signiert werden"
 msgid "Failed to sign event"
 msgstr "Ereignis konnte nicht signiert werden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1118
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:879
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1130
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:891
 msgid "Fetch Prayer Times"
 msgstr "Gebetszeiten abrufen"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:178
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:197
 msgid "Fetch times again"
 msgstr "Zeiten erneut abrufen"
 
@@ -6317,7 +6317,7 @@ msgstr "Emoji-Packs werden geladen …"
 msgid "Fetching more results from Relays..."
 msgstr "Hole weitere Ergebnisse von Relays …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1106
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1118
 msgid "Fetching…"
 msgstr "Wird abgerufen …"
 
@@ -6336,7 +6336,7 @@ msgstr "Follow-Pack aktualisiert"
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:348
+#: src/shell/focusDomains.ts:342
 msgid "Follow Packs"
 msgstr "Follow-Packs"
 
@@ -6344,7 +6344,7 @@ msgstr "Follow-Packs"
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:408
+#: src/shell/focusDomains.ts:412
 msgid "Follower Notification"
 msgstr "Follower-Benachrichtigung"
 
@@ -6390,7 +6390,7 @@ msgstr "dabei"
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:414
+#: src/shell/focusDomains.ts:418
 msgid "Group Chats"
 msgstr "Gruppen-Chats"
 
@@ -6414,7 +6414,7 @@ msgstr "Gast"
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:395
+#: src/shell/focusDomains.ts:389
 msgid "Hashtag Subscriptions"
 msgstr "Hashtag-Abos"
 
@@ -6429,7 +6429,7 @@ msgstr ""
 "ändert, zeigt die App visuelle Hinweise (blinkende Profilbilder), damit du "
 "dich erinnerst, wer sie ist."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:553
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:565
 msgid "hidden"
 msgstr "ausgeblendet"
 
@@ -6628,9 +6628,11 @@ msgstr "Geplante Beiträge werden geladen …"
 msgid "Loading slots…"
 msgstr "Slots werden geladen …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:501
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:223
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:239
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:513
+#: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:81
+#: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:95
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:242
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:258
 msgid "Loading the daily ayah…"
 msgstr "Täglicher Ayah wird geladen …"
 
@@ -6686,7 +6688,7 @@ msgstr ""
 msgid "Max resolution"
 msgstr "Maximale Auflösung"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 msgid "Moderation"
 msgstr "Moderation"
 
@@ -6728,7 +6730,7 @@ msgstr "Neue Notiz"
 msgid "New post tagged #%s"
 msgstr "Neuer Beitrag mit #%s"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:314
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:326
 msgid "Next year"
 msgstr "Nächstes Jahr"
 
@@ -6752,7 +6754,7 @@ msgstr "Noch keine Änderungen erkannt."
 msgid "No custom emojis yet. Add your first one above."
 msgstr "Noch keine eigenen Emojis. Füge oben dein erstes hinzu."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:533
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:545
 msgid "No dhikr actions yet. Create the first one."
 msgstr "Noch keine Dhikr-Aktionen. Erstelle die erste."
 
@@ -6833,7 +6835,7 @@ msgstr ""
 "Noch keine Slots veröffentlicht. Speichere die Konfiguration, um sie zu "
 "erzeugen."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1092
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1104
 msgid "no times cached, tap “Fetch Prayer Times”"
 msgstr "keine Zeiten gespeichert - tippe auf „Gebetszeiten abrufen“"
 
@@ -6878,7 +6880,7 @@ msgstr "Notiz gespeichert"
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:355
+#: src/shell/focusDomains.ts:349
 msgid "Note taking"
 msgstr "Notizen"
 
@@ -6902,7 +6904,7 @@ msgstr "Nichts gefunden für „%s“."
 msgid "Nothing to restore (notes already up to date)"
 msgstr "Nichts wiederherzustellen (Notizen bereits aktuell)"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:358
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:370
 msgid ""
 "Notifies you ahead of each holiday, through the same channels as the prayer "
 "reminders."
@@ -6914,7 +6916,7 @@ msgstr ""
 msgid "Notify me about my own posts"
 msgstr "Über eigene Beiträge benachrichtigen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:420
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:432
 msgid "Notify on activity"
 msgstr "Bei Aktivität benachrichtigen"
 
@@ -6946,7 +6948,7 @@ msgstr "Nur der Pack-Besitzer kann dieses Pack teilen"
 msgid "Open BTC Price"
 msgstr "BTC-Kurs öffnen"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:157
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:176
 msgid "Open Nostr Majlis"
 msgstr "Nostr Majlis öffnen"
 
@@ -7039,7 +7041,7 @@ msgstr "Umfrage"
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr "Beitrags-Kürzung deaktiviert - alle Beiträge werden vollständig angezeigt"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1112
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1124
 msgid "Prayer times updated"
 msgstr "Gebetszeiten aktualisiert"
 
@@ -7047,7 +7049,7 @@ msgstr "Gebetszeiten aktualisiert"
 msgid "Prayer times, dhikr and holiday reminders."
 msgstr "Gebetszeiten, Dhikr und Feiertags-Erinnerungen."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:313
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:325
 msgid "Previous year"
 msgstr "Vorheriges Jahr"
 
@@ -7089,7 +7091,7 @@ msgstr "Produktname …"
 msgid "Profile Recognition"
 msgstr "Profil-Erkennung"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 msgid "Progress"
 msgstr "Fortschritt"
 
@@ -7158,7 +7160,7 @@ msgstr "Wird veröffentlicht …"
 msgid "Quality"
 msgstr "Qualität"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:513
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:525
 msgid "Quran"
 msgstr "Quran"
 
@@ -7170,7 +7172,7 @@ msgstr "Zeitraum"
 msgid "Ranking your posts…"
 msgstr "Deine Beiträge werden gerankt …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:589
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:601
 msgid "Re-include"
 msgstr "Wieder einschließen"
 
@@ -7212,8 +7214,8 @@ msgstr "Aktualisierungsintervall"
 msgid "Refreshing…"
 msgstr "Wird aktualisiert …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1153
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:872
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1165
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:884
 msgid "Region"
 msgstr "Region"
 
@@ -7240,8 +7242,8 @@ msgstr "Erinnere mich vor Ereignisbeginn"
 msgid "Reminder default updated"
 msgstr "Erinnerungs-Standard aktualisiert"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1291
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:358
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1303
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:370
 msgid "Reminder Settings"
 msgstr "Erinnerungseinstellungen"
 
@@ -7406,7 +7408,7 @@ msgstr "Beitrag planen"
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:361
+#: src/shell/focusDomains.ts:355
 msgid "Scheduled Posts"
 msgstr "Geplante Beiträge"
 
@@ -7440,7 +7442,7 @@ msgstr "Notizen durchsuchen"
 msgid "Search notes…"
 msgstr "Notizen durchsuchen …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:790
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:802
 msgid "Search source…"
 msgstr "Quelle durchsuchen …"
 
@@ -7452,7 +7454,7 @@ msgstr "Suchbegriffe …"
 msgid "Search your posts"
 msgstr "Deine Beiträge durchsuchen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:926
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:938
 msgid "Search…"
 msgstr "Suchen …"
 
@@ -7469,20 +7471,20 @@ msgstr "Mehr sehen"
 msgid "Seen on %s"
 msgstr "Gesehen auf %s"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1186
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1198
 msgid "Select city…"
 msgstr "Stadt wählen …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1161
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:886
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1173
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:898
 msgid "Select country…"
 msgstr "Land wählen …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1013
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1027
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:900
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:956
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:983
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1025
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1039
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:912
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:968
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:995
 msgid "Select district…"
 msgstr "Bezirk wählen …"
 
@@ -7490,11 +7492,11 @@ msgstr "Bezirk wählen …"
 msgid "Select for deletion"
 msgstr "Zum Löschen auswählen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1175
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:893
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:945
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:976
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:996
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1008
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1187
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:905
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:957
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:988
 msgid "Select region…"
 msgstr "Region wählen …"
 
@@ -7507,11 +7509,11 @@ msgstr "Zeitraum wählen"
 msgid "Select Time Range"
 msgstr "Zeitraum wählen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1260
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1272
 msgid "Select your city to see prayer times."
 msgstr "Wähle deine Stadt, um Gebetszeiten zu sehen."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:840
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:852
 msgid "Select your location to see prayer times."
 msgstr "Wähle deinen Standort, um Gebetszeiten zu sehen."
 
@@ -7610,11 +7612,11 @@ msgstr ""
 msgid "Show your NIP-60 Lightning wallet balance in the sidebar."
 msgstr "Zeige dein NIP-60-Lightning-Wallet-Guthaben in der Sidebar."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1291
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1303
 msgid "Shows a banner before each prayer while NoorNote is open."
 msgstr "Zeigt vor jedem Gebet ein Banner, solange NoorNote offen ist."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:290
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:302
 msgid ""
 "Shows the current prayer and the time left until the next one in the "
 "sidebar."
@@ -7675,7 +7677,7 @@ msgstr "Jetzt synchronisieren"
 msgid "Sync read bookmarks across relays"
 msgstr "Gelesene Bookmarks über Relays synchronisieren"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:516
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:528
 msgid "Tafsir (Al-Mukhtasar)"
 msgstr "Tafsir (Al-Mukhtasar)"
 
@@ -7760,7 +7762,7 @@ msgstr ""
 "Dies entfernt den geplanten Beitrag dauerhaft. Das Ereignis wird nicht "
 "veröffentlicht."
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:199
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:218
 msgid "time left"
 msgstr "Restzeit"
 
@@ -8141,7 +8143,7 @@ msgstr "Artikel-Kurzfassungs-Limit auf %s Zeichen gesetzt"
 msgid "Article scheduled for %s"
 msgstr "Artikel geplant für %s"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1155
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1167
 msgid "Asr madhab"
 msgstr "Asr-Madhhab"
 
@@ -8161,7 +8163,7 @@ msgstr ""
 "Audiodateien werden vor dem Hochladen lokal mit einem hardwaregestützten "
 "Codec komprimiert."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 msgid "Author"
 msgstr "Autor"
 
@@ -8256,7 +8258,7 @@ msgstr "von %s"
 msgid "Circular navigation active"
 msgstr "Kreisende Navigation aktiv"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1154
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1166
 msgid "City"
 msgstr "Stadt"
 
@@ -8300,7 +8302,7 @@ msgstr "Erstelle dein erstes Produkt-Listing"
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:63
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:293
+#: src/shell/focusDomains.ts:295
 msgid "Custom Emojis"
 msgstr "Eigene Emojis"
 
@@ -8308,11 +8310,11 @@ msgstr "Eigene Emojis"
 msgid "Custom..."
 msgstr "Benutzerdefiniert …"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:193
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:203
 msgid "Daily Ayah"
 msgstr "Täglicher Ayah"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:316
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:328
 msgid ""
 "Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift "
 "Ramadan and the Eids by a day."
@@ -8320,7 +8322,7 @@ msgstr ""
 "Die Daten sind berechnet (Umm-al-Qura-Kalender); eine lokale Mondsichtung "
 "kann Ramadan und die Feste um einen Tag verschieben."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:360
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:372
 msgid "Days before"
 msgstr "Tage vorher"
 
@@ -8352,7 +8354,7 @@ msgstr "Grad 3 (Freunde von Freunden von Folgungen)"
 msgid "Delete \"%s\"%s? A deletion request is published to relays."
 msgstr "„%s“%s löschen? Eine Löschanfrage wird an Relays veröffentlicht."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:661
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:673
 msgid "Delete dhikr"
 msgstr "Dhikr löschen"
 
@@ -8366,7 +8368,7 @@ msgstr "Lösche deine Folgeliste. <strong>Mach vorher ein Backup!</strong>"
 
 #: src/addons/nostr-majlis/DhikrModal.ts:53
 #: src/addons/nostr-majlis/DhikrModal.ts:65
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:580
 msgid "Dhikr"
 msgstr "Dhikr"
 
@@ -8391,11 +8393,11 @@ msgstr ""
 "Entdecke und teile kuratierte Follow-Packs. Finde die für dich "
 "interessantesten Konten oder erstelle eigene Listen."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:290
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:302
 msgid "Display sidebar widget"
 msgstr "Sidebar-Widget anzeigen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:873
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:885
 msgid "District"
 msgstr "Bezirk"
 
@@ -8432,8 +8434,8 @@ msgstr "Notizen konnten nicht geladen werden"
 msgid "Failed to publish: %s"
 msgstr "Veröffentlichen fehlgeschlagen: %s"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1081
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:274
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1093
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:293
 msgid "Fetching times…"
 msgstr "Zeiten werden abgerufen …"
 
@@ -8462,7 +8464,7 @@ msgstr ""
 msgid "Hide self-reposts"
 msgstr "Eigene Reposts ausblenden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:662
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:674
 msgid "Hide this dhikr from everyone? You can un-hide it later."
 msgstr "Diesen Dhikr für alle ausblenden? Du kannst ihn später wieder einblenden."
 
@@ -8503,15 +8505,15 @@ msgstr "Highlights wieder eingeblendet"
 msgid "Hijri"
 msgstr "Hijri"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:358
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:370
 msgid "Holiday reminders"
 msgstr "Feiertags-Erinnerungen"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:191
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:201
 msgid "Holidays"
 msgstr "Feiertage"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:736
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:748
 msgid "Holidays %s"
 msgstr "Feiertage %s"
 
@@ -8579,7 +8581,7 @@ msgstr "folgt dir jetzt"
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 msgstr "Islamischer Kalender (z. B. „26. Rabi' ath-Thani 1446“)"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:186
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:196
 msgid ""
 "Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and "
 "community dhikr. Pick Diyanet for official times, or a calculation method "
@@ -8672,7 +8674,7 @@ msgstr "Melde dich an, um Notizen zu sichern"
 msgid "Log in to bookmark listings"
 msgstr "Melde dich an, um Listings zu merken"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:534
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:546
 msgid "Looking for existing dhikrs…"
 msgstr "Bestehende Dhikrs werden gesucht …"
 
@@ -8736,7 +8738,7 @@ msgstr "Mindestvorlauf"
 msgid "Minutes"
 msgstr "Minuten"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1293
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1305
 msgid "Minutes before"
 msgstr "Minuten vorher"
 
@@ -8804,9 +8806,9 @@ msgid "NoorNote is a web application. All data stays in your browser:"
 msgstr "NoorNote ist eine Web-Anwendung. Alle Daten bleiben in deinem Browser:"
 
 #: src/addons/addonI18n.ts:50
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:168
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:169
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:181
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:178
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:179
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:191
 msgid "Nostr-Majlis"
 msgstr "Nostr-Majlis"
 
@@ -8859,7 +8861,7 @@ msgstr "Telefon-Layout (390px Breite)"
 msgid "Phone:"
 msgstr "Telefon:"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1098
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1110
 msgid "Pick a district first"
 msgstr "Wähle zuerst einen Bezirk"
 
@@ -8892,11 +8894,11 @@ msgstr "Beiträge werden mit „via NoorNote“ signiert"
 msgid "Posts will be signed without client tag"
 msgstr "Beiträge werden ohne Client-Tag signiert"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1291
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1303
 msgid "Prayer reminders"
 msgstr "Gebets-Erinnerungen"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:180
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:199
 msgid "Prayer times not set"
 msgstr "Gebetszeiten nicht gesetzt"
 
@@ -9006,7 +9008,7 @@ msgstr "Rechtsbereich-Modus (Views als Tabs)"
 msgid "Right pane RSS mode (compact timeline)"
 msgstr "Rechtsbereich-RSS-Modus (kompakte Timeline)"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:190
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:200
 msgid "Salah"
 msgstr "Salah"
 
@@ -9068,7 +9070,8 @@ msgstr "Setzen"
 msgid "Show listings from people I follow in my timeline"
 msgstr "Listings von Menschen, denen ich folge, in meiner Timeline anzeigen"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:263
+#: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:116
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:282
 msgid "Show tafsir"
 msgstr "Tafsir anzeigen"
 
@@ -9080,7 +9083,7 @@ msgstr "Zeige die Kurszeile „1 BTC = …“ in der Sidebar."
 msgid "Show your Lightning wallet balance in the sidebar with fiat conversion."
 msgstr "Zeige dein Lightning-Wallet-Guthaben in der Sidebar mit Fiat-Umrechnung."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:290
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:302
 msgid "Sidebar Widget"
 msgstr "Sidebar-Widget"
 
@@ -9282,7 +9285,7 @@ msgstr "bis"
 msgid "Tribe not found"
 msgstr "Tribe nicht gefunden"
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:586
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:598
 msgid "Un-hide"
 msgstr "Wieder einblenden"
 
@@ -9364,7 +9367,7 @@ msgstr "Warte auf die Bestätigungs-E-Mail und klicke darin auf „Verify your a
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:420
+#: src/shell/focusDomains.ts:424
 msgid "Wallet Balance"
 msgstr "Wallet-Guthaben"
 
@@ -9450,7 +9453,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:426
+#: src/shell/focusDomains.ts:430
 msgid "Word Filter"
 msgstr "Wortfilter"
 
@@ -11574,7 +11577,7 @@ msgid "Enable Feedback Board"
 msgstr "Feedback-Board aktivieren"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:389
+#: src/shell/focusDomains.ts:383
 msgid "Feedback Board"
 msgstr "Feedback-Board"
 
@@ -11886,7 +11889,8 @@ msgstr "Permalink kopieren"
 msgid "Could not send message, please try again"
 msgstr "Nachricht konnte nicht gesendet werden, bitte versuche es erneut"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:239
+#: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:95
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:258
 msgid "Daily ayah unavailable, will retry tomorrow."
 msgstr "Täglicher Ayah nicht verfügbar, wird morgen erneut versucht."
 
@@ -12103,7 +12107,7 @@ msgstr ""
 "Zeige den aktuellen Bitcoin-Kurs auf dieser Seite und, über den Schalter "
 "unten, als Widget in der Sidebar."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:485
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:497
 msgid ""
 "Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the "
 "English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
@@ -12135,7 +12139,7 @@ msgstr "Abonniert, Events zu deinem Kalender hinzugefügt"
 msgid "The board could not be loaded, check your connection."
 msgstr "Das Board konnte nicht geladen werden, prüfe deine Verbindung."
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:509
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:521
 msgid ""
 "The daily ayah could not be loaded. Check your connection, it will retry "
 "automatically."
@@ -12438,15 +12442,15 @@ msgstr ""
 msgid "Classic interface active"
 msgstr "Klassische Oberfläche aktiv"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:170
+#: src/addons/live-streams/LiveStreamsAddonView.ts:175
 msgid "Currently live"
 msgstr "Gerade live"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:91
+#: src/addons/live-streams/LiveStreamsAddonView.ts:92
 msgid "Enable Live Streams"
 msgstr "Live Streams aktivieren"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:267
+#: src/addons/live-streams/LiveStreamsAddonView.ts:275
 msgid "Ended"
 msgstr "Beendet"
 
@@ -12471,7 +12475,7 @@ msgstr "Ablaufhinweise ausgeblendet"
 msgid "Expiry notices shown"
 msgstr "Ablaufhinweise eingeblendet"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:249
+#: src/addons/live-streams/LiveStreamsAddonView.ts:257
 msgid "Failed to load live streams"
 msgstr "Livestreams konnten nicht geladen werden"
 
@@ -12488,20 +12492,20 @@ msgstr "Focus UI (v2)"
 msgid "Highlight of v%s"
 msgstr "Highlight von v%s"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:265
+#: src/addons/live-streams/LiveStreamsAddonView.ts:273
 #: src/addons/live-streams/LiveStreamsSidebarWidget.ts:161
 msgid "Live"
 msgstr "Live"
 
 #: src/addons/addonI18n.ts:40
-#: src/addons/live-streams/LiveStreamsAddonView.ts:77
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
-#: src/addons/live-streams/LiveStreamsAddonView.ts:88
-#: src/shell/focusDomains.ts:314
+#: src/addons/live-streams/LiveStreamsAddonView.ts:79
+#: src/addons/live-streams/LiveStreamsAddonView.ts:89
+#: src/shell/focusDomains.ts:316
 msgid "Live Streams"
 msgstr "Live Streams"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:187
+#: src/addons/live-streams/LiveStreamsAddonView.ts:192
 msgid "Loading more streams..."
 msgstr "Lade weitere Streams..."
 
@@ -12514,7 +12518,7 @@ msgstr "Stream wird geladen…"
 msgid "Never expires"
 msgstr "Läuft nie ab"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:174
+#: src/addons/live-streams/LiveStreamsAddonView.ts:179
 msgid "No live streams found."
 msgstr "Keine Livestreams gefunden."
 
@@ -12526,7 +12530,7 @@ msgstr "Note ans Profil angeheftet"
 msgid "Note unpinned from profile"
 msgstr "Note vom Profil entpinnt"
 
-#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:54
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:80
 msgid "Pause"
 msgstr "Pause"
 
@@ -12534,11 +12538,11 @@ msgstr "Pause"
 msgid "Pin to profile"
 msgstr "Ans Profil heften"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:268
+#: src/addons/live-streams/LiveStreamsAddonView.ts:276
 msgid "Planned"
 msgstr "Geplant"
 
-#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:54
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:80
 msgid "Play"
 msgstr "Abspielen"
 
@@ -12559,7 +12563,7 @@ msgstr "Note läuft am %s ab"
 msgid "Set expiry"
 msgstr "Ablaufzeit setzen"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:166
+#: src/addons/live-streams/LiveStreamsAddonView.ts:171
 msgid ""
 "Show a widget in the sidebar with the currently-live streams of people you "
 "follow (max 3). The widget is hidden when nobody you follow is live."
@@ -12573,16 +12577,16 @@ msgstr ""
 msgid "Show expiry notice"
 msgstr "Ablaufhinweis anzeigen"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:164
+#: src/addons/live-streams/LiveStreamsAddonView.ts:169
 msgid "Show Live Streams Widget"
 msgstr "Live-Streams-Widget anzeigen"
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:295
+#: src/addons/live-streams/LiveStreamsAddonView.ts:303
 #: src/addons/live-streams/LiveStreamsSidebarWidget.ts:157
 msgid "Started %s"
 msgstr "Gestartet %s"
 
-#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:57
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:83
 msgid "Stop"
 msgstr "Stopp"
 
@@ -12633,7 +12637,7 @@ msgstr ""
 "Nicht verfügbar: Dieses Relay veröffentlicht kein NIP-11-Info-Dokument "
 "(oder CORS blockiert es im Browser)."
 
-#: src/addons/live-streams/LiveStreamsAddonView.ts:93
+#: src/addons/live-streams/LiveStreamsAddonView.ts:94
 msgid ""
 "Play NIP-53 live streams inline right from the timeline, no need to leave "
 "NoorNote. Uses hls.js; large providers like zap.stream are supported out of "
@@ -12651,16 +12655,16 @@ msgstr "Untere Fläche"
 msgid "Top panel"
 msgstr "Obere Fläche"
 
-#: src/shell/focusDomains.ts:405
+#: src/shell/focusDomains.ts:401
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
 #: src/components/views/TimelineView.ts:154
-#: src/shell/focusDomains.ts:199
+#: src/shell/focusDomains.ts:201
 msgid "Social Media"
 msgstr "Social Media"
 
-#: src/shell/focusDomains.ts:401
+#: src/shell/focusDomains.ts:395
 msgid "Bulk Delete"
 msgstr "Massenlöschung"
 
@@ -12681,8 +12685,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:1624
-#: src/shell/focusStage.ts:1644
+#: src/shell/focusStage.ts:1732
+#: src/shell/focusStage.ts:1752
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -12707,20 +12711,20 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:1641
+#: src/shell/focusStage.ts:1749
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:1620
+#: src/shell/focusStage.ts:1728
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:1619
+#: src/shell/focusStage.ts:1727
 msgid "Move all circles to the right column"
 msgstr ""
 
-#: src/shell/focusStage.ts:478
-#: src/shell/focusStage.ts:636
+#: src/shell/focusStage.ts:532
+#: src/shell/focusStage.ts:690
 msgid "Reorder"
 msgstr ""
 
@@ -12797,8 +12801,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:1351
-#: src/shell/focusStage.ts:1358
+#: src/shell/focusStage.ts:1459
+#: src/shell/focusStage.ts:1466
 msgid "Move widget"
 msgstr ""
 
