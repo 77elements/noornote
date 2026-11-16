@@ -28,7 +28,7 @@ import { LayoutService } from '../services/LayoutService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
 import { FocusStage } from './focusStage';
-import { FOCUS_DOMAINS } from './focusDomains';
+
 import { _ } from '../i18n';
 
 const SHELL_ID = 'focus-shell';
@@ -307,16 +307,15 @@ export function mountFocusShell(): void {
   document.getElementById('app')?.appendChild(shell);
 
   // The home grid IS '/'. A switch from a classic route (e.g. /settings/ui)
-  // rewrites the URL in place — no view mounting, no history entry. But a
-  // boot/reload ON a domain route (e.g. /timeline) restores that domain's
-  // focused surface instead, so the address survives reloads.
+  // rewrites the URL in place — no view mounting, no history entry. A
+  // boot/reload ON a shell-owned URL restores the mapped state: object
+  // routes (e.g. /timeline) AND detail deep-links (/note/:nevent,
+  // /profile/:npub, /profile/edit) — the address survives reloads.
+  // Unmapped boot paths (classic-only routes) fall back to the grid.
   const bootPath = window.location.pathname;
-  const bootDomain = FOCUS_DOMAINS.find(d => d.route === bootPath);
-  if (bootDomain) {
-    stage.restoreDomain(bootDomain);
-  } else {
-    Router.getInstance().replaceUrl('/');
-  }
+  void stage.syncFromUrl(bootPath).then(restored => {
+    if (!restored) Router.getInstance().replaceUrl('/');
+  });
 
   // Focus navigation seam: while the shell lives, note/article clicks etc.
   // render inside the focused column — the stage routes view types across

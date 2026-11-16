@@ -30,6 +30,8 @@ import {
   setHighlightHiddenFor,
 } from '../../helpers/highlightSetting';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { linkifyUrls } from '../../helpers/linkifyUrls';
@@ -170,6 +172,8 @@ export class ProfileView extends View {
   private tooltipDisposers: Array<() => void> = [];
   /** Disposer for the petname-note tooltip (re-attached on each render()). */
   private petnoteTooltipDispose: (() => void) | null = null;
+  /** Disposer for the public petname tooltip (re-attached on each render). */
+  private petTooltipDispose: (() => void) | null = null;
 
   constructor(npub: string) {
     super(); // Call View base class constructor
@@ -937,6 +941,13 @@ export class ProfileView extends View {
       const isAuthenticated = AuthGuard.requireAuth('edit profile');
       if (!isAuthenticated) return;
 
+      // Focus UI (v2): the flat profile editor view (/profile/edit) —
+      // same seam as the note composer. Classic: the modal.
+      if (isFocusUiEnabled()) {
+        delegateToFocusUi('profile-edit');
+        return;
+      }
+
       // Open profile edit modal
       const profileEditModal = ProfileEditModal.getInstance();
       void profileEditModal.show();
@@ -1453,13 +1464,35 @@ export class ProfileView extends View {
           if (!isFollowing(this.pubkey).public) {
             petnameEl.textContent = '';
             petnameEl.style.display = 'none';
+            this.petTooltipDispose?.();
+            this.petTooltipDispose = null;
             return;
           }
           petnameEl.style.display = '';
           const petname = getFollowPetname(this.pubkey);
           petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+          // nn-tooltip instead of a native title: descriptive, consistent
+          // with the private-note icon. Re-attach per render (state changed).
+          this.petTooltipDispose?.();
+          this.petTooltipDispose = Tooltip.attach(
+            petnameEl,
+            petname
+              ? _(
+                  'Public petname — stored in your contact list (NIP-02), visible to everyone. Click to edit.'
+                )
+              : _(
+                  'Public petname — click to set one. Stored in your contact list (NIP-02), visible to everyone.'
+                )
+          );
         };
         render();
+
+        // The follow list can land AFTER this PV's first render (post-login
+        // sync from files/relays replaces the storage). Re-render on follow
+        // changes so the (+)/petname appears as soon as the data is there —
+        // not only after navigating to another profile.
+        const subId = this.eventBus.on('follow:updated', () => render());
+        this.eventBusSubscriptions.push(subId);
 
         petnameEl.addEventListener('click', async e => {
           e.preventDefault();
@@ -1495,13 +1528,16 @@ export class ProfileView extends View {
 
     void import('../../services/PetnameService').then(({ PetnameService }) => {
       const service = PetnameService.getInstance();
-      if (!service.isPrivateNotesEnabled()) {
-        noteEl.style.display = 'none';
-        return;
-      }
-      noteEl.style.display = '';
 
       const render = (): void => {
+        if (!service.isPrivateNotesEnabled()) {
+          noteEl.style.display = 'none';
+          this.petnoteTooltipDispose?.();
+          this.petnoteTooltipDispose = null;
+          return;
+        }
+        noteEl.style.display = '';
+
         const note = service.getPetname(this.pubkey);
         const filled = !!note;
         noteEl.classList.toggle('profile-petname-note--filled', filled);
@@ -1517,6 +1553,12 @@ export class ProfileView extends View {
           '<svg width="18" height="18"><use href="#icon-note"/></svg>';
       };
       render();
+
+      // Live gate: the "Private petnames" toggle (gear/privacy settings) or a
+      // note mutation (local or relay sync) flips the state — the icon
+      // appears/disappears without a PV re-render.
+      const subId = this.eventBus.on('petname-notes:changed', () => render());
+      this.eventBusSubscriptions.push(subId);
 
       noteEl.addEventListener('click', async e => {
         e.preventDefault();
@@ -2627,6 +2669,8 @@ export class ProfileView extends View {
     this.tooltipDisposers = [];
     this.petnoteTooltipDispose?.();
     this.petnoteTooltipDispose = null;
+    this.petTooltipDispose?.();
+    this.petTooltipDispose = null;
 
     // Cleanup profile subscription
     this.profileUnsubscribe?.();

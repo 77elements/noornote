@@ -422,6 +422,17 @@ export class App {
       false,
       params => params.noteId ?? ''
     );
+    // Profile object routes (v2 focus UI). BOTH must register BEFORE
+    // '/profile/:npub' — the param pattern `[^/]+` would otherwise
+    // swallow 'edit' (and the param-less /profile) as an npub.
+    this.registerRoute(
+      '/profile/edit',
+      'profile-edit',
+      'profile-edit',
+      'pv',
+      true
+    );
+    this.registerRoute('/profile', 'profile', 'profile', 'pv', true);
     this.registerRoute(
       '/profile/:npub',
       'profile',

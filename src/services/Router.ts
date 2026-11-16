@@ -248,6 +248,43 @@ export class Router {
   }
 
   /**
+   * Record a new history step WITHOUT re-rendering the view (no handleRoute).
+   * The v2 focus shell drives its surfaces from the focus navigation seam —
+   * the URL must follow along as a REAL history step (pushState + custom
+   * stack push), so the Global Back button (Router.back()) and browser
+   * back/forward can walk v2 navigation. Unlike navigate(), no route is
+   * resolved and no view transition runs; the shell syncs its own state.
+   */
+  public pushUrl(path: string): void {
+    if (path === this.currentPath) return;
+
+    // Update navigation history: truncate forward entries, push (same
+    // bookkeeping as navigate(), incl. the consecutive-duplicate guard).
+    if (!this.isNavigatingHistory) {
+      this.history = this.history.slice(0, this.historyIndex + 1);
+      if (this.history[this.historyIndex] !== path) {
+        this.history.push(path);
+        if (this.history.length > this.MAX_HISTORY) {
+          this.history.shift();
+        } else {
+          this.historyIndex++;
+        }
+      }
+      this.saveHistory();
+    }
+
+    // Preserve the secondary-pane state (?scc=) just like navigate() does.
+    const scc = new URLSearchParams(window.location.search).get('scc');
+    const targetUrl = scc ? `${path}?scc=${encodeURIComponent(scc)}` : path;
+    window.history.pushState({}, '', targetUrl);
+
+    this.currentPath = path;
+    sessionStorage.setItem(this.SESSION_STORAGE_KEY, path);
+    this.persistRoute(path);
+    this.notifyHistoryChanged();
+  }
+
+  /**
    * Replace the current URL in place (no new history entry, no re-render).
    * Used to canonicalize a URL that already maps to the current view — e.g. a note
    * reached as /note/<hex> or /note/<nevent-with-relay-hints> is normalised to its

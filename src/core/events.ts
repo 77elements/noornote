@@ -440,6 +440,10 @@ export interface AppEvents {
   'profile:updated': ProfileUpdatedPayload;
   'profileMounts:changed': ProfileMountsChangedPayload;
   'pin:updated': { pubkey: string };
+  /** Private petname notes (NIP-78) changed locally: the feature toggle
+   *  flipped or a note was set/cleared (local mutation or relay sync).
+   *  Listeners re-evaluate the note icon / avatar ring visibility. */
+  'petname-notes:changed': void;
 
   // ── Relay ──────────────────────────────────
   'relay:connected': RelayConnectedPayload;

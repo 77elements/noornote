@@ -27,6 +27,9 @@
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
 import { Router } from '../services/Router';
+import { NavigationDispatcher } from '../services/NavigationDispatcher';
+import { parseFocusUrl, type FocusUrlState } from './focusUrlState';
+import { isSelfNav, pushFocusUrl } from './focusHistorySync';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -114,8 +117,11 @@ export class FocusStage {
     string,
     { btn: HTMLElement; source: HTMLElement | null }
   >();
-  /** Object-level history (def ids; back walks it, close removes). */
-  private hist: string[] = [];
+  /** History sync: back/forward re-derive shell state from the URL. */
+  private readonly onRouterHistoryChanged = (): void => {
+    if (isSelfNav()) return;
+    void this.syncFromUrl(Router.getInstance().getCurrentPath());
+  };
   /** ED-b bottom drawer (object settings), injected by the shell. */
   private drawer: FocusSettingsDrawer | null = null;
   private settingsView: FocusSettingsView | null = null;
@@ -151,6 +157,10 @@ export class FocusStage {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    window.addEventListener(
+      'router:history-changed',
+      this.onRouterHistoryChanged
+    );
   }
 
   /** Build the FS grid into the stage element. */
@@ -257,6 +267,10 @@ export class FocusStage {
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener(
+      'router:history-changed',
+      this.onRouterHistoryChanged
+    );
     this.onSettingsClosed();
     this.drawer?.setOnClosed(null);
     this.drawer = null;
@@ -266,7 +280,6 @@ export class FocusStage {
     this.surfaces.clear();
     this.objects.clear();
     this.scrollTopState.clear();
-    this.hist = [];
     for (const mgr of this.badgeManagers) mgr.destroy();
     this.badgeManagers = [];
     for (const dispose of this.tooltipDisposers) dispose();
@@ -275,11 +288,30 @@ export class FocusStage {
   }
 
   /**
-   * Re-open a domain's surface from its route (boot/reload restore): the
-   * URL is already correct, the surface opens with the standard morph.
+   * History sync: re-derive the shell state from a URL — the Global Back
+   * button, browser back/forward and hardware back all move the Router's
+   * custom stack; this turns the resulting path back into shell state
+   * (which object is focused, which state its surface shows). Boot
+   * deep-links (reload on /note/:nevent) come through here too.
+   * Returns false when the URL is not shell-owned (classic routes) —
+   * the caller leaves those alone.
    */
-  restoreDomain(def: FocusDomainDef): void {
-    void this.switchTo(def);
+  async syncFromUrl(path: string): Promise<boolean> {
+    if (this.morphing) return true; // a morph is running — do not fight it
+    if (path === HOME_ROUTE) {
+      if (this.activeId) this.close();
+      return true;
+    }
+    const state = parseFocusUrl(path, this.activeId);
+    if (!state) return false;
+    const def = FOCUS_DOMAINS.find(d => d.id === state.defId);
+    if (!def?.createSurface) return false;
+    if (this.activeId === def.id) {
+      await this.surfaces.get(def.id)?.view?.restoreState?.(state);
+      return true;
+    }
+    await this.switchTo(def, undefined, state);
+    return true;
   }
 
   /**
@@ -436,14 +468,7 @@ export class FocusStage {
     el.addEventListener('focus:surface-back', e => {
       const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
       backBtn.hidden = !detail?.visible;
-      if (detail?.visible) {
-        // A detail opened from THIS surface's own list (the handoff's
-        // setBackVisible fires detached and never reaches here) becomes
-        // its own history entry — back returns to the list, not past
-        // it. Unconditional push: the top entry is the list state the
-        // detail was opened from (same object id, different state).
-        this.hist.push(def.id);
-      } else if (
+      if (
         !detail?.visible &&
         this.settingsDef?.id === def.id &&
         this.settingsFromSecondary
@@ -474,24 +499,11 @@ export class FocusStage {
     backBtn.addEventListener('click', e => {
       e.stopPropagation();
       if (this.activeId !== def.id || this.morphing) return;
-      // History-aware back: pop the current state; the previous entry
-      // is either another object (morph back — its surface state was
-      // preserved on the way in) or this object's own list (in-column
-      // back). At the history root the surface's list back no-ops.
-      if (this.hist.length > 1) {
-        this.hist.pop();
-        const targetId = this.hist[this.hist.length - 1];
-        if (targetId === def.id) {
-          this.surfaces.get(def.id)?.view?.back?.();
-          return;
-        }
-        const target = FOCUS_DOMAINS.find(d => d.id === targetId);
-        if (target) {
-          void this.switchTo(target, undefined, true);
-          return;
-        }
-      }
-      this.surfaces.get(def.id)?.view?.back?.();
+      // History back, v1-parity: the Global Back Button mechanism. The
+      // current detail can veto first (e.g. the composer's unsaved-
+      // content guard) — the history must not move past a deferred back.
+      if (this.surfaces.get(def.id)?.view?.confirmBack?.() === false) return;
+      NavigationDispatcher.goBack();
     });
 
     // Scroll-to-top action: visible once the column's main scroller is
@@ -596,12 +608,14 @@ export class FocusStage {
    * back to its circle while the new one grows into the column. The
    * optional handoff opens a detail on the new surface before the
    * morph, so the column lands on its final content (e.g. the quoted
-   * article clicked inside the timeline).
+   * article clicked inside the timeline). A `restore` state (history
+   * sync) replaces the handoff: the surface re-derives its state from
+   * the parsed URL instead of opening a fresh seam detail.
    */
   private async switchTo(
     def: FocusDomainDef,
     nav?: FocusHandoff,
-    viaBack = false
+    restore?: FocusUrlState
   ): Promise<void> {
     const el = this.objects.get(def.id);
     if (!el || !def.createSurface) return;
@@ -615,18 +629,14 @@ export class FocusStage {
       }
       return;
     }
-    // History: every forward activation pushes (back walks without
-    // pushing).
-    if (!viaBack && this.hist[this.hist.length - 1] !== def.id) {
-      this.hist.push(def.id);
-    }
-    await this.open(def, el, nav);
+    await this.open(def, el, nav, restore);
   }
 
   private async open(
     def: FocusDomainDef,
     el: HTMLElement,
-    nav?: FocusHandoff
+    nav?: FocusHandoff,
+    restore?: FocusUrlState
   ): Promise<void> {
     // Column content switches — object settings (ED-b) belong to the old
     // object and follow it out.
@@ -653,7 +663,18 @@ export class FocusStage {
       this.morphing = false; // closed again while loading
       return;
     }
-    if (nav) {
+    if (restore) {
+      // History sync (back/forward/deep-link): re-derive the surface's
+      // state from the parsed URL. Same detached-frame caveat as the
+      // handoff above — set the back action manually for detail states.
+      try {
+        await surface.view?.restoreState?.(restore);
+        const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+        if (backBtn) backBtn.hidden = restore.kind === 'list';
+      } catch {
+        surface.view?.syncUrl?.();
+      }
+    } else if (nav) {
       if (surface.view?.openDetail) {
         try {
           await surface.view.openDetail(nav.param);
@@ -673,9 +694,9 @@ export class FocusStage {
       } else {
         // Object-root seam nav (no detail — e.g. 'tribes' from the TV
         // tab row): a deliberate object switch — the URL follows the
-        // domain route like a circle click would.
+        // domain route like a circle click would (push: real step).
         if (surface.view?.syncUrl) surface.view.syncUrl();
-        else if (def.route) Router.getInstance().replaceUrl(def.route);
+        else if (def.route) pushFocusUrl(def.route);
       }
     }
 
@@ -741,10 +762,11 @@ export class FocusStage {
     // URL follows the restored state (in place, no history entry): a
     // handoff's detail set its own URL already; otherwise the surface
     // syncs — a preserved detail keeps its route — falling back to the
-    // domain route.
-    if (!nav) {
+    // domain route. Circle clicks PUSH (a real history step); restores
+    // no-op (pushUrl's same-path guard — the URL is already correct).
+    if (!nav && !restore) {
       if (surface.view?.syncUrl) surface.view.syncUrl();
-      else if (def.route) Router.getInstance().replaceUrl(def.route);
+      else if (def.route) pushFocusUrl(def.route);
     }
 
     let morphDone: Promise<unknown> = Promise.resolve();
@@ -802,11 +824,9 @@ export class FocusStage {
     this.grid.classList.remove('is-focused');
     el.style.gridColumn = '';
     this.activeId = null;
-    // Back to the home grid URL (no-op when already there).
-    Router.getInstance().replaceUrl(HOME_ROUTE);
-    // The object left the history: its surface was reset above (a
-    // reopen starts at the list), so its history entries are gone too.
-    this.hist = this.hist.filter(id => id !== def.id);
+    // Back to the home grid URL (no-op when already there). PUSH: the
+    // grid is a state of its own — back from it returns to the object.
+    pushFocusUrl(HOME_ROUTE);
     this.restoreSideCircles();
     if (!first) return; // takeover / no-animate: plain class flip
 

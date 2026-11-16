@@ -25,6 +25,7 @@ import {
 } from '../addons/bookmarks/index';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
+import { PetnameService } from '../services/PetnameService';
 import {
   isPrivateFollowsEnabled,
   setPrivateFollowsEnabled,
@@ -548,22 +549,28 @@ export class FocusPrivateListSettings extends FocusSettingsPanel {
       listName: string;
       isEnabled: () => boolean;
       setEnabled: (enabled: boolean) => void;
+      /** NIP-51 caution line — off for non-list toggles (e.g. petnames). */
+      caution?: boolean;
     }
   ) {
     super();
   }
 
   protected render(): string {
+    const caution =
+      this.config.caution === false
+        ? ''
+        : `<p class="setting__desc ${this.config.hook}-warning">
+            <strong>${_('Caution:')}</strong>
+            ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", this.config.listName)}
+          </p>`;
     return `
       <section class="section">
         <div class="setting">
           <span class="setting__label">${_(this.config.label)}</span>
           <div class="setting__control" data-focus-setting="${this.config.hook}"></div>
           <p class="setting__desc">${_(this.config.description)}</p>
-          <p class="setting__desc ${this.config.hook}-warning">
-            <strong>${_('Caution:')}</strong>
-            ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", this.config.listName)}
-          </p>
+          ${caution}
         </div>
       </section>
     `;
@@ -608,6 +615,20 @@ export const mutesSettings = (): FocusSettingsView =>
     listName: _('mutes'),
     isEnabled: () => isPrivateMutesEnabled(),
     setEnabled: setPrivateMutesEnabled,
+  });
+
+export const profileSettings = (): FocusSettingsView =>
+  new FocusPrivateListSettings({
+    hook: 'private-petnames',
+    label: _('Private petnames'),
+    description: _(
+      'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted, only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.'
+    ),
+    listName: _('petnames'),
+    isEnabled: () => PetnameService.getInstance().isPrivateNotesEnabled(),
+    setEnabled: enabled =>
+      PetnameService.getInstance().setPrivateNotesEnabled(enabled),
+    caution: false,
   });
 
 /**

@@ -538,7 +538,7 @@ msgstr ""
 msgid "⏳ Waiting for password..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1471
+#: src/components/views/ProfileView.ts:1504
 #: src/lists/follows.ts:2408
 msgid "⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it."
 msgstr ""
@@ -551,7 +551,7 @@ msgstr ""
 msgid "🔑 Use NoorSigner"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1527
+#: src/components/views/ProfileView.ts:1569
 #: src/lists/follows.ts:2437
 msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
 msgstr ""
@@ -569,15 +569,15 @@ msgstr[1] ""
 
 #: src/components/settings/UISettingsSection.ts:106
 #: src/components/settings/UISettingsSection.ts:591
-#: src/shell/focusSettings.ts:120
-#: src/shell/focusSettings.ts:215
+#: src/shell/focusSettings.ts:118
+#: src/shell/focusSettings.ts:213
 msgid "1 week"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:108
 #: src/components/settings/UISettingsSection.ts:593
-#: src/shell/focusSettings.ts:122
-#: src/shell/focusSettings.ts:217
+#: src/shell/focusSettings.ts:120
+#: src/shell/focusSettings.ts:215
 msgid "1 year"
 msgstr ""
 
@@ -587,15 +587,15 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:105
 #: src/components/settings/UISettingsSection.ts:590
-#: src/shell/focusSettings.ts:119
-#: src/shell/focusSettings.ts:214
+#: src/shell/focusSettings.ts:117
+#: src/shell/focusSettings.ts:212
 msgid "3 days"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:107
 #: src/components/settings/UISettingsSection.ts:592
-#: src/shell/focusSettings.ts:121
-#: src/shell/focusSettings.ts:216
+#: src/shell/focusSettings.ts:119
+#: src/shell/focusSettings.ts:214
 msgid "3 months"
 msgstr ""
 
@@ -748,7 +748,7 @@ msgstr ""
 msgid "Add private note"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1513
+#: src/components/views/ProfileView.ts:1549
 msgid "Add private note. Only readable by you under this npub."
 msgstr ""
 
@@ -777,7 +777,7 @@ msgstr ""
 msgid "Add to Collection"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1028
+#: src/components/views/ProfileView.ts:1039
 msgid "Add to Tribe"
 msgstr ""
 
@@ -818,7 +818,7 @@ msgstr ""
 msgid "Added to private bookmarks"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1808
+#: src/components/views/ProfileView.ts:1850
 msgid "Added to tribe \"%s\""
 msgstr ""
 
@@ -857,6 +857,7 @@ msgid "Address, link, room…"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:111
+#: src/shell/focusSettings.ts:624
 msgid "Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted, only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone."
 msgstr ""
 
@@ -877,7 +878,7 @@ msgid "After the window expires, the blinking stops (you have adapted to their n
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:594
-#: src/shell/focusSettings.ts:218
+#: src/shell/focusSettings.ts:216
 msgid "all"
 msgstr ""
 
@@ -939,7 +940,7 @@ msgid "All muted users"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:109
-#: src/shell/focusSettings.ts:123
+#: src/shell/focusSettings.ts:121
 msgid "All self-reposts (any age)"
 msgstr ""
 
@@ -1017,7 +1018,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:310
+#: src/shell/focusDomains.ts:332
 msgid "Analytics"
 msgstr ""
 
@@ -1135,7 +1136,7 @@ msgstr ""
 msgid "Article"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:977
+#: src/components/views/ProfileView.ts:988
 msgid "Article alerts"
 msgstr ""
 
@@ -1148,7 +1149,7 @@ msgid "Article excerpt limit set to %s characters"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:272
-#: src/shell/focusSettings.ts:313
+#: src/shell/focusSettings.ts:311
 msgid "Article feed source, main view"
 msgstr ""
 
@@ -1182,9 +1183,9 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2112
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:37
-#: src/components/views/ProfileView.ts:2327
-#: src/components/views/ProfileView.ts:742
-#: src/shell/focusDomains.ts:189
+#: src/components/views/ProfileView.ts:2369
+#: src/components/views/ProfileView.ts:746
+#: src/shell/focusDomains.ts:200
 msgid "Articles"
 msgstr ""
 
@@ -1277,8 +1278,8 @@ msgstr ""
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1425
-#: src/components/views/ProfileView.ts:699
+#: src/components/views/ProfileView.ts:1436
+#: src/components/views/ProfileView.ts:703
 msgid "Award Badge"
 msgstr ""
 
@@ -1293,8 +1294,8 @@ msgstr ""
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:312
-#: src/shell/focusStage.ts:386
-#: src/shell/focusStage.ts:551
+#: src/shell/focusStage.ts:418
+#: src/shell/focusStage.ts:563
 msgid "Back"
 msgstr ""
 
@@ -1393,9 +1394,9 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:44
 #: src/addons/badges/BadgesView.ts:35
-#: src/components/views/ProfileView.ts:2239
-#: src/components/views/ProfileView.ts:748
-#: src/shell/focusDomains.ts:314
+#: src/components/views/ProfileView.ts:2281
+#: src/components/views/ProfileView.ts:752
+#: src/shell/focusDomains.ts:336
 msgid "Badges"
 msgstr ""
 
@@ -1414,7 +1415,7 @@ msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of th
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2535
-#: src/components/profile/ProfileEditModal.ts:199
+#: src/components/profile/ProfileEditor.ts:195
 #: src/helpers/profile-field-helpers.ts:48
 msgid "Bio"
 msgstr ""
@@ -1441,7 +1442,7 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:186
 #: src/components/views/ProfileBookingView.ts:202
-#: src/components/views/ProfileView.ts:696
+#: src/components/views/ProfileView.ts:700
 msgid "Book a meeting"
 msgstr ""
 
@@ -1553,12 +1554,12 @@ msgid "Bookmark listing"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:105
-#: src/shell/focusSettings.ts:471
+#: src/shell/focusSettings.ts:469
 msgid "Bookmark read-state sync disabled"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:104
-#: src/shell/focusSettings.ts:470
+#: src/shell/focusSettings.ts:468
 msgid "Bookmark read-state sync enabled"
 msgstr ""
 
@@ -1573,7 +1574,7 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:262
 #: src/components/settings/PrivacySettingsSection.ts:82
-#: src/shell/focusSettings.ts:530
+#: src/shell/focusSettings.ts:528
 msgid "bookmarks"
 msgstr ""
 
@@ -1584,7 +1585,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:216
+#: src/shell/focusDomains.ts:227
 msgid "Bookmarks"
 msgstr ""
 
@@ -1667,7 +1668,7 @@ msgstr ""
 msgid "Bulk delete"
 msgstr ""
 
-#: src/shell/focusDomains.ts:329
+#: src/shell/focusDomains.ts:351
 msgid "Bulk Delete"
 msgstr ""
 
@@ -1679,7 +1680,7 @@ msgstr ""
 msgid "bunker://..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2282
+#: src/components/views/ProfileView.ts:2324
 msgid "by"
 msgstr ""
 
@@ -1713,9 +1714,9 @@ msgstr ""
 #: src/addons/calendar/CalendarAddonView.ts:57
 #: src/addons/calendar/CalendarAddonView.ts:67
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
-#: src/components/views/ProfileView.ts:2174
-#: src/components/views/ProfileView.ts:747
-#: src/shell/focusDomains.ts:286
+#: src/components/views/ProfileView.ts:2216
+#: src/components/views/ProfileView.ts:751
+#: src/shell/focusDomains.ts:308
 msgid "Calendar"
 msgstr ""
 
@@ -1779,7 +1780,7 @@ msgstr ""
 #: src/components/modals/ZapModal.ts:148
 #: src/components/onboarding/AccountSetupWizard.ts:1510
 #: src/components/post/PostNoteModal.ts:405
-#: src/components/profile/ProfileEditModal.ts:257
+#: src/components/profile/ProfileEditor.ts:119
 #: src/components/reply/ReplyModal.ts:433
 #: src/components/report/ReportModal.ts:139
 #: src/components/settings/CacheSettingsSection.ts:373
@@ -1848,7 +1849,7 @@ msgid "Card options"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:134
-#: src/shell/focusSettings.ts:567
+#: src/shell/focusSettings.ts:564
 msgid "Caution:"
 msgstr ""
 
@@ -1915,7 +1916,7 @@ msgstr ""
 msgid "Checking…"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1677
+#: src/components/views/ProfileView.ts:1719
 msgid "Choose a tribe"
 msgstr ""
 
@@ -2029,8 +2030,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:382
-#: src/shell/focusStage.ts:550
+#: src/shell/focusStage.ts:414
+#: src/shell/focusStage.ts:562
 msgid "Close"
 msgstr ""
 
@@ -2258,7 +2259,7 @@ msgstr ""
 msgid "Conversations deleted & senders muted"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:724
+#: src/components/views/ProfileView.ts:728
 msgid "Copied!"
 msgstr ""
 
@@ -2293,7 +2294,7 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:689
+#: src/components/views/ProfileView.ts:693
 msgid "Copy npub"
 msgstr ""
 
@@ -2534,7 +2535,7 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:63
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:255
+#: src/shell/focusDomains.ts:277
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2663,32 +2664,32 @@ msgid "Default reminder lead for all events. Reminders stay local to this device
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:730
-#: src/shell/focusSettings.ts:335
+#: src/shell/focusSettings.ts:333
 msgid "Degree 1 (direct follows)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:722
-#: src/shell/focusSettings.ts:327
+#: src/shell/focusSettings.ts:325
 msgid "Degree 1, Direct follows"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:731
-#: src/shell/focusSettings.ts:336
+#: src/shell/focusSettings.ts:334
 msgid "Degree 2 (friends of friends)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:723
-#: src/shell/focusSettings.ts:328
+#: src/shell/focusSettings.ts:326
 msgid "Degree 2, Friends of friends"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:732
-#: src/shell/focusSettings.ts:337
+#: src/shell/focusSettings.ts:335
 msgid "Degree 3 (friends of friends of friends)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:726
-#: src/shell/focusSettings.ts:331
+#: src/shell/focusSettings.ts:329
 msgid "Degree 3, Friends of friends of friends (slow to build)"
 msgstr ""
 
@@ -2997,12 +2998,12 @@ msgid "Direct messages are not available with Bunker URL login"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:250
-#: src/shell/focusSettings.ts:182
+#: src/shell/focusSettings.ts:180
 msgid "Disable post truncation"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:182
-#: src/shell/focusSettings.ts:135
+#: src/shell/focusSettings.ts:133
 msgid "Disable self-reposts younger than:"
 msgstr ""
 
@@ -3025,7 +3026,12 @@ msgstr ""
 #: src/addons/calendar/CalendarImportExport.ts:103
 #: src/addons/calendar/CalendarImportExport.ts:463
 #: src/components/views/ArticleEditorView.ts:1010
+#: src/components/views/ProfileEditView.ts:80
 msgid "Discard"
+msgstr ""
+
+#: src/components/views/ProfileEditView.ts:78
+msgid "Discard changes?"
 msgstr ""
 
 #: src/addons/calendar/CalendarImportExport.ts:456
@@ -3054,7 +3060,7 @@ msgstr ""
 msgid "Dismiss"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:173
+#: src/components/profile/ProfileEditor.ts:169
 #: src/helpers/profile-field-helpers.ts:40
 msgid "Display Name"
 msgstr ""
@@ -3071,8 +3077,8 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/shell/focusStage.ts:1243
-#: src/shell/focusStage.ts:1262
+#: src/shell/focusStage.ts:1263
+#: src/shell/focusStage.ts:1282
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -3185,7 +3191,7 @@ msgstr ""
 msgid "e.g. Alhamdulillah"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1475
+#: src/components/views/ProfileView.ts:1508
 #: src/lists/follows.ts:2412
 msgid "e.g. Bob from work"
 msgstr ""
@@ -3300,13 +3306,13 @@ msgstr ""
 msgid "Edit note"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1512
+#: src/components/views/ProfileView.ts:1548
 #: src/lists/follows.ts:2368
 #: src/lists/follows.ts:2450
 msgid "Edit private note"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:107
+#: src/components/profile/ProfileEditModal.ts:49
 msgid "Edit Profile"
 msgstr ""
 
@@ -3314,7 +3320,7 @@ msgstr ""
 msgid "Edit tribes"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:919
+#: src/components/views/ProfileView.ts:923
 msgid "Edit your profile"
 msgstr ""
 
@@ -3322,7 +3328,7 @@ msgstr ""
 msgid "electronics, vintage (comma separated)"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:248
+#: src/components/profile/ProfileEditor.ts:244
 #: src/helpers/profile-field-helpers.ts:77
 msgid "Email format (user@domain.com) or LNURL"
 msgstr ""
@@ -3660,12 +3666,12 @@ msgid "Expired"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:652
-#: src/shell/focusSettings.ts:278
+#: src/shell/focusSettings.ts:276
 msgid "Expiry notices hidden"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:652
-#: src/shell/focusSettings.ts:278
+#: src/shell/focusSettings.ts:276
 msgid "Expiry notices shown"
 msgstr ""
 
@@ -3722,7 +3728,7 @@ msgstr ""
 msgid "Failed to add members"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1811
+#: src/components/views/ProfileView.ts:1853
 msgid "Failed to add to tribe"
 msgstr ""
 
@@ -3882,7 +3888,7 @@ msgstr ""
 msgid "Failed to load notes"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:434
+#: src/components/views/ProfileView.ts:438
 msgid "Failed to load profile"
 msgstr ""
 
@@ -4111,7 +4117,7 @@ msgid "Failed: %s"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:317
+#: src/shell/focusDomains.ts:339
 msgid "Feedback Board"
 msgstr ""
 
@@ -4249,7 +4255,7 @@ msgid "Follow All (%s)"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:67
-#: src/shell/focusSettings.ts:599
+#: src/shell/focusSettings.ts:603
 msgid "follow lists"
 msgstr ""
 
@@ -4284,7 +4290,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:282
+#: src/shell/focusDomains.ts:304
 msgid "Follow Packs"
 msgstr ""
 
@@ -4321,19 +4327,19 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:336
+#: src/shell/focusDomains.ts:358
 msgid "Follower Notification"
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:242
-#: src/components/views/ProfileView.ts:682
+#: src/components/views/ProfileView.ts:686
 msgid "Followers"
 msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:366
 #: src/components/onboarding/AccountSetupWizard.ts:2778
 #: src/components/user-search/UserSearchInput.ts:322
-#: src/components/views/ProfileView.ts:678
+#: src/components/views/ProfileView.ts:682
 msgid "Following"
 msgstr ""
 
@@ -4367,7 +4373,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:236
+#: src/shell/focusDomains.ts:247
 msgid "Follows"
 msgstr ""
 
@@ -4387,7 +4393,7 @@ msgstr ""
 msgid "Follows reset. Reloading..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:655
+#: src/components/views/ProfileView.ts:659
 msgid "Follows you"
 msgstr ""
 
@@ -4438,7 +4444,7 @@ msgstr ""
 msgid "Get notified when someone new follows you. Checks every 3 hours in the background; each new follower is verified against their own contact list, so there are no false alarms."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:975
+#: src/components/views/ProfileView.ts:986
 msgid "Get notified when this user posts a new article"
 msgstr ""
 
@@ -4520,7 +4526,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:342
+#: src/shell/focusDomains.ts:364
 msgid "Group Chats"
 msgstr ""
 
@@ -4544,7 +4550,7 @@ msgstr ""
 msgid "Handle key signer prompts through NoorNote instead of opening a terminal window."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:656
+#: src/components/views/ProfileView.ts:660
 msgid "Has muted you"
 msgstr ""
 
@@ -4560,7 +4566,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:323
+#: src/shell/focusDomains.ts:345
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4585,7 +4591,7 @@ msgid "hidden"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:229
-#: src/shell/focusSettings.ts:162
+#: src/shell/focusSettings.ts:160
 msgid "Hide highlights"
 msgstr ""
 
@@ -4594,7 +4600,7 @@ msgid "Hide notes containing specific words from all timelines. Manage your bloc
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:176
-#: src/shell/focusSettings.ts:129
+#: src/shell/focusSettings.ts:127
 msgid "Hide self-reposts"
 msgstr ""
 
@@ -4602,7 +4608,7 @@ msgstr ""
 msgid "Hide this dhikr from everyone? You can un-hide it later."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:989
+#: src/components/views/ProfileView.ts:1000
 msgid "Hide this user's website highlights and reposts of them from your timelines"
 msgstr ""
 
@@ -4611,22 +4617,22 @@ msgid "Hide timeline notes containing words on your filter list."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:232
-#: src/shell/focusSettings.ts:165
+#: src/shell/focusSettings.ts:163
 msgid "Hides other users' highlight posts that quote an external website, including pure reposts of them."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:179
-#: src/shell/focusSettings.ts:132
+#: src/shell/focusSettings.ts:130
 msgid "Hides reposts of users' own notes from your timeline."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:607
-#: src/shell/focusSettings.ts:230
+#: src/shell/focusSettings.ts:228
 msgid "Hiding all self-reposts"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:608
-#: src/shell/focusSettings.ts:231
+#: src/shell/focusSettings.ts:229
 msgid "Hiding self-reposts younger than %s"
 msgstr ""
 
@@ -4659,7 +4665,7 @@ msgid "highlighted your %s"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:631
-#: src/shell/focusSettings.ts:264
+#: src/shell/focusSettings.ts:262
 msgid "Highlights shown again"
 msgstr ""
 
@@ -4983,7 +4989,7 @@ msgstr ""
 msgid "Invalid notifications cache size (10-1000)"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:362
+#: src/components/views/ProfileView.ts:366
 msgid "Invalid profile ID"
 msgstr ""
 
@@ -5023,7 +5029,7 @@ msgstr ""
 msgid "Italic"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:556
+#: src/components/views/ProfileView.ts:560
 msgid "Joined Nostr on %s"
 msgstr ""
 
@@ -5039,6 +5045,10 @@ msgstr ""
 
 #: src/components/modals/SyncConfirmationModal.ts:279
 msgid "Keep all"
+msgstr ""
+
+#: src/components/views/ProfileEditView.ts:81
+msgid "Keep editing"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:1011
@@ -5184,7 +5194,7 @@ msgstr ""
 msgid "License"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:238
+#: src/components/profile/ProfileEditor.ts:234
 #: src/helpers/profile-field-helpers.ts:75
 msgid "Lightning Address"
 msgstr ""
@@ -5204,7 +5214,7 @@ msgstr ""
 #: src/components/qrcode/QRCodeModal.ts:128
 #: src/components/qrcode/QRCodeModal.ts:155
 #: src/components/qrcode/QRCodeModal.ts:163
-#: src/components/views/ProfileView.ts:714
+#: src/components/views/ProfileView.ts:718
 msgid "Lightning QR Code"
 msgstr ""
 
@@ -5328,7 +5338,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:270
+#: src/shell/focusDomains.ts:292
 msgid "Live Streams"
 msgstr ""
 
@@ -5368,7 +5378,7 @@ msgstr ""
 msgid "Loading articles..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2328
+#: src/components/views/ProfileView.ts:2370
 msgid "Loading articles…"
 msgstr ""
 
@@ -5511,7 +5521,7 @@ msgstr ""
 msgid "Loading older messages…"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:370
+#: src/components/views/ProfileView.ts:374
 msgid "Loading profile..."
 msgstr ""
 
@@ -5575,11 +5585,11 @@ msgstr ""
 msgid "Loading tribes..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2346
+#: src/components/views/ProfileView.ts:2388
 msgid "Loading videos…"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2364
+#: src/components/views/ProfileView.ts:2406
 msgid "Loading websites…"
 msgstr ""
 
@@ -5601,7 +5611,7 @@ msgstr ""
 #: src/components/ui/ReplyIndicator.ts:49
 #: src/components/ui/UserStatus.ts:42
 #: src/components/views/ListingReadView.ts:130
-#: src/components/views/ProfileView.ts:554
+#: src/components/views/ProfileView.ts:558
 #: src/lists/follows.ts:2642
 msgid "Loading..."
 msgstr ""
@@ -5738,7 +5748,7 @@ msgid "Logs exported"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:253
-#: src/shell/focusSettings.ts:185
+#: src/shell/focusSettings.ts:183
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr ""
 
@@ -5767,7 +5777,7 @@ msgid "Low Priority"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:753
-#: src/shell/focusSettings.ts:352
+#: src/shell/focusSettings.ts:350
 msgid "Main article feed: %s"
 msgstr ""
 
@@ -5798,7 +5808,7 @@ msgid "Manual Mode"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:180
-#: src/shell/focusSettings.ts:493
+#: src/shell/focusSettings.ts:491
 msgid "Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync."
 msgstr ""
 
@@ -5828,7 +5838,7 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:276
+#: src/shell/focusDomains.ts:298
 msgid "Marketplace"
 msgstr ""
 
@@ -5845,7 +5855,7 @@ msgid "Marketplace listings will appear here"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:149
-#: src/shell/focusSettings.ts:442
+#: src/shell/focusSettings.ts:440
 msgid "Marks ALL bookmarks as unread again (also on your other devices after their next sync)."
 msgstr ""
 
@@ -5974,7 +5984,7 @@ msgstr ""
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:208
+#: src/shell/focusDomains.ts:219
 msgid "Messages"
 msgstr ""
 
@@ -6042,15 +6052,15 @@ msgstr ""
 msgid "More Frequent (every 5 min)"
 msgstr ""
 
-#: src/shell/focusStage.ts:1259
+#: src/shell/focusStage.ts:1279
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:1239
+#: src/shell/focusStage.ts:1259
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:1238
+#: src/shell/focusStage.ts:1258
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -6138,7 +6148,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:247
+#: src/shell/focusDomains.ts:258
 msgid "Muted"
 msgstr ""
 
@@ -6158,7 +6168,7 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:281
 #: src/components/settings/PrivacySettingsSection.ts:97
-#: src/shell/focusSettings.ts:611
+#: src/shell/focusSettings.ts:615
 msgid "mutes"
 msgstr ""
 
@@ -6351,7 +6361,7 @@ msgstr ""
 msgid "NIP-05 Cache Size"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:224
+#: src/components/profile/ProfileEditor.ts:220
 #: src/helpers/profile-field-helpers.ts:64
 msgid "NIP-05 Identifier"
 msgstr ""
@@ -6402,7 +6412,7 @@ msgstr ""
 msgid "No badges created yet."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1382
+#: src/components/views/ProfileView.ts:1393
 msgid "No badges created yet. Create one in Addons → Badges."
 msgstr ""
 
@@ -6691,7 +6701,7 @@ msgstr ""
 msgid "No tribes available"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1669
+#: src/components/views/ProfileView.ts:1711
 msgid "No tribes found. Create a tribe first in the Tribe view."
 msgstr ""
 
@@ -6828,7 +6838,7 @@ msgstr ""
 msgid "Nostr illustration by @awayuki"
 msgstr ""
 
-#: src/shell/focusDomains.ts:333
+#: src/shell/focusDomains.ts:355
 msgid "Nostr Majlis"
 msgstr ""
 
@@ -6878,7 +6888,7 @@ msgid "Not a valid .po file"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:134
-#: src/shell/focusSettings.ts:568
+#: src/shell/focusSettings.ts:565
 msgid "Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s."
 msgstr ""
 
@@ -6963,7 +6973,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:289
+#: src/shell/focusDomains.ts:311
 msgid "Note taking"
 msgstr ""
 
@@ -6975,8 +6985,8 @@ msgstr ""
 msgid "Note unpinned from profile"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:741
-#: src/components/views/ProfileView.ts:760
+#: src/components/views/ProfileView.ts:745
+#: src/components/views/ProfileView.ts:764
 msgid "Notes"
 msgstr ""
 
@@ -7014,7 +7024,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:200
+#: src/shell/focusDomains.ts:211
 msgid "Notifications"
 msgstr ""
 
@@ -7062,7 +7072,7 @@ msgstr ""
 msgid "npub or hex pubkey, comma-separated"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:692
+#: src/components/views/ProfileView.ts:696
 msgid "npub QR Code"
 msgstr ""
 
@@ -7109,7 +7119,7 @@ msgstr ""
 msgid "Only searching for #%s"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1012
+#: src/components/views/ProfileView.ts:1023
 msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 
@@ -7230,7 +7240,7 @@ msgid "Other Third-Party Connections"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:630
-#: src/shell/focusSettings.ts:263
+#: src/shell/focusSettings.ts:261
 msgid "Others' highlights hidden"
 msgstr ""
 
@@ -7340,6 +7350,7 @@ msgid "Personal calendar"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:109
+#: src/shell/focusSettings.ts:627
 msgid "petnames"
 msgstr ""
 
@@ -7626,12 +7637,12 @@ msgid "Post to:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:459
-#: src/shell/focusSettings.ts:295
+#: src/shell/focusSettings.ts:293
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:460
-#: src/shell/focusSettings.ts:296
+#: src/shell/focusSettings.ts:294
 msgid "Post truncation enabled"
 msgstr ""
 
@@ -7733,12 +7744,12 @@ msgid "Private (encrypted)"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:180
-#: src/shell/focusSettings.ts:584
+#: src/shell/focusSettings.ts:588
 msgid "Private %s disabled"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:179
-#: src/shell/focusSettings.ts:583
+#: src/shell/focusSettings.ts:587
 msgid "Private %s enabled"
 msgstr ""
 
@@ -7747,7 +7758,7 @@ msgid "Private Bookmark"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:84
-#: src/shell/focusSettings.ts:527
+#: src/shell/focusSettings.ts:525
 msgid "Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them."
 msgstr ""
 
@@ -7757,7 +7768,7 @@ msgid "Private event: NIP-44-encrypted, only readable by you. Syncs across your 
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:69
-#: src/shell/focusSettings.ts:596
+#: src/shell/focusSettings.ts:600
 msgid "Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it."
 msgstr ""
 
@@ -7770,16 +7781,17 @@ msgid "Private Key (nsec) - KEEP THIS SECRET!"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:99
-#: src/shell/focusSettings.ts:608
+#: src/shell/focusSettings.ts:612
 msgid "Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1526
+#: src/components/views/ProfileView.ts:1568
 #: src/lists/follows.ts:2436
 msgid "Private Note"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:110
+#: src/shell/focusSettings.ts:623
 msgid "Private petnames"
 msgstr ""
 
@@ -7800,7 +7812,7 @@ msgid "Product name..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:239
-#: src/components/views/ProfileView.ts:744
+#: src/components/views/ProfileView.ts:748
 msgid "Products"
 msgstr ""
 
@@ -7814,7 +7826,7 @@ msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:252
+#: src/shell/focusDomains.ts:266
 msgid "Profile"
 msgstr ""
 
@@ -7822,7 +7834,7 @@ msgstr ""
 msgid "Profile Cache Size"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1971
+#: src/components/views/ProfileView.ts:2013
 msgid "Profile module not available"
 msgstr ""
 
@@ -7884,6 +7896,14 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1807
 msgid "Public Key (npub) - Your username"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1483
+msgid "Public petname — click to set one. Stored in your contact list (NIP-02), visible to everyone."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1480
+msgid "Public petname — stored in your contact list (NIP-02), visible to everyone. Click to edit."
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:334
@@ -8136,12 +8156,12 @@ msgid "Reactions"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:678
-#: src/shell/focusSettings.ts:247
+#: src/shell/focusSettings.ts:245
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:681
-#: src/shell/focusSettings.ts:248
+#: src/shell/focusSettings.ts:246
 msgid "Reactions hidden from your timeline again"
 msgstr ""
 
@@ -8158,7 +8178,7 @@ msgid "Read more from this author"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:192
-#: src/shell/focusSettings.ts:505
+#: src/shell/focusSettings.ts:503
 msgid "Read state reset, all bookmarks unread"
 msgstr ""
 
@@ -8223,7 +8243,7 @@ msgid "Recipe hint: add a cover image, recipe clients expect one."
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:197
+#: src/shell/focusDomains.ts:208
 msgid "Recipes"
 msgstr ""
 
@@ -8440,8 +8460,8 @@ msgstr ""
 msgid "Rename Folder"
 msgstr ""
 
-#: src/shell/focusStage.ts:377
-#: src/shell/focusStage.ts:549
+#: src/shell/focusStage.ts:409
+#: src/shell/focusStage.ts:561
 msgid "Reorder"
 msgstr ""
 
@@ -8575,7 +8595,7 @@ msgstr ""
 #: src/addons/calendar/CalendarImportExport.ts:131
 #: src/components/views/ArticleEditorView.ts:465
 #: src/components/views/ArticleEditorView.ts:517
-#: src/shell/focusSettings.ts:496
+#: src/shell/focusSettings.ts:494
 msgid "Reset"
 msgstr ""
 
@@ -8601,7 +8621,7 @@ msgid "Reset calendar?"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:198
-#: src/shell/focusSettings.ts:511
+#: src/shell/focusSettings.ts:509
 msgid "Reset failed: %s"
 msgstr ""
 
@@ -8637,8 +8657,8 @@ msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:146
 #: src/addons/bookmarks/BookmarksAddonView.ts:179
-#: src/shell/focusSettings.ts:439
-#: src/shell/focusSettings.ts:492
+#: src/shell/focusSettings.ts:437
+#: src/shell/focusSettings.ts:490
 msgid "Reset read state"
 msgstr ""
 
@@ -8857,7 +8877,7 @@ msgstr ""
 msgid "Saving to file..."
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:260
+#: src/components/profile/ProfileEditor.ts:122
 #: src/components/views/ArticleEditorView.ts:1172
 #: src/lists/bookmarks.ts:5403
 #: src/lists/follows.ts:1878
@@ -8927,7 +8947,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:295
+#: src/shell/focusDomains.ts:317
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -8955,8 +8975,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2099
 #: src/components/layout/MainLayout.ts:2110
 #: src/components/layout/MainLayout.ts:2113
-#: src/shell/focusStage.ts:390
-#: src/shell/focusStage.ts:552
+#: src/shell/focusStage.ts:422
+#: src/shell/focusStage.ts:564
 msgid "Scroll to top"
 msgstr ""
 
@@ -8981,7 +9001,7 @@ msgstr ""
 msgid "Search failed"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1994
+#: src/components/views/ProfileView.ts:2036
 msgid "Search failed: %s"
 msgstr ""
 
@@ -9158,12 +9178,12 @@ msgid "Selected:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:578
-#: src/shell/focusSettings.ts:204
+#: src/shell/focusSettings.ts:202
 msgid "Self-reposts hidden from timeline"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:579
-#: src/shell/focusSettings.ts:205
+#: src/shell/focusSettings.ts:203
 msgid "Self-reposts shown again"
 msgstr ""
 
@@ -9193,7 +9213,7 @@ msgstr ""
 msgid "Send DM"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:705
+#: src/components/views/ProfileView.ts:709
 msgid "Send message"
 msgstr ""
 
@@ -9269,7 +9289,7 @@ msgstr ""
 msgid "Set Password"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1470
+#: src/components/views/ProfileView.ts:1503
 #: src/lists/follows.ts:2407
 msgid "Set Petname"
 msgstr ""
@@ -9279,7 +9299,7 @@ msgstr ""
 msgid "Set reminder"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1590
+#: src/components/views/ProfileView.ts:1632
 msgid "Set status…"
 msgstr ""
 
@@ -9305,8 +9325,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:397
-#: src/shell/focusStage.ts:554
+#: src/shell/focusStage.ts:429
+#: src/shell/focusStage.ts:566
 msgid "Settings"
 msgstr ""
 
@@ -9374,7 +9394,7 @@ msgid "Show different avatars"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:239
-#: src/shell/focusSettings.ts:172
+#: src/shell/focusSettings.ts:170
 msgid "Show expiry notice"
 msgstr ""
 
@@ -9414,8 +9434,8 @@ msgid "Show Notes"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:219
-#: src/components/views/ProfileView.ts:984
-#: src/shell/focusSettings.ts:152
+#: src/components/views/ProfileView.ts:995
+#: src/shell/focusSettings.ts:150
 msgid "Show reactions"
 msgstr ""
 
@@ -9457,7 +9477,7 @@ msgstr ""
 msgid "Show this folder inline on your Profile View"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:982
+#: src/components/views/ProfileView.ts:993
 msgid "Show this user's reactions (likes) as entries in your timeline"
 msgstr ""
 
@@ -9474,7 +9494,7 @@ msgid "Show your NIP-60 Lightning wallet balance in the sidebar."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:242
-#: src/shell/focusSettings.ts:175
+#: src/shell/focusSettings.ts:173
 msgid "Shows a \"Post expires on …\" line under notes with an expiration time (NIP-40)."
 msgstr ""
 
@@ -9487,7 +9507,7 @@ msgid "Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the En
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:222
-#: src/shell/focusSettings.ts:155
+#: src/shell/focusSettings.ts:153
 msgid "Shows reactions (likes) from people you follow as entries in your timeline."
 msgstr ""
 
@@ -9640,7 +9660,7 @@ msgid "Slug and Name are required"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:156
-#: src/shell/focusDomains.ts:180
+#: src/shell/focusDomains.ts:191
 msgid "Social Media"
 msgstr ""
 
@@ -9648,21 +9668,21 @@ msgstr ""
 msgid "Social Media that <em>can't</em> betray you."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1011
-#: src/components/views/ProfileView.ts:1182
+#: src/components/views/ProfileView.ts:1022
+#: src/components/views/ProfileView.ts:1193
 msgid "Soft mute"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1186
+#: src/components/views/ProfileView.ts:1197
 msgid "Soft mute lifted"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1011
-#: src/components/views/ProfileView.ts:1182
+#: src/components/views/ProfileView.ts:1022
+#: src/components/views/ProfileView.ts:1193
 msgid "Soft muted"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1185
+#: src/components/views/ProfileView.ts:1196
 msgid "Soft muted, their interactions no longer notify you"
 msgstr ""
 
@@ -9821,7 +9841,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:1035
+#: src/App.ts:1046
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9937,7 +9957,7 @@ msgstr ""
 msgid "Switch to manual mode"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:705
+#: src/components/views/ProfileView.ts:709
 msgid "Switch to NoorSigner or browser extension to send messages"
 msgstr ""
 
@@ -9964,12 +9984,12 @@ msgid "Sync failed%s"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:142
-#: src/shell/focusSettings.ts:426
+#: src/shell/focusSettings.ts:424
 msgid "Sync frequency"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:168
-#: src/shell/focusSettings.ts:483
+#: src/shell/focusSettings.ts:481
 msgid "Sync frequency: %s"
 msgstr ""
 
@@ -9983,11 +10003,11 @@ msgid "Sync now"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:134
-#: src/shell/focusSettings.ts:418
+#: src/shell/focusSettings.ts:416
 msgid "Sync read bookmarks across relays"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:259
+#: src/components/profile/ProfileEditor.ts:121
 #: src/helpers/ListSyncMode.ts:144
 #: src/lists/mutes.ts:1323
 msgid "Sync to Relays"
@@ -10106,7 +10126,7 @@ msgstr ""
 msgid "Tell Us About Yourself"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:205
+#: src/components/profile/ProfileEditor.ts:201
 #: src/helpers/profile-field-helpers.ts:49
 msgid "Tell us about yourself..."
 msgstr ""
@@ -10340,19 +10360,19 @@ msgstr ""
 msgid "This user has no Lightning wallet configured"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1126
+#: src/components/views/ProfileView.ts:1137
 msgid "This user's highlights are now hidden"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1127
+#: src/components/views/ProfileView.ts:1138
 msgid "This user's highlights are shown again"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1156
+#: src/components/views/ProfileView.ts:1167
 msgid "This user's reactions are hidden from your timeline again"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1155
+#: src/components/views/ProfileView.ts:1166
 msgid "This user's reactions now appear in your timeline"
 msgstr ""
 
@@ -10574,7 +10594,7 @@ msgid "Tracking \"%s\""
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:137
-#: src/shell/focusSettings.ts:421
+#: src/shell/focusSettings.ts:419
 msgid "Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total."
 msgstr ""
 
@@ -10595,7 +10615,7 @@ msgstr ""
 msgid "Tribe deleted"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1777
+#: src/components/views/ProfileView.ts:1819
 msgid "Tribe not found"
 msgstr ""
 
@@ -10617,7 +10637,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:224
+#: src/shell/focusDomains.ts:235
 msgid "Tribes"
 msgstr ""
 
@@ -10625,7 +10645,7 @@ msgstr ""
 msgid "Tribes reset. Reloading..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:991
+#: src/components/views/ProfileView.ts:1002
 msgid "Turn off Highlights"
 msgstr ""
 
@@ -10916,17 +10936,17 @@ msgid "Use NoorSigner"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:83
-#: src/shell/focusSettings.ts:526
+#: src/shell/focusSettings.ts:524
 msgid "Use private bookmarks (NIP-51)"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:68
-#: src/shell/focusSettings.ts:595
+#: src/shell/focusSettings.ts:599
 msgid "Use private follow lists (NIP-51)"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:98
-#: src/shell/focusSettings.ts:607
+#: src/shell/focusSettings.ts:611
 msgid "Use private mutes (NIP-51)"
 msgstr ""
 
@@ -10946,7 +10966,7 @@ msgstr ""
 msgid "User is already in this pack"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1789
+#: src/components/views/ProfileView.ts:1831
 msgid "User is already in tribe \"%s\""
 msgstr ""
 
@@ -10968,13 +10988,13 @@ msgstr ""
 msgid "User unmuted"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:193
+#: src/components/profile/ProfileEditor.ts:189
 #: src/helpers/profile-field-helpers.ts:33
 msgid "username"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2348
-#: src/components/profile/ProfileEditModal.ts:186
+#: src/components/profile/ProfileEditor.ts:182
 #: src/helpers/profile-field-helpers.ts:32
 msgid "Username"
 msgstr ""
@@ -11001,7 +11021,7 @@ msgstr ""
 msgid "Vacation to"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:234
+#: src/components/profile/ProfileEditor.ts:230
 #: src/helpers/profile-field-helpers.ts:66
 msgid "Verification identifier(s), comma-separated (user@domain.com, user@other.com)"
 msgstr ""
@@ -11055,9 +11075,9 @@ msgstr ""
 msgid "Video upload failed"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2345
-#: src/components/views/ProfileView.ts:743
-#: src/shell/focusDomains.ts:196
+#: src/components/views/ProfileView.ts:2387
+#: src/components/views/ProfileView.ts:747
+#: src/shell/focusDomains.ts:207
 msgid "Videos"
 msgstr ""
 
@@ -11139,7 +11159,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:348
+#: src/shell/focusDomains.ts:370
 msgid "Wallet Balance"
 msgstr ""
 
@@ -11193,14 +11213,14 @@ msgstr ""
 msgid "Web Hosting"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:211
+#: src/components/profile/ProfileEditor.ts:207
 #: src/components/views/ZapstoreAppView.ts:305
 #: src/helpers/profile-field-helpers.ts:56
 msgid "Website"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2363
-#: src/components/views/ProfileView.ts:746
+#: src/components/views/ProfileView.ts:2405
+#: src/components/views/ProfileView.ts:750
 msgid "Websites"
 msgstr ""
 
@@ -11289,7 +11309,7 @@ msgstr ""
 msgid "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the feed beyond your direct follows but take longer to build and include authors you may not know."
 msgstr ""
 
-#: src/shell/focusSettings.ts:316
+#: src/shell/focusSettings.ts:314
 msgid "Whose articles appear in the main article feed — higher degrees broaden the feed but take longer to build."
 msgstr ""
 
@@ -11324,7 +11344,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:354
+#: src/shell/focusDomains.ts:376
 msgid "Word Filter"
 msgstr ""
 
@@ -11332,7 +11352,7 @@ msgstr ""
 msgid "Write"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1531
+#: src/components/views/ProfileView.ts:1573
 #: src/lists/follows.ts:2441
 msgid "Write anything you want to remember about this user…"
 msgstr ""
@@ -11417,6 +11437,10 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:1009
 msgid "You have unsaved changes. Discard them?"
+msgstr ""
+
+#: src/components/views/ProfileEditView.ts:79
+msgid "You have unsaved profile changes. Discard them?"
 msgstr ""
 
 #: src/lists/mutes.ts:1401
@@ -11524,7 +11548,7 @@ msgstr ""
 msgid "Your followers belong to you"
 msgstr ""
 
-#: src/components/profile/ProfileEditModal.ts:180
+#: src/components/profile/ProfileEditor.ts:176
 #: src/helpers/profile-field-helpers.ts:41
 msgid "Your full name"
 msgstr ""
@@ -11654,7 +11678,7 @@ msgstr ""
 msgid "Zap the developer"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:717
+#: src/components/views/ProfileView.ts:721
 msgid "Zap this user"
 msgstr ""
 

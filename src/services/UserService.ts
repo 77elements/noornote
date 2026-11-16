@@ -10,6 +10,10 @@ import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from './SystemLogger';
 import { FollowStorageAdapter } from '../lists/follows';
 import { AuthService } from './AuthService';
+import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
+
+/** Cap on the target's NIP-65 write relays added to the query set. */
+const MAX_WRITE_RELAYS = 6;
 
 export class UserService {
   private static instance: UserService;
@@ -17,12 +21,14 @@ export class UserService {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private followAdapter: FollowStorageAdapter;
+  private relayListOrch: RelayListOrchestrator;
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.followAdapter = new FollowStorageAdapter();
+    this.relayListOrch = RelayListOrchestrator.getInstance();
   }
 
   public static getInstance(): UserService {
@@ -102,10 +108,20 @@ export class UserService {
     try {
       const relays = this.relayConfig.getAggregatorRelays();
 
+      // NIP-65 outbox primary: the target's kind:3 may live on write relays
+      // the aggregator relays don't serve (or serve stale copies of) — the
+      // same strategy FollowVerificationService uses for its kind:3 reads.
+      // Without it the PV "Following" count silently showed 0 for users
+      // whose contact list wasn't reachable via aggregators alone.
+      const writeRelays = await this.getTheirWriteRelays(pubkey);
+      const queryRelays = Array.from(
+        new Set([...writeRelays.slice(0, MAX_WRITE_RELAYS), ...relays])
+      );
+
       // Fetch kind:3 contact list from relays
       // If forceRefresh, skip NDK cache to get fresh data
       const events = await this.transport.fetch(
-        relays,
+        queryRelays,
         [
           {
             authors: [pubkey],
@@ -122,8 +138,12 @@ export class UserService {
         return [];
       }
 
-      // Extract pubkeys from p-tags
-      const followEvent = events[0];
+      // Pick the NEWEST event across all queried relays — a lagging relay
+      // can serve an old (truncated) contact list copy, which would show a
+      // wrong (too low) following count.
+      const followEvent = events.reduce((a, b) =>
+        (a.created_at ?? 0) >= (b.created_at ?? 0) ? a : b
+      );
       if (!followEvent) {
         return [];
       }
@@ -140,6 +160,23 @@ export class UserService {
         'UserService',
         `Error fetching other user's follow list: ${String(error)}`
       );
+      return [];
+    }
+  }
+
+  /**
+   * Resolve the target's NIP-65 write relays (kind:10002). Empty on failure —
+   * the caller then falls back to aggregator relays alone.
+   */
+  private async getTheirWriteRelays(pubkey: string): Promise<string[]> {
+    try {
+      const bootstrap = this.relayConfig.getAggregatorRelays();
+      const result = await this.relayListOrch.fetchRelayList(pubkey, bootstrap);
+      if (!result || !result.relays.length) return [];
+      return result.relays
+        .filter(r => r.types.includes('write'))
+        .map(r => r.url);
+    } catch (_error) {
       return [];
     }
   }

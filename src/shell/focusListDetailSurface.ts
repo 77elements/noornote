@@ -19,11 +19,12 @@ import type {
   FocusDomainSurfaceView,
   FocusSettingsView,
 } from './focusDomains';
+import type { FocusUrlState } from './focusUrlState';
 import {
   createFocusSurfaceFrame,
   type FocusSurfaceFrame,
 } from './focusSurfaceFrame';
-import { Router } from '../services/Router';
+import { pushFocusUrl, replaceFocusUrl } from './focusHistorySync';
 
 /** Minimal shape every surface view already fulfills. */
 export interface SurfaceViewHandle {
@@ -155,7 +156,10 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     // its fetch resolves — with a cache hit that happens in the same
     // microtask cascade, i.e. before any URL set HERE would run. The
     // canonical form then wins, exactly like the classic Router flow.
-    Router.getInstance().replaceUrl(this.config.detailRoute(param));
+    // PUSH (not replace): every detail open is a real history step — the
+    // Global Back button / browser back walk the Router's custom stack
+    // and the stage re-derives this state from the URL (restoreState).
+    pushFocusUrl(this.config.detailRoute(param));
     this.detail = await this.config.createDetail(param);
     this.detailParam = param;
     this.detailIsSecondary = false;
@@ -196,7 +200,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.scrollSlot.scrollTop = 0;
     }
     this.frame.setBackVisible(true);
-    Router.getInstance().replaceUrl(secondary.route);
+    pushFocusUrl(secondary.route);
   }
 
   private showList(): void {
@@ -210,7 +214,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.scrollSlot.scrollTop = this.savedListScroll;
     }
     this.frame.setBackVisible(false);
-    Router.getInstance().replaceUrl(this.config.listRoute);
+    replaceFocusUrl(this.config.listRoute);
   }
 
   /** Return to the list state when the surface is detached from its column. */
@@ -242,16 +246,55 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     this.showList();
   }
 
-  /** Sync the URL with the current state (a preserved detail keeps its route). */
+  /** Sync the URL with the current state (a preserved detail keeps its route).
+   *  PUSH: a (re)mount is a real navigation step — the same-path guard in
+   *  Router.pushUrl makes boot/restores no-ops. */
   syncUrl(): void {
     if (this.detail && this.detailIsSecondary && this.config.secondary) {
-      Router.getInstance().replaceUrl(this.config.secondary.route);
+      pushFocusUrl(this.config.secondary.route);
       return;
     }
-    Router.getInstance().replaceUrl(
+    pushFocusUrl(
       this.detail && this.detailParam
         ? this.config.detailRoute(this.detailParam)
         : this.config.listRoute
+    );
+  }
+
+  /**
+   * History-restore (back/forward/deep-link): the URL is already correct.
+   * No-op when the surface already shows the target state — a re-open of
+   * the SAME detail would re-fetch and clobber a preserved scroll.
+   */
+  async restoreState(state: FocusUrlState): Promise<void> {
+    if (state.kind === 'list') {
+      if (this.detail) this.showList();
+      return;
+    }
+    if (state.kind === 'secondary') {
+      if (this.detail && this.detailIsSecondary) return;
+      await this.openSecondaryDetail();
+      return;
+    }
+    if (
+      this.detail &&
+      !this.detailIsSecondary &&
+      this.detailParam === state.param
+    ) {
+      return;
+    }
+    await this.openDetail(state.param);
+  }
+
+  /**
+   * Back-veto passthrough: the CURRENT detail decides (e.g. the composer's
+   * unsaved-content guard). No detail → no veto.
+   */
+  confirmBack(): boolean {
+    return (
+      (
+        this.detail as { confirmBack?: () => boolean } | null
+      )?.confirmBack?.() !== false
     );
   }
 

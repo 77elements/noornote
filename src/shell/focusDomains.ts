@@ -13,12 +13,14 @@
  */
 
 import { _ } from '../i18n';
+import type { FocusUrlState } from './focusUrlState';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
 import { mutesSurface } from './focusMutesSurface';
+import { profileSurface } from './focusProfileSurface';
 import { tribesSurface } from './focusTribesSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
@@ -27,6 +29,7 @@ import {
   followsSettings,
   mutesSettings,
   notificationsSettings,
+  profileSettings,
   socialSettings,
 } from './focusSettings';
 
@@ -85,6 +88,13 @@ export interface FocusDomainSurfaceView {
    * preserved detail keeps its own route.
    */
   syncUrl?(): void;
+  /**
+   * History-restore: bring the surface back to the state a parsed URL
+   * describes (back/forward/deep-link). The URL is already correct —
+   * implementations must not push another history step (pushUrl's
+   * same-path guard makes the surface's own sync calls no-ops).
+   */
+  restoreState?(state: FocusUrlState): Promise<void> | void;
 }
 
 /** A mounted domain surface, ready to append into the focus column. */
@@ -251,7 +261,17 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     createSurface: mutesSurface,
     createSettings: mutesSettings,
   },
-  { id: 'profile', label: _('Profile'), icon: 'icon-profile' },
+  {
+    id: 'profile',
+    label: _('Profile'),
+    icon: 'icon-profile',
+    route: '/profile',
+    viewTypes: ['profile', 'profile-edit'],
+    createSurface: profileSurface,
+    createSettings: profileSettings,
+    // list = own profile (circle click), detail = foreign profile (seam
+    // 'profile'), secondary = the flat profile editor (/profile/edit).
+  },
   {
     id: 'custom-emojis',
     label: _('Custom Emojis'),

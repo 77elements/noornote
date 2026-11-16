@@ -468,6 +468,16 @@ html.ui--focus {
   padding: 0;
 }
 
+// The profile editor (/profile/edit) ends with its Save/Cancel actions at
+// the very bottom of the scroll column — without extra clearance they sit
+// under the closed ED-b tab. The padding goes on the editor ROOT (inside
+// the scroll container): .view-content is height-fixed (border-box), so
+// padding there would be swallowed by the fixed height instead of adding
+// scrollable space.
+.ui--focus .view-content--profile-edit .profile-edit-modal {
+  padding-bottom: calc($gap * 5);
+}
+
 // The classic note-card hover panel is a v1 feed affordance — the shell's
 // timeline cards stay flat on hover.
 .ui--focus .note-card:hover {
