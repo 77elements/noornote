@@ -13,7 +13,6 @@ import { FocusListDetailSurface } from './focusListDetailSurface';
 
 export const articlesSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--articles',
     navViewType: 'article',
     listRoute: '/articles',
     detailRoute: naddr => `/article/${naddr}`,

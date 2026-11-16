@@ -2,8 +2,8 @@
  * Focus surface: Bookmarks (v2).
  *
  * The column renders a BookmarkManager whose containerElement is the
- * SURFACE ROOT — the manager scopes every internal query (classic tab
- * container lookups, folder grid, card states) to the surface, so folder
+ * stage's column slot — the manager scopes every internal query (classic
+ * tab container lookups, folder grid, card states) to the slot, so folder
  * navigation, mark-as-read and event-driven refreshes work inside the
  * shell. MainLayout's own manager instance is untouched: the shell is a
  * sibling of MainLayout.element, so the classic instance's queries never
@@ -21,40 +21,51 @@
  */
 
 import type { FocusDomainSurface } from './focusDomains';
+import type { BookmarkManager } from '../lists/bookmarks';
 import { _ } from '../i18n';
 
 export const bookmarksSurface = async (): Promise<FocusDomainSurface> => {
-  const element = document.createElement('div');
-  element.className = 'focus-surface focus-surface--bookmarks';
-
   const { isBookmarksEnabled } = await import('../addons/bookmarks/index');
-  if (!isBookmarksEnabled()) {
-    element.innerHTML = `
-      <div class="view-content view-content--lists">
-        <div class="bookmarks-empty-state">
-          <p>${_('Enable the Bookmarks addon in Settings → Addons.')}</p>
-        </div>
-      </div>
-    `;
-    return { element };
-  }
+  const BookmarkManagerCtor = isBookmarksEnabled()
+    ? (await import('../lists/bookmarks')).BookmarkManager
+    : null;
 
-  const { BookmarkManager } = await import('../lists/bookmarks');
-  const manager = new BookmarkManager(element);
-
-  const content = document.createElement('div');
-  content.className = 'tab-content tab-content--active';
-  content.dataset.tabContent = 'list-bookmarks';
-  element.appendChild(content);
-
-  await manager.renderListTab(content);
+  let manager: BookmarkManager | null = null;
+  let content: HTMLElement | null = null;
 
   return {
-    element,
+    attach(slot) {
+      if (content) {
+        slot.appendChild(content);
+        return;
+      }
+      if (!BookmarkManagerCtor) {
+        content = document.createElement('div');
+        content.className = 'view-content view-content--lists';
+        content.innerHTML = `
+          <div class="bookmarks-empty-state">
+            <p>${_('Enable the Bookmarks addon in Settings → Addons.')}</p>
+          </div>
+        `;
+        slot.appendChild(content);
+        return;
+      }
+      content = document.createElement('div');
+      content.className = 'tab-content tab-content--active';
+      content.dataset.tabContent = 'list-bookmarks';
+      slot.appendChild(content);
+      manager = new BookmarkManagerCtor(slot);
+      void manager.renderListTab(content);
+    },
+    detach() {
+      // Content stays cached — the manager instance is preserved.
+      content?.remove();
+    },
     view: {
       destroy(): void {
-        manager.destroy();
-        element.innerHTML = '';
+        manager?.destroy();
+        manager = null;
+        content = null;
       },
     },
   };

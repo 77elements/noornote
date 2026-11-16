@@ -24,10 +24,12 @@ html.ui--focus {
   }
 }
 
+// The shell is the frame (chrome lives here later); the empty central
+// area below the ED overlays is the stage (.focus-stage). The class is
+// the anchor for the #app:has(> .focus-shell) background scoping — the
+// element's width comes from #app.
 .focus-shell {
-  // The shell is the frame (chrome lives here later); the empty central
-  // area below the ED overlays is the stage (.focus-stage).
-  width: 100%;
+  // empty by design
 }
 
 // The section radial lives on #app (not on the shell — the shell is only
@@ -448,7 +450,7 @@ html.ui--focus {
 // (height: 100%) resolves against it exactly like in the classic layout.
 // The only sanctioned override on .view-content is the focus-scoped top
 // spacing below (clears the ED-t overlay).
-.focus-object__surface {
+.focus-object__content {
   grid-column: 1; // first column of the active object's grid body
   grid-row: 1; // pinned — see .focus-object__actions
   height: 100%;
@@ -493,15 +495,6 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// Focus surface wrapper: hosts a domain's inner view swaps (articles:
-// list ↔ detail) inside the focus column. The classic SCC tab system has
-// no equivalent in the shell — detail views render in the column, the
-// object's action-button stack (focusStage) provides the back control.
-.focus-surface {
-  position: relative;
-  height: 100%;
-}
-
 // Shared surface header: the h1 title every focus view carries above its
 // content, action button right (same DOM as the timeline's title row).
 // Classic v1 renders the same rows (Timeline, Articles) with the action
@@ -514,27 +507,29 @@ html:not(.ui--focus) .focus-view-header__action {
   display: none;
 }
 
-// Media: header row + the feed's own internal scroller (.media-feed is
-// height: 100% — the body row must own the remaining surface height; the
-// composer detail replaces the body 1:1, so the frame row is a plain 1fr).
-.focus-surface--media {
+// Media: header row + the feed's own internal scroller. The list root is
+// the slot's direct child (the surface frame div is gone) — it carries the
+// full column height so the feed's internal scroll resolves; the composer
+// detail (.view-content, height: 100%) replaces it 1:1.
+.focus-object__content--media .media-surface__body {
   display: grid;
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
 
-  .focus-surface__body {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+  // The feed is the grid's second row — a plain item would overflow.
+  .media-feed {
     min-height: 0;
-  }
-
-  // Composer: one $gap of clearance at the bottom of the scrolled column.
-  .video-editor {
-    padding-bottom: $gap;
   }
 }
 
+// Media: composer clearance at the bottom of the scrolled column.
+.focus-object__content--media .video-editor {
+  padding-bottom: $gap;
+}
+
 // Marketplace: same composer clearance for the listing editor.
-.focus-surface--marketplace .article-editor {
+.focus-object__content--marketplace .article-editor {
   padding-bottom: $gap;
 }
 

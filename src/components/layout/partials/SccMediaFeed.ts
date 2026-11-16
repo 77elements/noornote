@@ -241,7 +241,7 @@ export class SccMediaFeed {
 
   public destroy(): void {
     this.infiniteScroll.destroy();
-    this.container.innerHTML = '';
+    this.gridEl.remove();
     this.seenIds.clear();
   }
 }

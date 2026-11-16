@@ -99,10 +99,16 @@ export interface FocusDomainSurfaceView {
   restoreState?(state: FocusUrlState): Promise<void> | void;
 }
 
-/** A mounted domain surface, ready to append into the focus column. */
+/** A mounted domain surface, ready to attach into the focus column. */
 export interface FocusDomainSurface {
-  /** Self-rendered root element of the surface. */
-  element: HTMLElement;
+  /**
+   * Mount the surface's content into the stage's column slot
+   * (.focus-object__content). The slot is the domain's content root —
+   * surfaces own their content, the stage owns the slot.
+   */
+  attach(slot: HTMLElement): void;
+  /** Detach the surface's content from the slot (content stays cached). */
+  detach(): void;
   /** Optional view handle for pause/resume/destroy lifecycle. */
   view?: FocusDomainSurfaceView;
   /**
@@ -293,7 +299,13 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
         '../addons/custom-emojis/CustomEmojisView'
       );
       const view = new CustomEmojisView();
-      return { element: view.getElement(), view, ephemeral: true };
+      const el = view.getElement();
+      return {
+        attach: slot => slot.appendChild(el),
+        detach: () => el.remove(),
+        view,
+        ephemeral: true,
+      };
     },
   },
   {
@@ -338,7 +350,13 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
         '../addons/scheduled-posts/ScheduledPostsAddonView'
       );
       const view = new ScheduledPostsAddonView();
-      return { element: view.getElement(), view, ephemeral: true };
+      const el = view.getElement();
+      return {
+        attach: slot => slot.appendChild(el),
+        detach: () => el.remove(),
+        view,
+        ephemeral: true,
+      };
     },
   },
   {

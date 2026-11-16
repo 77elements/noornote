@@ -19,7 +19,6 @@ import { _ } from '../i18n';
 
 export const marketplaceSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--marketplace',
     navViewType: 'listing',
     listRoute: '/marketplace',
     detailRoute: naddr => `/listing/${naddr}`,

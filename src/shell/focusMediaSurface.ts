@@ -22,7 +22,6 @@ import { _ } from '../i18n';
 
 export const mediaSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--media',
     listRoute: '/media',
     createList: async () => {
       const { SccMediaFeed } = await import(
@@ -35,8 +34,10 @@ export const mediaSurface = async (): Promise<FocusDomainSurface> => {
 
       // Header: h1 + Post button (same DOM as the social timeline's title
       // row; the button routes through the focus nav seam like Write Note).
+      // The feed appends its .media-feed directly as the body grid's
+      // second row — no extra wrapper.
       const root = document.createElement('div');
-      root.className = 'focus-surface__body';
+      root.className = 'media-surface__body';
       root.appendChild(
         createFocusViewHeader({
           title: _('Media'),
@@ -46,10 +47,8 @@ export const mediaSurface = async (): Promise<FocusDomainSurface> => {
           },
         })
       );
-      const feedHost = document.createElement('div');
-      root.appendChild(feedHost);
 
-      const feed = new SccMediaFeed(feedHost, {
+      const feed = new SccMediaFeed(root, {
         onClick: (event, clickEvent) => {
           if (!event.id) return;
           const nevent = encodeNevent(event.id);

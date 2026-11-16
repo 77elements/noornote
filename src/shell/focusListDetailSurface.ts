@@ -10,8 +10,9 @@
  *
  * Element lifecycle is owned by the FocusSurfaceFrame — views' destroy()
  * methods do not detach their elements, so the frame is the single place
- * that guarantees exactly one content element in the column (a leftover
- * detail would push the list down → phantom gap above the first card).
+ * that guarantees exactly one content element in the stage's column slot
+ * (a leftover detail would push the list down → phantom gap above the
+ * first card).
  */
 
 import type {
@@ -33,8 +34,6 @@ export interface SurfaceViewHandle {
 }
 
 export interface FocusListDetailSurfaceConfig {
-  /** Frame class name (e.g. 'focus-surface--articles'). */
-  className: string;
   /**
    * View type this surface owns in the focus navigation seam. Optional:
    * a list+composer surface without its own detail (e.g. media — note
@@ -102,11 +101,11 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
 
   /** The focus column's scroll container (the stage's surface slot). */
   protected get scrollSlot(): HTMLElement | null {
-    return this.frame.element.parentElement as HTMLElement | null;
+    return this.frame.slot;
   }
 
   constructor(private readonly config: FocusListDetailSurfaceConfig) {
-    this.frame = createFocusSurfaceFrame(config.className);
+    this.frame = createFocusSurfaceFrame();
     // List mounts immediately — the surface IS the domain's content.
     this.listPromise = config.createList().then(list => {
       this.list = list;
@@ -116,7 +115,11 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
 
   /** The surface contract: this object doubles as the view handle. */
   asSurface(): FocusDomainSurface {
-    return { element: this.frame.element, view: this };
+    return {
+      attach: slot => this.frame.attach(slot),
+      detach: () => this.frame.detach(),
+      view: this,
+    };
   }
 
   /**

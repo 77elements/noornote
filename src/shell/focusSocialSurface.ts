@@ -14,7 +14,6 @@ import { FocusListDetailSurface } from './focusListDetailSurface';
 
 export const socialSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--social',
     navViewType: 'single-note',
     listRoute: '/timeline',
     detailRoute: nevent => `/note/${nevent}`,

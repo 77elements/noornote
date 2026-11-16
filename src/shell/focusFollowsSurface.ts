@@ -2,8 +2,8 @@
  * Focus surface: Follows (v2).
  *
  * Same scoping pattern as the bookmarks/tribes surfaces: a FollowListManager
- * whose containerElement is the SURFACE ROOT — the manager scopes every
- * internal query to the surface, so sorting, filtering and the extended
+ * whose containerElement is the stage's column slot — the manager scopes
+ * every internal query to the slot, so sorting, filtering and the extended
  * features work inside the shell. MainLayout's own manager instance is
  * untouched: the shell is a sibling of MainLayout.element, so the classic
  * instance's queries never see (or double-render) the surface DOM, and no
@@ -22,24 +22,32 @@
 import type { FocusDomainSurface } from './focusDomains';
 
 export const followsSurface = async (): Promise<FocusDomainSurface> => {
-  const element = document.createElement('div');
-  element.className = 'focus-surface focus-surface--follows';
-
-  const content = document.createElement('div');
-  content.className = 'tab-content tab-content--active';
-  content.dataset.tabContent = 'list-follows';
-  element.appendChild(content);
-
   const { FollowListManager } = await import('../lists/follows');
-  const manager = new FollowListManager(element);
-  await manager.renderListTab(content);
+  let manager: InstanceType<typeof FollowListManager> | null = null;
+  let content: HTMLElement | null = null;
 
   return {
-    element,
+    attach(slot) {
+      if (content) {
+        slot.appendChild(content);
+        return;
+      }
+      content = document.createElement('div');
+      content.className = 'tab-content tab-content--active';
+      content.dataset.tabContent = 'list-follows';
+      slot.appendChild(content);
+      manager = new FollowListManager(slot);
+      void manager.renderListTab(content);
+    },
+    detach() {
+      // Content stays cached — the manager instance is preserved.
+      content?.remove();
+    },
     view: {
       destroy(): void {
-        manager.destroy();
-        element.innerHTML = '';
+        manager?.destroy();
+        manager = null;
+        content = null;
       },
     },
   };

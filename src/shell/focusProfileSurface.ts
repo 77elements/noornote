@@ -24,7 +24,6 @@ export const profileSurface = async (): Promise<FocusDomainSurface> => {
   const ownNpub = currentUser?.npub ?? '';
 
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--profile',
     navViewType: 'profile',
     listRoute: '/profile',
     detailRoute: npub => `/profile/${npub}`,

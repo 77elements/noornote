@@ -87,25 +87,25 @@ class EdgeDrawer {
     this.root.className = `focus-drawer focus-drawer--${this.edge}`;
     const label = this.edge === 'top' ? _('Top panel') : _('Bottom panel');
     this.root.innerHTML = `
-      <div class="focus-drawer__panel" role="region" aria-label="${label}"></div>
-      <button type="button" class="focus-drawer__tab"
+      <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${label}"></div>
+      <button type="button" class="focus-drawer__tab" data-drawer-tab
         aria-label="${label}" aria-expanded="false"></button>
     `;
     if (decoratePanel) {
       const panel = this.root.querySelector(
-        '.focus-drawer__panel'
+        '[data-drawer-panel]'
       ) as HTMLElement;
       decoratePanel(panel);
     }
     this.tab = this.root.querySelector(
-      '.focus-drawer__tab'
+      '[data-drawer-tab]'
     ) as HTMLButtonElement;
     this.tab.addEventListener('pointerdown', this.onPointerDown);
     this.tab.addEventListener('pointermove', this.onPointerMove);
     this.tab.addEventListener('pointerup', this.onPointerUp);
     this.tab.addEventListener('pointercancel', this.onPointerCancel);
     this.panelEl = this.root.querySelector(
-      '.focus-drawer__panel'
+      '[data-drawer-panel]'
     ) as HTMLElement;
     parent.appendChild(this.root);
     // Sync the drag math with the stylesheet (constructor value is only a

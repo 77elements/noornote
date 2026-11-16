@@ -74,11 +74,11 @@ interface FocusHandoff {
  */
 const DIODES: Record<string, string> = {
   notifications:
-    '<span class="notifications-badge focus-object__diode"></span>',
+    '<span class="notifications-badge focus-object__diode" data-focus-diode="notifications"></span>',
   messages:
-    '<span class="badge badge--green dm-badge focus-object__diode" style="display: none"></span>',
+    '<span class="badge badge--green dm-badge focus-object__diode" data-focus-diode="dm" style="display: none"></span>',
   bookmarks:
-    '<span class="notifications-badge focus-object__diode" data-list-unread="bookmarks"></span>',
+    '<span class="notifications-badge focus-object__diode" data-focus-diode="bookmarks" data-list-unread="bookmarks"></span>',
 };
 
 export class FocusStage {
@@ -184,9 +184,11 @@ export class FocusStage {
    */
   private setupBadgeManagers(): void {
     const notif = this.grid.querySelector(
-      '.notifications-badge:not([data-list-unread])'
+      '[data-focus-diode="notifications"]:not([data-list-unread])'
     ) as HTMLElement | null;
-    const dm = this.grid.querySelector('.dm-badge') as HTMLElement | null;
+    const dm = this.grid.querySelector(
+      '[data-focus-diode="dm"]'
+    ) as HTMLElement | null;
     if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
     if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
     this.badgeManagers.push(new ListsCountManager(this.grid));
@@ -364,7 +366,7 @@ export class FocusStage {
     if (this.settingsDef) {
       this.objects
         .get(this.settingsDef.id)
-        ?.querySelector('.focus-object__settings')
+        ?.querySelector("[data-focus-action='settings']")
         ?.classList.remove('is-active');
     }
     this.settingsView?.destroy();
@@ -406,26 +408,28 @@ export class FocusStage {
         ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
         <span class="focus-object__label">${def.label}</span>
       </button>
-      <button type="button" class="focus-object__move" aria-label="${_('Reorder')}">
+      <button type="button" class="focus-object__move" data-focus-action="move" aria-label="${_('Reorder')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
       <div class="focus-object__actions">
-        <button type="button" class="focus-object__control"
+        <button type="button" class="focus-object__control" data-focus-action="close"
           aria-label="${_('Close')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
         </button>
-        <button type="button" class="focus-object__back" hidden
+        <button type="button" class="focus-object__back" data-focus-action="back"
+          hidden
           aria-label="${_('Back')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
         </button>
-        <button type="button" class="focus-object__scroll-top" hidden
+        <button type="button" class="focus-object__scroll-top" data-focus-action="scroll-top"
+          hidden
           aria-label="${_('Scroll to top')}">
           <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
         </button>
         ${
           def.createSettings
             ? `
-        <button type="button" class="focus-object__settings"
+        <button type="button" class="focus-object__settings" data-focus-action="settings"
           aria-label="${_('Settings')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-settings"/></svg>
         </button>`
@@ -433,13 +437,15 @@ export class FocusStage {
         }
       </div>
       ${DIODES[def.id] ?? ''}
-      <div class="focus-object__surface"></div>
+      <div class="focus-object__content focus-object__content--${def.id}" data-focus-slot></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def));
     // Move handle: pointer drag reorders the circles (drop on another
     // circle swaps the two positions, persisted per account). The handle
     // click itself must never open the object.
-    const moveBtn = el.querySelector('.focus-object__move') as HTMLElement;
+    const moveBtn = el.querySelector(
+      "[data-focus-action='move']"
+    ) as HTMLElement;
     moveBtn.addEventListener('click', e => e.stopPropagation());
     moveBtn.addEventListener('pointerdown', e => {
       if (this.morphing) return;
@@ -451,7 +457,9 @@ export class FocusStage {
       }
       this.startOrderDrag(e, def.id, el);
     });
-    const control = el.querySelector('.focus-object__control') as HTMLElement;
+    const control = el.querySelector(
+      "[data-focus-action='close']"
+    ) as HTMLElement;
     control.addEventListener('click', e => {
       // The control only exists on the active object (hidden in grid state
       // via CSS) and always means "close"; never re-trigger "open".
@@ -464,7 +472,9 @@ export class FocusStage {
     // Action-button stack: the surface reports detail state via the frame
     // (focusSurfaceFrame.setBackVisible bubbles 'focus:surface-back') —
     // the back action shows only while a detail replaces the list.
-    const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+    const backBtn = el.querySelector(
+      "[data-focus-action='back']"
+    ) as HTMLElement;
     el.addEventListener('focus:surface-back', e => {
       const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
       backBtn.hidden = !detail?.visible;
@@ -486,9 +496,7 @@ export class FocusStage {
         if (detail?.visible) {
           st.btn.hidden = true;
         } else {
-          const slot = el.querySelector(
-            '.focus-object__surface'
-          ) as HTMLElement;
+          const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
           st.source = this.findMainScroller(slot);
           st.btn.hidden = !(
             st.source && st.source.scrollTop > SCROLL_TOP_THRESHOLD
@@ -512,9 +520,9 @@ export class FocusStage {
     // itself (articles: the column scrolls) and internal scrollers
     // (social: the timeline scrolls inside the view) — scroll doesn't
     // bubble, but capture on the slot receives every descendant's event.
-    const slot = el.querySelector('.focus-object__surface') as HTMLElement;
+    const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
     const scrollTopBtn = el.querySelector(
-      '.focus-object__scroll-top'
+      "[data-focus-action='scroll-top']"
     ) as HTMLElement;
     const scrollTop = { btn: scrollTopBtn, source: null as HTMLElement | null };
     this.scrollTopState.set(def.id, scrollTop);
@@ -546,7 +554,7 @@ export class FocusStage {
     // object's settings panel (def.createSettings decides visibility).
     if (def.createSettings) {
       const settingsBtn = el.querySelector(
-        '.focus-object__settings'
+        "[data-focus-action='settings']"
       ) as HTMLElement;
       settingsBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -564,7 +572,9 @@ export class FocusStage {
       [_('Scroll to top'), scrollTopBtn],
       [
         _('Settings'),
-        el.querySelector('.focus-object__settings') as HTMLElement | null,
+        el.querySelector(
+          "[data-focus-action='settings']"
+        ) as HTMLElement | null,
       ],
     ];
     for (const [text, btn] of tips) {
@@ -669,7 +679,9 @@ export class FocusStage {
       // handoff above — set the back action manually for detail states.
       try {
         await surface.view?.restoreState?.(restore);
-        const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+        const backBtn = el.querySelector(
+          "[data-focus-action='back']"
+        ) as HTMLElement;
         if (backBtn) backBtn.hidden = restore.kind === 'list';
       } catch {
         surface.view?.syncUrl?.();
@@ -683,7 +695,7 @@ export class FocusStage {
           // the object's back action is wired via that event, so set it
           // here.
           const backBtn = el.querySelector(
-            '.focus-object__back'
+            "[data-focus-action='back']"
           ) as HTMLElement;
           if (backBtn) backBtn.hidden = false;
         } catch {
@@ -721,7 +733,7 @@ export class FocusStage {
             oldSurface.view?.reset?.();
           }
         }
-        oldSurface.element.remove();
+        oldSurface.detach();
       }
       // The old column is gone — reset its scroll-to-top action for a
       // clean reopen (same contract as close()).
@@ -737,8 +749,8 @@ export class FocusStage {
       this.restoreSideCircles();
     }
 
-    const slot = el.querySelector('.focus-object__surface') as HTMLElement;
-    slot.appendChild(surface.element);
+    const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
+    surface.attach(slot);
     surface.view?.resume?.();
     el.classList.add('focus-object--active');
     this.grid.classList.add('is-focused');
@@ -810,7 +822,7 @@ export class FocusStage {
         surface.view?.pause?.();
         surface.view?.reset?.();
       }
-      surface.element.remove();
+      surface.detach();
     }
     // The column is gone — reset the scroll-to-top action for a clean
     // reopen (hidden until the user scrolls again).
@@ -868,7 +880,7 @@ export class FocusStage {
       }
       el.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      const obj = hit?.closest('.focus-object') as HTMLElement | null;
+      const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
       const next = obj && obj !== el && obj.dataset.domainId ? obj : null;
       if (next !== target) {
         target?.classList.remove('is-drop-target');
@@ -927,7 +939,7 @@ export class FocusStage {
       }
       icon.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      over = !!hit && hit.closest('.focus-side-stack') === targetEl;
+      over = !!hit && hit.closest('[data-focus-stack]') === targetEl;
     };
     const cleanup = (): void => {
       window.removeEventListener('pointermove', onMove);
@@ -983,13 +995,13 @@ export class FocusStage {
       const stackRect = t.stack.getBoundingClientRect();
       const scrollTop = t.stack.scrollTop;
       const circles = (
-        [...t.stack.querySelectorAll('.focus-object')] as HTMLElement[]
+        [...t.stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
       ).filter(c => !c.classList.contains('is-column-drag'));
       const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
       let y: number;
       if (circles.length === 0) {
         const tools = t.stack.querySelector(
-          '.focus-side-stack__tools'
+          '[data-focus-stack-tools]'
         ) as HTMLElement | null;
         y = tools
           ? tools.getBoundingClientRect().bottom -
@@ -1101,7 +1113,7 @@ export class FocusStage {
   ): { stack: HTMLElement; index: number } | null {
     if (!this.sideStacks) return null;
     const hit = document.elementFromPoint(x, y);
-    const stack = hit?.closest('.focus-side-stack') as HTMLElement | null;
+    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
     if (
       !stack ||
       (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
@@ -1110,7 +1122,7 @@ export class FocusStage {
     // The lifted circle is still a DOM child of its source stack (fixed
     // positioning) — exclude it, it holds no drop position.
     const circles = (
-      [...stack.querySelectorAll('.focus-object')] as HTMLElement[]
+      [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
     ).filter(c => !c.classList.contains('is-column-drag'));
     for (let i = 0; i < circles.length; i++) {
       const circle = circles[i];
@@ -1224,9 +1236,11 @@ export class FocusStage {
   private reparentSideStacks(activeId: string): void {
     const left = document.createElement('div');
     left.className = 'focus-side-stack';
+    left.dataset.focusStack = '';
     left.style.gridColumn = '1';
     const right = document.createElement('div');
     right.className = 'focus-side-stack';
+    right.dataset.focusStack = '';
     right.style.gridColumn = '3';
     left.innerHTML = this.stackMoveIcon('left');
     right.innerHTML = this.stackMoveIcon('right');
@@ -1236,17 +1250,17 @@ export class FocusStage {
     ] as const) {
       // The buttons must never open an object underneath.
       const tools = stack.querySelector(
-        '.focus-side-stack__tools'
+        '[data-focus-stack-tools]'
       ) as HTMLElement;
       tools.addEventListener('click', ev => ev.stopPropagation());
       const move = tools.querySelector(
-        '.focus-side-stack__move'
+        '[data-focus-stack-move]'
       ) as HTMLElement;
       move.addEventListener('pointerdown', ev =>
         this.startStackDrag(ev, side, move)
       );
       tools
-        .querySelector('.focus-side-stack__reset')
+        .querySelector('[data-focus-stack-reset]')
         ?.addEventListener('click', () => this.resetStackSide());
       // Stack tools live only while their stack exists (recreated per
       // focus, removed on close) — their listeners die with the elements,
@@ -1261,7 +1275,7 @@ export class FocusStage {
         ],
         [
           _('Distribute circles evenly'),
-          tools.querySelector('.focus-side-stack__reset') as HTMLElement,
+          tools.querySelector('[data-focus-stack-reset]') as HTMLElement,
         ],
       ];
       for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
@@ -1275,11 +1289,11 @@ export class FocusStage {
 
   /** The stack's top tools: move handle (drag moves ALL circles) + reset. */
   private stackMoveIcon(side: 'left' | 'right'): string {
-    return `<div class="focus-side-stack__tools">
-      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" aria-label="${_('Move all circles')}">
+    return `<div class="focus-side-stack__tools" data-focus-stack-tools>
+      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" data-focus-stack-move aria-label="${_('Move all circles')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
-      <button type="button" class="focus-side-stack__reset" aria-label="${_('Distribute circles evenly')}">
+      <button type="button" class="focus-side-stack__reset" data-focus-stack-reset aria-label="${_('Distribute circles evenly')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-pull-refresh"/></svg>
       </button>
     </div>`;

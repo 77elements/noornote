@@ -13,7 +13,6 @@ import { FocusListDetailSurface } from './focusListDetailSurface';
 
 export const messagesSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--messages',
     navViewType: 'messages',
     listRoute: '/messages',
     detailRoute: pubkey => `/messages/${pubkey}`,

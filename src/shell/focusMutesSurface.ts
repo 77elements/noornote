@@ -2,10 +2,10 @@
  * Focus surface: Muted (v2).
  *
  * Same scoping pattern as the bookmarks/follows surfaces: a MuteListManager
- * whose containerElement is the SURFACE ROOT — the manager scopes every
- * internal query (classic tab container lookups, sync buttons, refreshes)
- * to the surface. MainLayout's own manager instance is untouched: the
- * shell is a sibling of MainLayout.element, so the classic instance's
+ * whose containerElement is the stage's column slot — the manager scopes
+ * every internal query (classic tab container lookups, sync buttons,
+ * refreshes) to the slot. MainLayout's own manager instance is untouched:
+ * the shell is a sibling of MainLayout.element, so the classic instance's
  * queries never see (or double-render) the surface DOM, and no sync logic
  * differs (docs/features/lists.md — zero changes in src/lists sync
  * behaviour).
@@ -18,24 +18,32 @@
 import type { FocusDomainSurface } from './focusDomains';
 
 export const mutesSurface = async (): Promise<FocusDomainSurface> => {
-  const element = document.createElement('div');
-  element.className = 'focus-surface focus-surface--mutes';
-
-  const content = document.createElement('div');
-  content.className = 'tab-content tab-content--active';
-  content.dataset.tabContent = 'list-mutes';
-  element.appendChild(content);
-
   const { MuteListManager } = await import('../lists/mutes');
-  const manager = new MuteListManager(element);
-  await manager.renderListTab(content);
+  let manager: InstanceType<typeof MuteListManager> | null = null;
+  let content: HTMLElement | null = null;
 
   return {
-    element,
+    attach(slot) {
+      if (content) {
+        slot.appendChild(content);
+        return;
+      }
+      content = document.createElement('div');
+      content.className = 'tab-content tab-content--active';
+      content.dataset.tabContent = 'list-mutes';
+      slot.appendChild(content);
+      manager = new MuteListManager(slot);
+      void manager.renderListTab(content);
+    },
+    detach() {
+      // Content stays cached — the manager instance is preserved.
+      content?.remove();
+    },
     view: {
       destroy(): void {
-        manager.destroy();
-        element.innerHTML = '';
+        manager?.destroy();
+        manager = null;
+        content = null;
       },
     },
   };

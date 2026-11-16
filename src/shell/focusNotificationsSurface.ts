@@ -15,7 +15,6 @@ import { FocusListDetailSurface } from './focusListDetailSurface';
 
 export const notificationsSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--notifications',
     navViewType: 'single-note',
     listRoute: '/notifications',
     detailRoute: nevent => `/note/${nevent}`,
