@@ -2177,7 +2177,7 @@ export class MainLayout {
               </button>
               <button class="new-post-dropup__item" data-action="new-video">
                 <svg width="24" height="24"><use href="#icon-video"/></svg>
-                ${_('Video')}
+                ${_('Post Media')}
               </button>
               <button class="new-post-dropup__item new-post-dropup__item--product" data-action="new-product" style="display: none;">
                 <svg width="24" height="24"><use href="#icon-shopping-bag"/></svg>

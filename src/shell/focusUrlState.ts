@@ -51,6 +51,13 @@ export function parseFocusUrl(
       }
       case 'article':
         return { defId: 'articles', kind: 'detail', param: tail };
+      case 'articles':
+        // '/articles/post' is the article composer (secondary detail);
+        // no other two-segment articles route exists.
+        if (tail === 'post') {
+          return { defId: 'articles', kind: 'secondary' };
+        }
+        return null;
       case 'messages':
         return { defId: 'messages', kind: 'detail', param: tail };
       case 'profile':
@@ -60,6 +67,13 @@ export function parseFocusUrl(
           return { defId: 'profile', kind: 'secondary' };
         }
         return { defId: 'profile', kind: 'detail', param: tail };
+      case 'media':
+        // '/media/post' is the video composer (secondary detail); the
+        // media surface has no param detail (notes morph to social).
+        if (tail === 'post') {
+          return { defId: 'media', kind: 'secondary' };
+        }
+        return null;
       default:
         return null;
     }
@@ -82,6 +96,8 @@ export function parseFocusUrl(
         return { defId: 'tribes', kind: 'list' };
       case 'follow-list':
         return { defId: 'follows', kind: 'list' };
+      case 'media':
+        return { defId: 'media', kind: 'list' };
       case 'profile':
         return { defId: 'profile', kind: 'list' };
       default:

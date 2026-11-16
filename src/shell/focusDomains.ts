@@ -19,6 +19,7 @@ import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
+import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
 import { tribesSurface } from './focusTribesSurface';
@@ -200,11 +201,18 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Articles'),
     icon: 'icon-articles',
     route: '/articles',
-    viewTypes: ['article'],
+    viewTypes: ['article', 'write-article'],
     createSurface: articlesSurface,
     createSettings: articlesSettings,
   },
-  { id: 'videos', label: _('Videos'), icon: 'icon-video' },
+  {
+    id: 'media',
+    label: _('Media'),
+    icon: 'icon-video',
+    route: '/media',
+    viewTypes: ['write-video'],
+    createSurface: mediaSurface,
+  },
   { id: 'recipes', label: _('Recipes'), icon: 'icon-book-open' },
   {
     id: 'notifications',

@@ -412,6 +412,17 @@ export class App {
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/whats-new', 'whats-new', 'whats-new', 'wnv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
+    // /articles/post: the Focus UI (v2) shows this URL while the article
+    // composer is open in the Articles domain. Classic HAS the article
+    // editor (at /write-article) — map the alias to it so a reload/direct
+    // link lands in the same composer.
+    this.registerRoute(
+      '/articles/post',
+      'write-article',
+      'write-article',
+      'aev',
+      true
+    );
 
     // Parameterized routes (public)
     this.registerRoute(
@@ -501,6 +512,22 @@ export class App {
     // Social Media domain holds the focus — a reload or direct link must
     // land on the timeline in the classic interface too.
     this.registerRoute('/timeline', 'timeline', 'timeline', 'tv', true);
+    // Explicit /media alias: the Focus UI (v2) shows this URL while the
+    // Media domain holds the focus. Classic has no standalone media route —
+    // the media feed is an SCC tab — so a reload/direct link lands on the
+    // timeline, the classic home surface.
+    this.registerRoute('/media', 'timeline', 'timeline', 'tv', true);
+    // /media/post: the Focus UI (v2) shows this URL while the video
+    // composer is open in the Media domain. Classic HAS the video editor
+    // (at /write-video) — map the alias to it so a reload/direct link
+    // lands in the same composer.
+    this.registerRoute(
+      '/media/post',
+      'write-video',
+      'write-video',
+      'vev',
+      true
+    );
     // Explicit /follow-list alias: the Focus UI (v2) shows this URL while the
     // Follows domain holds the focus — a reload or direct link must not fall
     // through to the nip19 catch-all; classic lands on the lists overview

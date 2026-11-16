@@ -9,6 +9,8 @@
 import { View } from './View';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
+import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 import { _ } from '../../i18n';
 
 export class ArticleTimelineView extends View {
@@ -32,12 +34,23 @@ export class ArticleTimelineView extends View {
    * Render the view
    */
   private render(): void {
-    this.container.innerHTML = `
-      <header class="article-timeline-view__header">
-        <h1 class="article-timeline-view__title">${_('Articles')}</h1>
-      </header>
-      <div class="article-timeline-view__content"></div>
-    `;
+    // Shared focus-view-header row: h1 left, Write Article button right.
+    // The button routes through the focus nav seam (v2 composer); classic
+    // v1 hides it (the +New Post dropup owns article composition there).
+    this.container.appendChild(
+      createFocusViewHeader({
+        title: _('Articles'),
+        titleClass: 'article-timeline-view__title',
+        actionLabel: _('Write Article'),
+        onAction: () => {
+          delegateToFocusUi('write-article');
+        },
+      })
+    );
+    this.container.insertAdjacentHTML(
+      'beforeend',
+      `<div class="article-timeline-view__content"></div>`
+    );
 
     // Main variant: 20-per-page grid, click routes through ViewNavigationController
     // (right-pane aware, opens article in SCC if modifier key / right-pane mode).

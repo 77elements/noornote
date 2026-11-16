@@ -14,6 +14,12 @@
 import { View } from './View';
 import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
+
+/** Optional exit seam: Focus UI (v2) closes the composer column instead of a classic router navigation. */
+export interface VideoEditorViewOptions {
+  /** Called on publish success (instead of router.navigate('/')). */
+  onClose?: () => void;
+}
 import {
   type VideoOptions,
   type MediaModuleApi,
@@ -40,6 +46,7 @@ type DetectedKind = 21 | 22;
 export class VideoEditorView extends View {
   private container: HTMLElement;
   private router: Router;
+  private readonly onClose: (() => void) | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private _mediaApi?: MediaModuleApi | null;
@@ -69,8 +76,9 @@ export class VideoEditorView extends View {
   private isVideoUploading: boolean = false;
   private isThumbnailUploading: boolean = false;
 
-  constructor() {
+  constructor(options?: VideoEditorViewOptions) {
     super();
+    this.onClose = options?.onClose ?? null;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--video-editor';
     this.router = Router.getInstance();
@@ -112,11 +120,7 @@ export class VideoEditorView extends View {
         <div class="back-padder">
         <div class="video-editor">
           <header class="video-editor__header">
-            <button class="video-editor__back" data-action="back">
-              <svg width="24" height="24"><use href="#icon-back"/></svg>
-              Back
-            </button>
-            <h1 class="video-editor__title">${_('Post Video')}</h1>
+            <h1 class="video-editor__title">${_('Post Media')}</h1>
           </header>
 
           <div class="video-editor__toolbar">
@@ -129,7 +133,7 @@ export class VideoEditorView extends View {
 
           <footer class="video-editor__footer">
             ${this.toolbar.render()}
-            <div class="video-editor__actions">
+            <div class="video-editor__actions l-row--right">
               <button class="btn" data-action="publish" disabled>${_('Publish')}</button>
             </div>
           </footer>
@@ -260,10 +264,6 @@ export class VideoEditorView extends View {
   }
 
   private setupEventListeners(): void {
-    // Back button
-    const backBtn = this.container.querySelector('[data-action="back"]');
-    backBtn?.addEventListener('click', () => this.router.navigate('/'));
-
     // Field inputs
     this.setupFieldListeners();
 
@@ -594,7 +594,8 @@ export class VideoEditorView extends View {
         ModuleLoader.getInstance()
           .getApi<ProfileModuleApi>('profile')
           ?.invalidateCarouselCacheForCurrentUser();
-        this.router.navigate('/');
+        if (this.onClose) this.onClose();
+        else this.router.navigate('/');
       }
     } finally {
       this.isPublishing = false;

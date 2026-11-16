@@ -17,6 +17,10 @@ describe('parseFocusUrl', () => {
       defId: 'articles',
       kind: 'list',
     });
+    expect(parseFocusUrl('/articles/post')).toEqual({
+      defId: 'articles',
+      kind: 'secondary',
+    });
     expect(parseFocusUrl('/notifications')).toEqual({
       defId: 'notifications',
       kind: 'list',
@@ -36,6 +40,14 @@ describe('parseFocusUrl', () => {
     expect(parseFocusUrl('/follow-list')).toEqual({
       defId: 'follows',
       kind: 'list',
+    });
+    expect(parseFocusUrl('/media')).toEqual({
+      defId: 'media',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/media/post')).toEqual({
+      defId: 'media',
+      kind: 'secondary',
     });
     expect(parseFocusUrl('/profile')).toEqual({
       defId: 'profile',

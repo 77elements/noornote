@@ -21,21 +21,32 @@ interface MediaItem {
   title?: string | undefined;
 }
 
+export interface SccMediaFeedOptions {
+  /**
+   * Click handler override for tiles. Default (classic SCC): a plain router
+   * navigation to the note's SNV. The Focus UI (v2) passes the focus-nav
+   * seam instead — openView('single-note') morphs to the social object.
+   */
+  onClick?: (event: NostrEvent, clickEvent: MouseEvent) => void;
+}
+
 export class SccMediaFeed {
   private container: HTMLElement;
   private gridEl: HTMLElement;
   private infiniteScroll: InfiniteScroll;
   private userProfileService: UserProfileService;
   private router: Router;
+  private readonly onClick: SccMediaFeedOptions['onClick'];
   private seenIds = new Set<string>();
   private oldestTimestamp = Math.floor(Date.now() / 1000);
   private isLoading = false;
   private hasMore = true;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, options: SccMediaFeedOptions = {}) {
     this.container = container;
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
+    this.onClick = options.onClick;
 
     this.gridEl = document.createElement('div');
     this.gridEl.className = 'media-feed';
@@ -202,7 +213,11 @@ export class SccMediaFeed {
       </div>
     `;
 
-    tile.addEventListener('click', () => {
+    tile.addEventListener('click', e => {
+      if (this.onClick) {
+        this.onClick(item.event, e);
+        return;
+      }
       this.router.navigate(`/note/${item.event.id}`);
     });
 

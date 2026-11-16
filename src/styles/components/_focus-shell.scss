@@ -502,6 +502,37 @@ html.ui--focus {
   height: 100%;
 }
 
+// Shared surface header: the h1 title every focus view carries above its
+// content, action button right (same DOM as the timeline's title row).
+// Classic v1 renders the same rows (Timeline, Articles) with the action
+// button hidden — composition comes from the +New Post dropup there.
+.focus-view-header {
+  margin-bottom: $gap;
+}
+
+html:not(.ui--focus) .focus-view-header__action {
+  display: none;
+}
+
+// Media: header row + the feed's own internal scroller (.media-feed is
+// height: 100% — the body row must own the remaining surface height; the
+// composer detail replaces the body 1:1, so the frame row is a plain 1fr).
+.focus-surface--media {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+
+  .focus-surface__body {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  // Composer: one $gap of clearance at the bottom of the scrolled column.
+  .video-editor {
+    padding-bottom: $gap;
+  }
+}
+
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in
 // the shell. Covers the ED-t panel area (not the tab) and centers the
 // switch vertically, left-aligned.

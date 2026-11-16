@@ -16,6 +16,16 @@
 import { View } from './View';
 import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
+
+/** Optional exit seam: Focus UI (v2) closes the composer column instead of a classic router navigation. */
+export interface ArticleEditorViewOptions {
+  /**
+   * Called on back-button exit (no arg, after the unsaved-changes dialog)
+   * and on publish success (with the new article's naddr — the surface
+   * opens the published article as its detail).
+   */
+  onClose?: (naddr?: string) => void;
+}
 import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 // ArticleService accessed via articles module API
 import { RelayConfig } from '../../services/RelayConfig';
@@ -146,9 +156,32 @@ export class ArticleEditorView extends View {
       e.preventDefault();
     }
   };
+  /** True once an exit path (back/publish) is on its way — confirmBack no longer vetoes (see NewNoteView's closing flag). */
+  private exiting = false;
 
-  constructor(editNaddr?: string) {
+  /** Exit via the v2 seam (onClose) or the classic navigation stack. */
+  private exitEditor(naddr?: string): void {
+    this.exiting = true;
+    if (this.onClose) this.onClose(naddr);
+    else if (naddr) this.router.navigate(`/article/${naddr}`);
+    else NavigationDispatcher.goBack();
+  }
+
+  /**
+   * Surface-back veto (v2): an unsaved-changes dialog defers the exit —
+   * same contract as the note composer's confirmBack.
+   */
+  confirmBack(): boolean {
+    if (this.exiting || !this.isDirty()) return true;
+    queueMicrotask(() => void this.handleBack());
+    return false;
+  }
+
+  private readonly onClose: ((naddr?: string) => void) | null;
+
+  constructor(editNaddr?: string, options?: ArticleEditorViewOptions) {
     super();
+    this.onClose = options?.onClose ?? null;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article-editor';
     this.router = Router.getInstance();
@@ -1000,7 +1033,7 @@ export class ArticleEditorView extends View {
    */
   private async handleBack(): Promise<void> {
     if (!this.isDirty()) {
-      NavigationDispatcher.goBack();
+      this.exitEditor();
       return;
     }
 
@@ -1013,7 +1046,7 @@ export class ArticleEditorView extends View {
     });
 
     if (discard) {
-      NavigationDispatcher.goBack();
+      this.exitEditor();
     }
   }
 
@@ -1211,7 +1244,8 @@ export class ArticleEditorView extends View {
       }
 
       if (naddr && !isDraft) {
-        this.router.navigate(`/article/${naddr}`);
+        if (this.onClose) this.exitEditor(naddr);
+        else this.router.navigate(`/article/${naddr}`);
       }
     } finally {
       this.isPublishing = false;

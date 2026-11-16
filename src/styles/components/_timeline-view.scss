@@ -26,18 +26,6 @@
   }
 }
 
-// Heading row (l-row--split): h1 left, Write Note button right. v2-only —
-// in classic v1 the +New Post dropup owns note composition.
-.timeline-view__title-row {
-  margin-bottom: $gap;
-
-  html:not(.ui--focus) & {
-    .timeline-view__write-btn {
-      display: none;
-    }
-  }
-}
-
 .timeline-view__header {
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-2);

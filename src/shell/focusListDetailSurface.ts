@@ -35,16 +35,21 @@ export interface SurfaceViewHandle {
 export interface FocusListDetailSurfaceConfig {
   /** Frame class name (e.g. 'focus-surface--articles'). */
   className: string;
-  /** View type this surface owns in the focus navigation seam. */
-  navViewType: string;
+  /**
+   * View type this surface owns in the focus navigation seam. Optional:
+   * a list+composer surface without its own detail (e.g. media — note
+   * clicks morph to the social object) omits navViewType/detailRoute/
+   * createDetail and carries only a secondary.
+   */
+  navViewType?: string;
   /** URL route while the list is shown. */
   listRoute: string;
   /** URL route while a detail is shown. */
-  detailRoute: (param: string) => string;
+  detailRoute?: (param: string) => string;
   /** Create the cached list view (called once, lazily). */
   createList: () => Promise<SurfaceViewHandle>;
   /** Create the detail view for a focus-navigation param. */
-  createDetail: (param: string) => Promise<SurfaceViewHandle>;
+  createDetail?: (param: string) => Promise<SurfaceViewHandle>;
   /**
    * Optional second, param-less detail this surface answers to in the
    * focus navigation seam (e.g. the social composer at
@@ -110,7 +115,12 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
    * navigation).
    */
   handleFocusNav(viewType: string, param?: string): boolean {
-    if (viewType === this.config.navViewType && param) {
+    if (
+      this.config.navViewType &&
+      this.config.createDetail &&
+      viewType === this.config.navViewType &&
+      param
+    ) {
       void this.openDetail(param);
       return true;
     }
@@ -139,6 +149,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       }
       return;
     }
+    if (!this.config.createDetail || !this.config.detailRoute) return;
     // A cross-object handoff can open a detail right after the surface
     // was created — await the constructor's pending list creation so the
     // list is never created twice and its late swapToList cannot clobber
@@ -255,7 +266,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       return;
     }
     pushFocusUrl(
-      this.detail && this.detailParam
+      this.detail && this.detailParam && this.config.detailRoute
         ? this.config.detailRoute(this.detailParam)
         : this.config.listRoute
     );

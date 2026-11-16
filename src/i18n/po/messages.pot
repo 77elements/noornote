@@ -1018,7 +1018,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:332
+#: src/shell/focusDomains.ts:340
 msgid "Analytics"
 msgstr ""
 
@@ -1185,7 +1185,7 @@ msgstr ""
 #: src/components/views/ArticleTimelineView.ts:37
 #: src/components/views/ProfileView.ts:2369
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:200
+#: src/shell/focusDomains.ts:201
 msgid "Articles"
 msgstr ""
 
@@ -1396,7 +1396,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2281
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:336
+#: src/shell/focusDomains.ts:344
 msgid "Badges"
 msgstr ""
 
@@ -1585,7 +1585,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:227
+#: src/shell/focusDomains.ts:235
 msgid "Bookmarks"
 msgstr ""
 
@@ -1668,7 +1668,7 @@ msgstr ""
 msgid "Bulk delete"
 msgstr ""
 
-#: src/shell/focusDomains.ts:351
+#: src/shell/focusDomains.ts:359
 msgid "Bulk Delete"
 msgstr ""
 
@@ -1716,7 +1716,7 @@ msgstr ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2216
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:308
+#: src/shell/focusDomains.ts:316
 msgid "Calendar"
 msgstr ""
 
@@ -2010,7 +2010,7 @@ msgstr ""
 msgid "Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>\"Create keystore\"</strong>"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:256
+#: src/components/views/VideoEditorView.ts:264
 msgid "Click or drag & drop to upload video"
 msgstr ""
 
@@ -2535,7 +2535,7 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:63
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:277
+#: src/shell/focusDomains.ts:285
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2915,7 +2915,7 @@ msgstr[1] ""
 msgid "Describe your product..."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:169
+#: src/components/views/VideoEditorView.ts:177
 msgid "Describe your video..."
 msgstr ""
 
@@ -2925,7 +2925,7 @@ msgstr ""
 #: src/addons/feedback-board/FeedbackBoardView.ts:629
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
-#: src/components/views/VideoEditorView.ts:165
+#: src/components/views/VideoEditorView.ts:173
 #: src/lists/bookmarks.ts:3781
 #: src/lists/bookmarks.ts:3965
 msgid "Description"
@@ -2942,7 +2942,7 @@ msgstr ""
 #: src/addons/marketplace/ListingEditorView.ts:277
 #: src/components/layout/MainLayout.ts:2210
 #: src/components/views/ArticleEditorView.ts:380
-#: src/components/views/VideoEditorView.ts:177
+#: src/components/views/VideoEditorView.ts:185
 msgid "Details"
 msgstr ""
 
@@ -4117,7 +4117,7 @@ msgid "Failed: %s"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:339
+#: src/shell/focusDomains.ts:347
 msgid "Feedback Board"
 msgstr ""
 
@@ -4290,7 +4290,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:304
+#: src/shell/focusDomains.ts:312
 msgid "Follow Packs"
 msgstr ""
 
@@ -4303,7 +4303,7 @@ msgstr ""
 msgid "Follow some users or check your relay connections."
 msgstr ""
 
-#: src/components/layout/partials/SccMediaFeed.ts:55
+#: src/components/layout/partials/SccMediaFeed.ts:66
 msgid "Follow users to see their media here."
 msgstr ""
 
@@ -4327,7 +4327,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:358
+#: src/shell/focusDomains.ts:366
 msgid "Follower Notification"
 msgstr ""
 
@@ -4373,7 +4373,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:247
+#: src/shell/focusDomains.ts:255
 msgid "Follows"
 msgstr ""
 
@@ -4526,7 +4526,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:364
+#: src/shell/focusDomains.ts:372
 msgid "Group Chats"
 msgstr ""
 
@@ -4566,7 +4566,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:345
+#: src/shell/focusDomains.ts:353
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4728,7 +4728,7 @@ msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:257
 #: src/components/views/ArticleEditorView.ts:394
-#: src/components/views/VideoEditorView.ts:190
+#: src/components/views/VideoEditorView.ts:198
 msgid "https://... or upload"
 msgstr ""
 
@@ -5118,8 +5118,8 @@ msgstr ""
 msgid "Known"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:230
-#: src/components/views/VideoEditorView.ts:522
+#: src/components/views/VideoEditorView.ts:238
+#: src/components/views/VideoEditorView.ts:533
 msgid "Landscape"
 msgstr ""
 
@@ -5338,7 +5338,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:292
+#: src/shell/focusDomains.ts:300
 msgid "Live Streams"
 msgstr ""
 
@@ -5437,8 +5437,8 @@ msgstr ""
 msgid "Loading listing..."
 msgstr ""
 
-#: src/components/layout/partials/SccMediaFeed.ts:45
-#: src/components/layout/partials/SccMediaFeed.ts:59
+#: src/components/layout/partials/SccMediaFeed.ts:56
+#: src/components/layout/partials/SccMediaFeed.ts:70
 #: src/helpers/renderMediaContent.ts:529
 msgid "Loading media..."
 msgstr ""
@@ -5838,7 +5838,7 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:298
+#: src/shell/focusDomains.ts:306
 msgid "Marketplace"
 msgstr ""
 
@@ -5883,6 +5883,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
+#: src/shell/focusDomains.ts:210
+#: src/shell/focusMediaSurface.ts:42
 msgid "Media"
 msgstr ""
 
@@ -5893,7 +5895,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:128
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:294
 #: src/addons/follow-packs/FollowPackManager.ts:553
-#: src/components/views/VideoEditorView.ts:381
+#: src/components/views/VideoEditorView.ts:392
 msgid "Media module not available"
 msgstr ""
 
@@ -5984,7 +5986,7 @@ msgstr ""
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:219
+#: src/shell/focusDomains.ts:227
 msgid "Messages"
 msgstr ""
 
@@ -6148,7 +6150,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:258
+#: src/shell/focusDomains.ts:266
 msgid "Muted"
 msgstr ""
 
@@ -6532,7 +6534,7 @@ msgstr ""
 msgid "No matching notes found."
 msgstr ""
 
-#: src/components/layout/partials/SccMediaFeed.ts:65
+#: src/components/layout/partials/SccMediaFeed.ts:76
 msgid "No media from your follows yet."
 msgstr ""
 
@@ -6838,7 +6840,7 @@ msgstr ""
 msgid "Nostr illustration by @awayuki"
 msgstr ""
 
-#: src/shell/focusDomains.ts:355
+#: src/shell/focusDomains.ts:363
 msgid "Nostr Majlis"
 msgstr ""
 
@@ -6865,7 +6867,7 @@ msgstr ""
 msgid "nostr, bitcoin, technology (comma separated)"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:207
+#: src/components/views/VideoEditorView.ts:215
 msgid "nostr, music, tutorial (comma separated)"
 msgstr ""
 
@@ -6973,7 +6975,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:311
+#: src/shell/focusDomains.ts:319
 msgid "Note taking"
 msgstr ""
 
@@ -7024,7 +7026,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:211
+#: src/shell/focusDomains.ts:219
 msgid "Notifications"
 msgstr ""
 
@@ -7593,8 +7595,8 @@ msgstr ""
 msgid "Poll: %s"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:230
-#: src/components/views/VideoEditorView.ts:522
+#: src/components/views/VideoEditorView.ts:238
+#: src/components/views/VideoEditorView.ts:533
 msgid "Portrait"
 msgstr ""
 
@@ -7628,6 +7630,12 @@ msgstr ""
 msgid "Post Highlight"
 msgstr ""
 
+#: src/components/layout/MainLayout.ts:2180
+#: src/components/views/VideoEditorView.ts:127
+#: src/shell/focusMediaSurface.ts:43
+msgid "Post Media"
+msgstr ""
+
 #: src/addons/feedback-board/FeedbackBoardView.ts:635
 msgid "Post Ticket"
 msgstr ""
@@ -7644,10 +7652,6 @@ msgstr ""
 #: src/components/settings/UISettingsSection.ts:460
 #: src/shell/focusSettings.ts:294
 msgid "Post truncation enabled"
-msgstr ""
-
-#: src/components/views/VideoEditorView.ts:119
-msgid "Post Video"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:702
@@ -7826,7 +7830,7 @@ msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2098
-#: src/shell/focusDomains.ts:266
+#: src/shell/focusDomains.ts:274
 msgid "Profile"
 msgstr ""
 
@@ -7907,7 +7911,7 @@ msgid "Public petname — stored in your contact list (NIP-02), visible to every
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:334
-#: src/components/views/VideoEditorView.ts:133
+#: src/components/views/VideoEditorView.ts:141
 msgid "Publish"
 msgstr ""
 
@@ -8003,7 +8007,7 @@ msgstr ""
 #: src/addons/marketplace/ListingEditorView.ts:685
 #: src/components/onboarding/AccountSetupWizard.ts:3060
 #: src/components/views/ArticleEditorView.ts:1172
-#: src/components/views/VideoEditorView.ts:569
+#: src/components/views/VideoEditorView.ts:580
 msgid "Publishing..."
 msgstr ""
 
@@ -8243,7 +8247,7 @@ msgid "Recipe hint: add a cover image, recipe clients expect one."
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:1837
-#: src/shell/focusDomains.ts:208
+#: src/shell/focusDomains.ts:216
 msgid "Recipes"
 msgstr ""
 
@@ -8426,7 +8430,7 @@ msgstr ""
 msgid "Remove Relay"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:236
+#: src/components/views/VideoEditorView.ts:244
 msgid "Remove video"
 msgstr ""
 
@@ -8947,7 +8951,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:317
+#: src/shell/focusDomains.ts:325
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -9660,7 +9664,7 @@ msgid "Slug and Name are required"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:156
-#: src/shell/focusDomains.ts:191
+#: src/shell/focusDomains.ts:192
 msgid "Social Media"
 msgstr ""
 
@@ -9841,7 +9845,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:1046
+#: src/App.ts:1062
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9945,7 +9949,7 @@ msgstr ""
 msgid "Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in every list to control sync from/to relays and local backups). Also unlocks the Danger Zone for resetting corrupted list data."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:233
+#: src/components/views/VideoEditorView.ts:241
 msgid "Switch orientation"
 msgstr ""
 
@@ -10094,7 +10098,7 @@ msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:295
 #: src/components/views/ArticleEditorView.ts:416
-#: src/components/views/VideoEditorView.ts:202
+#: src/components/views/VideoEditorView.ts:210
 msgid "Tags"
 msgstr ""
 
@@ -10440,7 +10444,7 @@ msgstr ""
 msgid "Threads you muted to stop notifications from replies."
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:185
+#: src/components/views/VideoEditorView.ts:193
 msgid "Thumbnail"
 msgstr ""
 
@@ -10527,7 +10531,7 @@ msgstr ""
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
-#: src/components/views/VideoEditorView.ts:153
+#: src/components/views/VideoEditorView.ts:161
 msgid "Title"
 msgstr ""
 
@@ -10565,7 +10569,7 @@ msgstr ""
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
-#: src/components/views/VideoEditorView.ts:179
+#: src/components/views/VideoEditorView.ts:187
 msgid "Toggle section"
 msgstr ""
 
@@ -10637,7 +10641,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:235
+#: src/shell/focusDomains.ts:243
 msgid "Tribes"
 msgstr ""
 
@@ -10893,7 +10897,7 @@ msgstr ""
 msgid "Upload media"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:194
+#: src/components/views/VideoEditorView.ts:202
 msgid "Upload thumbnail"
 msgstr ""
 
@@ -10909,7 +10913,7 @@ msgstr ""
 msgid "Uploading to media server…"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:248
+#: src/components/views/VideoEditorView.ts:256
 msgid "Uploading video..."
 msgstr ""
 
@@ -11042,8 +11046,7 @@ msgstr ""
 msgid "video"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2180
-#: src/components/views/VideoEditorView.ts:148
+#: src/components/views/VideoEditorView.ts:156
 msgid "Video"
 msgstr ""
 
@@ -11067,17 +11070,16 @@ msgstr ""
 msgid "Video published successfully!"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:158
+#: src/components/views/VideoEditorView.ts:166
 msgid "Video title (optional)"
 msgstr ""
 
-#: src/components/views/VideoEditorView.ts:391
+#: src/components/views/VideoEditorView.ts:402
 msgid "Video upload failed"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:2387
 #: src/components/views/ProfileView.ts:747
-#: src/shell/focusDomains.ts:207
 msgid "Videos"
 msgstr ""
 
@@ -11159,7 +11161,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:370
+#: src/shell/focusDomains.ts:378
 msgid "Wallet Balance"
 msgstr ""
 
@@ -11344,7 +11346,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:376
+#: src/shell/focusDomains.ts:384
 msgid "Word Filter"
 msgstr ""
 

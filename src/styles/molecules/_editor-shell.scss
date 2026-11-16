@@ -21,30 +21,6 @@
   flex-direction: column;
   min-height: calc(100vh - $gap * 6);
 
-  &__back {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    padding: calc($gap / 2) $gap;
-    background: none;
-    border-radius: $radius-xl;
-    color: var(--color-5);
-    font-family: inherit;
-    cursor: pointer;
-    transition: $transition-colors;
-
-    svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    &:hover {
-      background: var(--bg-accent);
-      color: var(--color-4);
-      border-color: var(--color-4);
-    }
-  }
-
   &__title {
     @extend %h1;
     font-weight: 600;
