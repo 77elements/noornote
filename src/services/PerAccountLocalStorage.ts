@@ -251,7 +251,6 @@ export const StorageKeys = {
   CUSTOM_EMOJIS_ENABLED: 'noornote_custom_emojis_enabled_map',
   BOOKMARKS_ADDON_ENABLED: 'noornote_bookmarks_addon_enabled_map',
   TRIBES_ADDON_ENABLED: 'noornote_tribes_addon_enabled_map',
-  EXTENDED_FOLLOWS_ADDON_ENABLED: 'noornote_extended_follows_addon_enabled_map',
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   BTC_PRICE_ENABLED: 'noornote_btc_price_enabled_map',
   BTC_PRICE_SIDEBAR_WIDGET: 'noornote_btc_price_sidebar_widget_map',

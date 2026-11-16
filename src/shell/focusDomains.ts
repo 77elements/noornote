@@ -17,6 +17,7 @@ import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
+import { followsSurface } from './focusFollowsSurface';
 import { tribesSurface } from './focusTribesSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
@@ -228,7 +229,15 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     // on it (TimelineView), the TV "Edit tribes" link routes here via
     // the 'tribes' view type (focus navigation seam).
   },
-  { id: 'follows', label: _('Follows'), icon: 'icon-follows' },
+  {
+    id: 'follows',
+    label: _('Follows'),
+    icon: 'icon-follows',
+    route: '/follow-list',
+    viewTypes: [],
+    createSurface: followsSurface,
+    // Always-on, extended features merged in — no settings, no gear.
+  },
   { id: 'muted', label: _('Muted'), icon: 'icon-mute', addon: true },
   { id: 'profile', label: _('Profile'), icon: 'icon-profile' },
   {
@@ -312,12 +321,6 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     addon: true,
   },
   { id: 'majlis', label: _('Nostr Majlis'), icon: 'icon-globe', addon: true },
-  {
-    id: 'extended-follows',
-    label: _('Extended Follows'),
-    icon: 'icon-user-16',
-    addon: true,
-  },
   {
     id: 'follower-notification',
     label: _('Follower Notification'),

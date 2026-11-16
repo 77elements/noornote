@@ -549,7 +549,6 @@ export interface AppEvents {
   'calendar:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
-  'extended-follows:toggle': AddonTogglePayload;
   'follow-packs:addon-toggle': AddonTogglePayload;
   'follow-packs:toggle': AddonTogglePayload;
   'follower-notification:addon-toggle': AddonTogglePayload;

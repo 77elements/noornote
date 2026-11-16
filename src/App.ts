@@ -490,6 +490,17 @@ export class App {
     // Social Media domain holds the focus — a reload or direct link must
     // land on the timeline in the classic interface too.
     this.registerRoute('/timeline', 'timeline', 'timeline', 'tv', true);
+    // Explicit /follow-list alias: the Focus UI (v2) shows this URL while the
+    // Follows domain holds the focus — a reload or direct link must not fall
+    // through to the nip19 catch-all; classic lands on the lists overview
+    // (?scc=list-follows opens the follows list directly).
+    this.registerRoute(
+      '/follow-list',
+      'lists-overview',
+      'lists-overview',
+      'lov',
+      true
+    );
     this.registerRoute(
       '/timeline/new-note',
       'new-note',
@@ -608,13 +619,6 @@ export class App {
       '/addons/tribes',
       'addon-tribes',
       'addon-tribes',
-      'adv',
-      true
-    );
-    this.registerRoute(
-      '/addons/extended-follows',
-      'addon-extended-follows',
-      'addon-extended-follows',
       'adv',
       true
     );

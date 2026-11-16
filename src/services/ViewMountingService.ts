@@ -586,17 +586,6 @@ export class ViewMountingService {
           },
         };
 
-      case 'addon-extended-follows':
-        return {
-          factory: async () => {
-            const { ExtendedFollowsAddonView } = await import(
-              '../addons/extended-follows/ExtendedFollowsAddonView'
-            );
-            const view = new ExtendedFollowsAddonView();
-            return { element: view.getElement(), view };
-          },
-        };
-
       case 'addon-wallet-balance':
         return {
           factory: async () => {

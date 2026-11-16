@@ -37,11 +37,31 @@ vi.stubGlobal(
 
 import { InfiniteScroll } from './InfiniteScroll';
 
+// Manual rAF harness: the deferred-start path (detached container) polls via
+// requestAnimationFrame — deterministic flush instead of timer faking.
+const rafHarness = globalThis as Record<string, unknown>;
+let rafQueue: FrameRequestCallback[] = [];
+const flushRaf = (): void => {
+  const queue = rafQueue;
+  rafQueue = [];
+  queue.forEach(cb => cb(performance.now()));
+};
+rafHarness.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+  rafQueue.push(cb);
+  return rafQueue.length;
+};
+rafHarness.cancelAnimationFrame = (id: number): void => {
+  rafQueue[id - 1] = () => undefined;
+};
+
 describe('InfiniteScroll', () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    // Fake only the debounce timers — rAF stays the manual harness above
+    // (fake-timers would otherwise overwrite it and the deferred-start
+    // polling would never run in tests).
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     container = document.createElement('div');
     document.body.appendChild(container);
     IOStub.instances = [];
@@ -174,5 +194,73 @@ describe('InfiniteScroll', () => {
     first.trigger(true);
     vi.advanceTimersByTime(1000);
     expect(container.isConnected).toBe(true);
+  });
+
+  // ===== Regression: detached containers + clip roots (focus surfaces) =====
+  // Focus surfaces render into DETACHED subtrees that the stage appends
+  // afterwards. An IntersectionObserver created against a detached root never
+  // re-evaluates after attachment — the list's "load more" stayed dead on
+  // first boot. observe() now defers the observer until the container is
+  // connected, and resolves the root lazily at that moment.
+
+  it('creates sentinel immediately but defers the observer until attachment', () => {
+    const detached = document.createElement('div'); // NOT in the document
+    const is = new InfiniteScroll(vi.fn());
+    is.observe(detached);
+
+    // sentinel + indicator exist right away (renderers insert items before)
+    expect(detached.querySelector('.infinite-scroll-sentinel')).not.toBeNull();
+    expect(detached.querySelector('.infinite-scroll-loading')).not.toBeNull();
+    // no observer while detached
+    expect(IOStub.instances).toHaveLength(0);
+
+    // attach → the next rAF poll starts the observation
+    document.body.appendChild(detached);
+    flushRaf();
+    expect(IOStub.instances).toHaveLength(1);
+  });
+
+  it('disconnect() cancels a pending deferred start', () => {
+    const detached = document.createElement('div');
+    const is = new InfiniteScroll(vi.fn());
+    is.observe(detached);
+    is.disconnect();
+
+    document.body.appendChild(detached);
+    flushRaf();
+    expect(IOStub.instances).toHaveLength(0);
+    expect(detached.querySelector('.infinite-scroll-sentinel')).toBeNull();
+  });
+
+  it('resolves a lazy root when observation starts, not at observe() time', () => {
+    const detached = document.createElement('div');
+    const scroller = document.createElement('section');
+    let resolved = 'never';
+    const is = new InfiniteScroll(vi.fn());
+    is.observe(detached, () => {
+      resolved = 'called';
+      return scroller;
+    });
+
+    // root must NOT be resolved while detached (contextual overflow rules
+    // don't match on detached subtrees → wrong root)
+    expect(resolved).toBe('never');
+
+    document.body.appendChild(detached);
+    flushRaf();
+    expect(resolved).toBe('called');
+    // the observer was created against the lazily resolved scroll container
+    expect(IOStub.last!.opts?.root).toBe(scroller);
+  });
+
+  it('uses an explicitly given scroll container as the observer root', () => {
+    const scroller = document.createElement('div');
+    const list = document.createElement('div');
+    scroller.appendChild(list);
+    document.body.appendChild(scroller);
+
+    const is = new InfiniteScroll(vi.fn());
+    is.observe(list, scroller);
+    expect(IOStub.last!.opts?.root).toBe(scroller);
   });
 });

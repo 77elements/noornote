@@ -18,8 +18,6 @@ export function translateAddonName(id: string): string {
       return _('Bookmarks');
     case 'tribes':
       return _('Tribes');
-    case 'extended-follows':
-      return _('Extended Follows');
     case 'wallet-balance':
       return _('Wallet Balance');
     case 'profile-recognition':
@@ -73,10 +71,6 @@ export function translateAddonDescription(id: string): string {
     case 'tribes':
       return _(
         'Subscribe to shared follow lists and follow curated groups in one go.'
-      );
-    case 'extended-follows':
-      return _(
-        'Track follows, unfollows and profile changes beyond the plain follow list.'
       );
     case 'wallet-balance':
       return _('Show your NIP-60 Lightning wallet balance in the sidebar.');

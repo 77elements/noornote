@@ -49,11 +49,10 @@ import { SystemLogger } from './services/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
-// MutualChangeService: only load if Extended Follows addon is enabled
-import { isExtendedFollowsEnabled } from './addons/extended-follows/index';
-if (isExtendedFollowsEnabled()) {
-  void import('./services/MutualChangeService');
-}
+// MutualChangeService: storage lifecycle for the manual "Check for Changes"
+// (mutuals diff) — always on since the Extended Follows addon was merged
+// into the follow list.
+void import('./services/MutualChangeService');
 import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 
 // Track failed image loads (URL → log message for removal)
