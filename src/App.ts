@@ -517,6 +517,11 @@ export class App {
     // the media feed is an SCC tab — so a reload/direct link lands on the
     // timeline, the classic home surface.
     this.registerRoute('/media', 'timeline', 'timeline', 'tv', true);
+    // /muted: the Focus UI (v2) shows this URL while the Muted domain
+    // holds the focus. Classic has no standalone muted route — the muted
+    // list is an SCC tab — so a reload/direct link lands on the classic
+    // mute-list view.
+    this.registerRoute('/muted', 'mute-list', 'mute-list', 'ml', true);
     // /media/post: the Focus UI (v2) shows this URL while the video
     // composer is open in the Media domain. Classic HAS the video editor
     // (at /write-video) — map the alias to it so a reload/direct link

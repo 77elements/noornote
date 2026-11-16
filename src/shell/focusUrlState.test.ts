@@ -45,6 +45,10 @@ describe('parseFocusUrl', () => {
       defId: 'media',
       kind: 'list',
     });
+    expect(parseFocusUrl('/muted')).toEqual({
+      defId: 'muted',
+      kind: 'list',
+    });
     expect(parseFocusUrl('/media/post')).toEqual({
       defId: 'media',
       kind: 'secondary',

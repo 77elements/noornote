@@ -115,6 +115,8 @@ export function parseFocusUrl(
         return { defId: 'follows', kind: 'list' };
       case 'media':
         return { defId: 'media', kind: 'list' };
+      case 'muted':
+        return { defId: 'muted', kind: 'list' };
       case 'marketplace':
         return { defId: 'marketplace', kind: 'list' };
       case 'profile':

@@ -495,11 +495,16 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// Shared surface header: the h1 title every focus view carries above its
-// content, action button right (same DOM as the timeline's title row).
+// Shared surface header: the h1 IS the header row — title left, optional
+// action button right (inside the h1; classic hides both — visually-hidden
+// title contract — v2 shows both).
 // Classic v1 renders the same rows (Timeline, Articles) with the action
 // button hidden — composition comes from the +New Post dropup there.
 .focus-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc($gap / 2);
   margin-bottom: $gap;
 }
 
@@ -531,6 +536,19 @@ html:not(.ui--focus) .focus-view-header__action {
 // Marketplace: same composer clearance for the listing editor.
 .focus-object__content--marketplace .article-editor {
   padding-bottom: $gap;
+}
+
+// Muted: header + the manager's own scroller (classic .tab-content
+// contract: height 100% + overflow-y auto — trimmed to the slot's
+// remaining row so header and list scroll as one column).
+.focus-object__content--muted {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+
+  .tab-content {
+    height: auto;
+    min-height: 0;
+  }
 }
 
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in

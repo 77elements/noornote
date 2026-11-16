@@ -273,6 +273,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Muted'),
     icon: 'icon-mute',
     addon: true,
+    route: '/muted',
     createSurface: mutesSurface,
     createSettings: mutesSettings,
   },
