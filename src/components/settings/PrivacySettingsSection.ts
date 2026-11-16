@@ -131,7 +131,7 @@ export class PrivacySettingsSection extends SettingsSection {
     const warning =
       config.betaWarning === false
         ? ''
-        : `<p class="setting__desc ${config.id}-warning"><strong>${_('Beta Feature:')}</strong> ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", config.listName)}</p>`;
+        : `<p class="setting__desc ${config.id}-warning"><strong>${_('Caution:')}</strong> ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", config.listName)}</p>`;
     const viewButton = config.viewButtonLabel
       ? `<div class="l-row l-row--right">
           <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>

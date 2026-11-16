@@ -18,11 +18,14 @@ import { socialSurface } from './focusSocialSurface';
 import { messagesSurface } from './focusMessagesSurface';
 import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
+import { mutesSurface } from './focusMutesSurface';
 import { tribesSurface } from './focusTribesSurface';
 import { notificationsSurface } from './focusNotificationsSurface';
 import {
   articlesSettings,
   bookmarksSettings,
+  followsSettings,
+  mutesSettings,
   notificationsSettings,
   socialSettings,
 } from './focusSettings';
@@ -236,9 +239,18 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/follow-list',
     viewTypes: [],
     createSurface: followsSurface,
-    // Always-on, extended features merged in — no settings, no gear.
+    createSettings: followsSettings,
+    // Always-on, extended features merged in. Settings (gear): the
+    // private-lists toggle from the classic Settings → Privacy section.
   },
-  { id: 'muted', label: _('Muted'), icon: 'icon-mute', addon: true },
+  {
+    id: 'muted',
+    label: _('Muted'),
+    icon: 'icon-mute',
+    addon: true,
+    createSurface: mutesSurface,
+    createSettings: mutesSettings,
+  },
   { id: 'profile', label: _('Profile'), icon: 'icon-profile' },
   {
     id: 'custom-emojis',
