@@ -554,17 +554,18 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// Shared surface header: the h1 IS the header row — title left, optional
-// action button right (inside the h1; classic hides both — visually-hidden
-// title contract — v2 shows both).
+// Shared surface header: a .l-row--split row — title (h1) left, optional
+// action button right (button is a SIBLING of the h1; inside the h1 it
+// would inherit the heading's font size). The row owns the vertical
+// spacing — title classes drop their own margin here.
 // Classic v1 renders the same rows (Timeline, Articles) with the action
 // button hidden — composition comes from the +New Post dropup there.
 .focus-view-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc($gap / 2);
   margin-bottom: $gap;
+
+  h1 {
+    margin: 0;
+  }
 }
 
 html:not(.ui--focus) .focus-view-header__action {
