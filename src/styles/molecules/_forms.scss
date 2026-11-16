@@ -90,9 +90,9 @@
   color-scheme: dark; // Default: dark calendar popup
 
   // Light themes: native calendar in light mode
-  [data-theme="bright-superman"] &,
-  [data-theme="soft-lilac"] &,
-  [data-theme="t-low"] & {
+  [data-theme='bright-superman'] &,
+  [data-theme='soft-lilac'] &,
+  [data-theme='t-low'] & {
     color-scheme: light;
   }
 
@@ -104,14 +104,14 @@
 // Native picker indicators on plain .input date/time fields (e.g. the
 // calendar editor's datetime-local) — without a color-scheme the indicator
 // icon renders in default black and vanishes on dark input backgrounds.
-.input[type="date"],
-.input[type="datetime-local"],
-.input[type="time"] {
+.input[type='date'],
+.input[type='datetime-local'],
+.input[type='time'] {
   color-scheme: dark;
 
-  [data-theme="bright-superman"] &,
-  [data-theme="soft-lilac"] &,
-  [data-theme="t-low"] & {
+  [data-theme='bright-superman'] &,
+  [data-theme='soft-lilac'] &,
+  [data-theme='t-low'] & {
     color-scheme: light;
   }
 
@@ -178,7 +178,7 @@ label {
     background: var(--bg-accent);
   }
 
-  input[type="radio"] {
+  input[type='radio'] {
     margin-top: calc($gap / 4);
     cursor: pointer;
     accent-color: var(--color-4);
@@ -311,8 +311,8 @@ label {
     pointer-events: none;
   }
 
-  input[type="checkbox"],
-  input[type="radio"] {
+  input[type='checkbox'],
+  input[type='radio'] {
     cursor: pointer;
     width: 18px;
     height: 18px;
@@ -323,6 +323,17 @@ label {
     border-radius: $radius-xl;
     position: relative;
 
+    // Always-visible ring: an unchecked input was invisible before, so the
+    // control only read as a checkbox once checked. The same circle frames
+    // the check mark in the checked state.
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      border: 1.5px solid var(--color-5);
+      border-radius: 50%;
+    }
+
     &:checked::after {
       content: '✓';
       position: absolute;
@@ -330,7 +341,7 @@ label {
       left: 50%;
       transform: translate(-50%, -50%);
       color: var(--color-5);
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
     }
   }
@@ -369,9 +380,14 @@ label {
       color: var(--color-5);
     }
 
-    input[type="checkbox"] {
+    input[type='checkbox'] {
       width: 13px;
       height: 13px;
+
+      // Thinner ring for the 13px control (1.5px would crowd it)
+      &::before {
+        border-width: 1px;
+      }
 
       &:checked::after {
         font-size: 11px;
@@ -379,4 +395,3 @@ label {
     }
   }
 }
-

@@ -478,6 +478,14 @@ html.ui--focus {
   padding-bottom: calc($gap * 5);
 }
 
+// Same ED-b clearance for the notifications view: without bottom padding
+// the last notification + the custom scrollbar get cut at the column's
+// bottom edge. The list is the view's scroll-content root (inside the
+// height-fixed .view-content), so padding there extends the scroll area.
+.ui--focus .view-content--notifications .notifications-view__content {
+  padding-bottom: calc($gap * 5);
+}
+
 // The classic note-card hover panel is a v1 feed affordance — the shell's
 // timeline cards stay flat on hover.
 .ui--focus .note-card:hover {
