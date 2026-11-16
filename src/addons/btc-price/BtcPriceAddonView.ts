@@ -142,6 +142,10 @@ export class BtcPriceAddonView extends View {
         AddonLoader.getInstance()
           .getRuntime<BtcPriceRuntime>('btc-price')
           ?.widget?.refresh();
+        // The Focus UI stage places/removes the widget slot live.
+        TypedEventBus.getInstance().emit('btc-price:widget-toggle', {
+          enabled: checked,
+        });
       },
     });
     mount.innerHTML = this.widgetSwitch.render();

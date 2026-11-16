@@ -48,8 +48,14 @@ export class BtcPriceSidebarWidget {
     void this.update();
   };
 
+  /**
+   * Focus UI (v2) host: when set, the widget renders into the stage's
+   * side-stack slot instead of the classic sidebar slot. null = classic.
+   */
+  private focusHost: HTMLElement | null = null;
+
   // Delegated so it survives the innerHTML rewrites in renderRate(); removed in teardown().
-  // In the sidebar slot, any click that is not the refresh button opens the
+  // In a sidebar slot, any click that is not the refresh button opens the
   // addon page; the addon-page instance is display-only and stays put.
   private onClick = (e: MouseEvent): void => {
     if (
@@ -59,7 +65,11 @@ export class BtcPriceSidebarWidget {
       void this.manualRefresh();
       return;
     }
-    if (this.el?.closest('[data-sidebar-widget="btc-price"]')) {
+    if (
+      this.el?.closest(
+        '[data-sidebar-widget="btc-price"], [data-focus-widget="btc-price"]'
+      )
+    ) {
       Router.getInstance().navigate('/addons/btc-price');
     }
   };
@@ -81,7 +91,7 @@ export class BtcPriceSidebarWidget {
       return;
     }
     if (!this.el) {
-      const container = this.opts.container();
+      const container = this.focusHost ?? this.opts.container();
       if (!container) return;
       this.el = document.createElement('div');
       this.el.className = 'sidebar-widget';
@@ -97,6 +107,19 @@ export class BtcPriceSidebarWidget {
         () => void this.update(),
         UPDATE_INTERVAL_MS
       );
+  }
+
+  /**
+   * Focus UI (v2): render into the stage's side-stack slot while it
+   * exists (null on stack teardown — the widget returns to the classic
+   * slot). The next refresh re-parents the DOM.
+   */
+  setFocusHost(host: HTMLElement | null): void {
+    this.focusHost = host;
+    if (this.el && this.el.parentElement !== host) {
+      this.teardown(); // refresh() rebuilds the el + restarts the tick
+    }
+    this.refresh();
   }
 
   private async update(): Promise<void> {

@@ -561,6 +561,7 @@ export interface AppEvents {
   'live-streams:addon-toggle': AddonTogglePayload;
   'live-streams:widget-toggle': { enabled: boolean };
   'live-streams:background-player': { pinned: boolean };
+  'btc-price:widget-toggle': { enabled: boolean };
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;

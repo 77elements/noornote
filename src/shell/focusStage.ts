@@ -35,6 +35,11 @@ import {
   hasLiveStreamsBackgroundPin,
 } from '../addons/live-streams/index';
 import { getNostrMajlisSettings } from '../addons/nostr-majlis/index';
+import {
+  isBtcPriceEnabled,
+  isBtcPriceSidebarWidget,
+} from '../addons/btc-price/index';
+import { isWalletBalanceEnabled } from '../addons/wallet-balance/index';
 import { parseFocusUrl, type FocusUrlState } from './focusUrlState';
 import { isSelfNav, pushFocusUrl } from './focusHistorySync';
 import {
@@ -75,6 +80,8 @@ const WIDGET_IDS = [
   'live-streams-mini-player',
   'nostr-majlis',
   'nostr-majlis-quran',
+  'btc-price',
+  'wallet-balance',
 ] as const;
 
 /** Structural widget contract for the FV side-stack slots (v2). */
@@ -153,6 +160,10 @@ export class FocusStage {
   private pinSubId: string | null = null;
   /** nostr-majlis:settings-changed subscription (majlis widgets). */
   private majlisSettingsSubId: string | null = null;
+  /** btc-price:widget-toggle subscription (btc price widget). */
+  private btcWidgetSubId: string | null = null;
+  /** wallet-balance:addon-toggle subscription (wallet display widget). */
+  private walletSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
@@ -246,6 +257,17 @@ export class FocusStage {
         this.setWidgetAvailable('nostr-majlis', settings.sidebarWidget);
         this.setWidgetAvailable('nostr-majlis-quran', settings.quranDaily);
       }
+    );
+    // The "Show BTC Sidebar Widget" switch flipped in the addon object.
+    this.btcWidgetSubId = TypedEventBus.getInstance().on(
+      'btc-price:widget-toggle',
+      data => this.setWidgetAvailable('btc-price', !!data?.enabled)
+    );
+    // The wallet addon toggled: the display appears/disappears live
+    // (its only enable condition — same as classic).
+    this.walletSubId = TypedEventBus.getInstance().on(
+      'wallet-balance:addon-toggle',
+      data => this.setWidgetAvailable('wallet-balance', !!data?.enabled)
     );
     this.setupBadgeManagers();
   }
@@ -389,6 +411,14 @@ export class FocusStage {
     if (this.majlisSettingsSubId) {
       TypedEventBus.getInstance().off(this.majlisSettingsSubId);
       this.majlisSettingsSubId = null;
+    }
+    if (this.btcWidgetSubId) {
+      TypedEventBus.getInstance().off(this.btcWidgetSubId);
+      this.btcWidgetSubId = null;
+    }
+    if (this.walletSubId) {
+      TypedEventBus.getInstance().off(this.walletSubId);
+      this.walletSubId = null;
     }
     window.removeEventListener(
       'router:history-changed',
@@ -1372,6 +1402,16 @@ export class FocusStage {
     } else if (id === 'nostr-majlis-quran') {
       addonId = 'nostr-majlis';
       if (!getNostrMajlisSettings().quranDaily) return null;
+    } else if (id === 'btc-price') {
+      addonId = 'btc-price';
+      // Same contract as classic: the widget exists only while the addon
+      // is enabled AND its "Show BTC Sidebar Widget" switch is on.
+      if (!isBtcPriceEnabled() || !isBtcPriceSidebarWidget()) return null;
+    } else if (id === 'wallet-balance') {
+      addonId = 'wallet-balance';
+      // Same as classic: the display shows whenever the addon is enabled
+      // (no separate widget switch).
+      if (!isWalletBalanceEnabled()) return null;
     } else {
       return null;
     }
