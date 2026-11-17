@@ -31,6 +31,32 @@ const SHARED_DETAIL_ROUTES: Record<string, string[]> = {
 };
 
 /**
+ * Addon objects' list routes under /addons/:slug — the same URLs the
+ * classic UI uses (v1 Router registrations), so every widget click /
+ * deep link that targets an addon view lands on the owning FV object.
+ */
+const ADDON_LIST_ROUTES: Record<string, string> = {
+  'custom-emojis': 'custom-emojis',
+  'follow-packs': 'follow-packs',
+  calendar: 'calendar',
+  'note-taking': 'note-taking',
+  'scheduled-posts': 'scheduled-posts',
+  analytics: 'analytics',
+  badges: 'badges',
+  'feedback-board': 'feedback-board',
+  'hashtag-subscriptions': 'hashtag-subscriptions',
+  'bulk-delete': 'bulk-delete',
+  'nostr-majlis': 'majlis',
+  'follower-notification': 'follower-notification',
+  'group-chats': 'group-chats',
+  'wallet-balance': 'wallet-balance',
+  // v1 slug has no hyphen — keep it as the canonical URL.
+  wordfilter: 'word-filter',
+  // /addons/live-streams is a classic alias of the canonical /live-streams.
+  'live-streams': 'live-streams',
+};
+
+/**
  * Parse a pathname into a focus shell state. Returns null for paths the
  * shell does not own (classic routes like /settings, addon objects
  * without routes, unknown) — the caller leaves those alone.
@@ -82,6 +108,14 @@ export function parseFocusUrl(
           return { defId: 'media', kind: 'secondary' };
         }
         return null;
+      case 'addons': {
+        // Addon objects' list states (/addons/<slug> — classic URLs).
+        const defId = ADDON_LIST_ROUTES[tail];
+        return defId ? { defId, kind: 'list' } : null;
+      }
+      case 'follow-pack':
+        // '/follow-pack/:naddr' is a follow pack detail (FollowPacks).
+        return { defId: 'follow-packs', kind: 'detail', param: tail };
       default:
         return null;
     }
@@ -95,6 +129,29 @@ export function parseFocusUrl(
     }
     // '/live-streams/stream/:naddr' is a stream detail (inline player).
     if (head === 'live-streams' && tail === 'stream') {
+      return { defId: 'live-streams', kind: 'detail', param };
+    }
+    // '/addons/nostr-majlis/:tab' deep-links a majlis tab (dhikr
+    // notification, "Show tafsir" quran widget link).
+    if (head === 'addons' && tail === 'nostr-majlis') {
+      return { defId: 'majlis', kind: 'detail', param };
+    }
+    // '/addons/feedback-board/:naddr' opens a ticket (deep link).
+    if (head === 'addons' && tail === 'feedback-board') {
+      return { defId: 'feedback-board', kind: 'detail', param };
+    }
+    return null;
+  }
+
+  // Four-segment param routes (classic aliases).
+  if (segments.length === 4) {
+    const [head, slug, tail, param] = segments as [
+      string,
+      string,
+      string,
+      string,
+    ];
+    if (head === 'addons' && slug === 'live-streams' && tail === 'stream') {
       return { defId: 'live-streams', kind: 'detail', param };
     }
     return null;
@@ -127,6 +184,10 @@ export function parseFocusUrl(
         return { defId: 'marketplace', kind: 'list' };
       case 'profile':
         return { defId: 'profile', kind: 'list' };
+      case 'my-listings':
+        // '/my-listings' is the marketplace dashboard (detail of the
+        // marketplace object — the surface swaps the manager view in).
+        return { defId: 'marketplace', kind: 'detail', param: 'my-listings' };
       default:
         return null;
     }

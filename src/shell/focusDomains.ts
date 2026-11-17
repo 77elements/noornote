@@ -22,6 +22,7 @@ import { followsSurface } from './focusFollowsSurface';
 import { marketplaceSurface } from './focusMarketplaceSurface';
 import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
 import { focusMajlisSurface } from './focusMajlisSurface';
+import { focusAddonObjectSurface } from './focusAddonObjectSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -295,21 +296,18 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Custom Emojis'),
     icon: 'icon-emoji',
     addon: true,
+    route: '/addons/custom-emojis',
     // On-demand addon object: entering the object loads the addon,
     // leaving it unloads again (ephemeral surface).
-    createSurface: async () => {
-      const { CustomEmojisView } = await import(
-        '../addons/custom-emojis/CustomEmojisView'
-      );
-      const view = new CustomEmojisView();
-      const el = view.getElement();
-      return {
-        attach: slot => slot.appendChild(el),
-        detach: () => el.remove(),
-        view,
-        ephemeral: true,
-      };
-    },
+    createSurface: focusAddonObjectSurface({
+      ephemeral: true,
+      load: async () => {
+        const { CustomEmojisView } = await import(
+          '../addons/custom-emojis/CustomEmojisView'
+        );
+        return new CustomEmojisView();
+      },
+    }),
   },
   {
     id: 'live-streams',
@@ -342,69 +340,173 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Follow Packs'),
     icon: 'icon-tribes-circles',
     addon: true,
+    route: '/addons/follow-packs',
+    viewTypes: ['follow-pack'],
+    createSurface: async () => {
+      const { FocusListDetailSurface } = await import(
+        './focusListDetailSurface'
+      );
+      const { FollowPacksView } = await import(
+        '../addons/follow-packs/FollowPacksView'
+      );
+      const surface = new FocusListDetailSurface({
+        navViewType: 'follow-pack',
+        listRoute: '/addons/follow-packs',
+        detailRoute: naddr => `/follow-pack/${naddr}`,
+        createList: async () => new FollowPacksView(),
+        createDetail: async naddr => {
+          const { FollowPackDetailView } = await import(
+            '../components/views/FollowPackDetailView'
+          );
+          return new FollowPackDetailView(naddr);
+        },
+      });
+      return surface.asSurface();
+    },
   },
-  { id: 'calendar', label: _('Calendar'), icon: 'icon-calendar', addon: true },
+  {
+    id: 'calendar',
+    label: _('Calendar'),
+    icon: 'icon-calendar',
+    addon: true,
+    route: '/addons/calendar',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { CalendarAddonView } = await import(
+          '../addons/calendar/CalendarAddonView'
+        );
+        return new CalendarAddonView();
+      },
+    }),
+  },
   {
     id: 'note-taking',
     label: _('Note taking'),
     icon: 'icon-edit',
     addon: true,
+    route: '/addons/note-taking',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { NoteTakingAddonView } = await import(
+          '../addons/note-taking/NoteTakingAddonView'
+        );
+        return new NoteTakingAddonView();
+      },
+    }),
   },
   {
     id: 'scheduled-posts',
     label: _('Scheduled Posts'),
     icon: 'icon-clock',
     addon: true,
+    route: '/addons/scheduled-posts',
     // On-demand addon object: entering the object loads the addon,
     // leaving it unloads again (ephemeral surface).
-    createSurface: async () => {
-      const { ScheduledPostsAddonView } = await import(
-        '../addons/scheduled-posts/ScheduledPostsAddonView'
-      );
-      const view = new ScheduledPostsAddonView();
-      const el = view.getElement();
-      return {
-        attach: slot => slot.appendChild(el),
-        detach: () => el.remove(),
-        view,
-        ephemeral: true,
-      };
-    },
+    createSurface: focusAddonObjectSurface({
+      ephemeral: true,
+      load: async () => {
+        const { ScheduledPostsAddonView } = await import(
+          '../addons/scheduled-posts/ScheduledPostsAddonView'
+        );
+        return new ScheduledPostsAddonView();
+      },
+    }),
   },
   {
     id: 'analytics',
     label: _('Analytics'),
     icon: 'icon-trending-up',
     addon: true,
+    route: '/addons/analytics',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { AnalyticsAddonView } = await import(
+          '../addons/analytics/AnalyticsAddonView'
+        );
+        return new AnalyticsAddonView();
+      },
+    }),
   },
-  { id: 'badges', label: _('Badges'), icon: 'icon-badge', addon: true },
+  {
+    id: 'badges',
+    label: _('Badges'),
+    icon: 'icon-badge',
+    addon: true,
+    route: '/addons/badges',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { BadgesView } = await import('../addons/badges/BadgesView');
+        return new BadgesView();
+      },
+    }),
+  },
   {
     id: 'feedback-board',
     label: _('Feedback Board'),
     icon: 'icon-grid-dots',
     addon: true,
+    route: '/addons/feedback-board',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { FeedbackBoardAddonView } = await import(
+          '../addons/feedback-board/FeedbackBoardView'
+        );
+        return new FeedbackBoardAddonView();
+      },
+      // '/addons/feedback-board/:naddr' opens the ticket modal
+      // (deep link — the view ignores invalid/non-board naddrs).
+      restore: (handle, state) => {
+        if (state.kind === 'detail' && state.param) {
+          void (
+            handle as unknown as {
+              openDeepLink(naddr: string): Promise<void>;
+            }
+          ).openDeepLink(state.param);
+        }
+      },
+    }),
   },
   {
     id: 'hashtag-subscriptions',
     label: _('Hashtag Subscriptions'),
     icon: 'icon-tag',
     addon: true,
+    route: '/addons/hashtag-subscriptions',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { HashtagSubscriptionsAddonView } = await import(
+          '../addons/hashtag-subscriptions/HashtagSubscriptionsAddonView'
+        );
+        return new HashtagSubscriptionsAddonView();
+      },
+    }),
   },
   {
     id: 'bulk-delete',
     label: _('Bulk Delete'),
     icon: 'icon-trash',
     addon: true,
+    route: '/addons/bulk-delete',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { BulkDeleteView } = await import(
+          '../addons/bulk-delete/BulkDeleteView'
+        );
+        return new BulkDeleteView();
+      },
+    }),
   },
   {
     id: 'majlis',
     label: _('Nostr Majlis'),
     icon: 'icon-globe',
     addon: true,
+    route: '/addons/nostr-majlis',
     // On-demand addon object (ephemeral surface): entering the object
     // loads the addon, leaving it unloads again — unless one of the two
     // majlis widgets is active (always-on reasons, see
-    // nostr-majlis/index.ts isNostrMajlisAutoLoaded).
+    // nostr-majlis/index.ts isNostrMajlisAutoLoaded). Detail = a tab
+    // deep link (/addons/nostr-majlis/:tab).
     createSurface: focusMajlisSurface,
   },
   {
@@ -412,23 +514,63 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Follower Notification'),
     icon: 'icon-bell',
     addon: true,
+    route: '/addons/follower-notification',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { FollowerNotificationAddonView } = await import(
+          '../addons/follower-notification/FollowerNotificationAddonView'
+        );
+        return new FollowerNotificationAddonView();
+      },
+    }),
   },
   {
     id: 'group-chats',
     label: _('Group Chats'),
     icon: 'icon-message',
     addon: true,
+    route: '/addons/group-chats',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { GroupChatsAddonView } = await import(
+          '../addons/group-chats/GroupChatsAddonView'
+        );
+        return new GroupChatsAddonView();
+      },
+    }),
   },
   {
     id: 'wallet-balance',
     label: _('Wallet Balance'),
     icon: 'icon-zap',
     addon: true,
+    route: '/addons/wallet-balance',
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { WalletBalanceAddonView } = await import(
+          '../addons/wallet-balance/WalletBalanceAddonView'
+        );
+        return new WalletBalanceAddonView();
+      },
+    }),
   },
   {
     id: 'word-filter',
     label: _('Word Filter'),
     icon: 'icon-eye-closed',
     addon: true,
+    // Classic slug (no hyphen) — keep the v1 URL canonical. On-demand
+    // addon object: ON while the object is open, OFF after leaving —
+    // unless words are configured (always-on, see isWordFilterAutoLoaded).
+    route: '/addons/wordfilter',
+    createSurface: focusAddonObjectSurface({
+      ephemeral: true,
+      load: async () => {
+        const { WordFilterAddonView } = await import(
+          '../addons/content-word-filter/WordFilterAddonView'
+        );
+        return new WordFilterAddonView();
+      },
+    }),
   },
 ];

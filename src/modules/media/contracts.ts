@@ -1,6 +1,6 @@
-import type { VideoOptions } from '../../services/VideoService';
+import type { VideoOptions, PictureOptions } from '../../services/VideoService';
 
-export type { VideoOptions };
+export type { VideoOptions, PictureOptions };
 
 export interface MediaUploadResult {
   success: boolean;
@@ -21,4 +21,5 @@ export interface MediaModuleApi {
 
   // VideoService
   publishVideo(options: VideoOptions): Promise<string | null>;
+  publishPicture(options: PictureOptions): Promise<string | null>;
 }

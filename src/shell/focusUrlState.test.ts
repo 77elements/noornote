@@ -134,11 +134,77 @@ describe('parseFocusUrl', () => {
     });
   });
 
+  it('maps every addon object list route to its owning domain', () => {
+    expect(parseFocusUrl('/addons/custom-emojis')).toEqual({
+      defId: 'custom-emojis',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/addons/scheduled-posts')).toEqual({
+      defId: 'scheduled-posts',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/addons/nostr-majlis')).toEqual({
+      defId: 'majlis',
+      kind: 'list',
+    });
+    // Classic slug without hyphen.
+    expect(parseFocusUrl('/addons/wordfilter')).toEqual({
+      defId: 'word-filter',
+      kind: 'list',
+    });
+    // Classic alias of the canonical /live-streams.
+    expect(parseFocusUrl('/addons/live-streams')).toEqual({
+      defId: 'live-streams',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/addons/wallet-balance')).toEqual({
+      defId: 'wallet-balance',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/addons/follow-packs')).toEqual({
+      defId: 'follow-packs',
+      kind: 'list',
+    });
+  });
+
+  it('maps the addon object param deep links', () => {
+    expect(parseFocusUrl('/addons/nostr-majlis/daily-ayah')).toEqual({
+      defId: 'majlis',
+      kind: 'detail',
+      param: 'daily-ayah',
+    });
+    expect(parseFocusUrl('/addons/feedback-board/naddr1abc')).toEqual({
+      defId: 'feedback-board',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
+    expect(parseFocusUrl('/follow-pack/naddr1abc')).toEqual({
+      defId: 'follow-packs',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
+    expect(parseFocusUrl('/addons/live-streams/stream/naddr1abc')).toEqual({
+      defId: 'live-streams',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
+  });
+
+  it('maps the marketplace dashboard', () => {
+    expect(parseFocusUrl('/my-listings')).toEqual({
+      defId: 'marketplace',
+      kind: 'detail',
+      param: 'my-listings',
+    });
+  });
+
   it('returns null for non-shell paths', () => {
     expect(parseFocusUrl('/')).toBeNull();
     expect(parseFocusUrl('/settings/privacy')).toBeNull();
     expect(parseFocusUrl('/addons')).toBeNull();
     expect(parseFocusUrl('/mutes')).toBeNull();
     expect(parseFocusUrl('/')).toBeNull();
+    // btc-price has no FV object — stays classic.
+    expect(parseFocusUrl('/addons/btc-price')).toBeNull();
   });
 });

@@ -513,6 +513,14 @@ html.ui--focus {
   grid-column: 1; // first column of the active object's grid body
   grid-row: 1; // pinned — see .focus-object__actions
   height: 100%;
+  // ED-b clearance, uniform for EVERY focus view: the slot's content box
+  // ends $fv-padding-bottom above the bottom edge, so height:100% view
+  // roots — including their internal scrollers (timeline, media feed) —
+  // end above the closed ED-b tab. Views that grow beyond their height-
+  // fixed root (the editors) overflow the slot and scroll into the
+  // padding: the scrollable area of a scroll container includes its
+  // padding-bottom.
+  padding-bottom: $fv-padding-bottom;
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling
   // (social timeline: overflow hidden + inner scroll) fit exactly and
@@ -527,24 +535,6 @@ html.ui--focus {
 // manages its own spacing.
 .ui--focus .view-content {
   padding: 0;
-}
-
-// The profile editor (/profile/edit) ends with its Save/Cancel actions at
-// the very bottom of the scroll column — without extra clearance they sit
-// under the closed ED-b tab. The padding goes on the editor ROOT (inside
-// the scroll container): .view-content is height-fixed (border-box), so
-// padding there would be swallowed by the fixed height instead of adding
-// scrollable space.
-.ui--focus .view-content--profile-edit .profile-edit-modal {
-  padding-bottom: calc($gap * 5);
-}
-
-// Same ED-b clearance for the notifications view: without bottom padding
-// the last notification + the custom scrollbar get cut at the column's
-// bottom edge. The list is the view's scroll-content root (inside the
-// height-fixed .view-content), so padding there extends the scroll area.
-.ui--focus .view-content--notifications .notifications-view__content {
-  padding-bottom: calc($gap * 5);
 }
 
 // The classic note-card hover panel is a v1 feed affordance — the shell's
@@ -586,16 +576,6 @@ html:not(.ui--focus) .focus-view-header__action {
   .media-feed {
     min-height: 0;
   }
-}
-
-// Media: composer clearance at the bottom of the scrolled column.
-.focus-object__content--media .video-editor {
-  padding-bottom: $gap;
-}
-
-// Marketplace: same composer clearance for the listing editor.
-.focus-object__content--marketplace .article-editor {
-  padding-bottom: $gap;
 }
 
 // Muted: header + the manager's own scroller (classic .tab-content

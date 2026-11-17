@@ -4,7 +4,9 @@ import {
   mountWordFilterContent,
 } from './ContentWordFilterSettings';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { isContentWordFilterEnabled } from './index';
+import { isContentWordFilterEnabled, isWordFilterAutoLoaded } from './index';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
+import { AddonLoader } from '../AddonLoader';
 import { _ } from '../../i18n';
 
 export class WordFilterAddonView extends View {
@@ -12,12 +14,19 @@ export class WordFilterAddonView extends View {
   private contentEl: HTMLElement | null = null;
   private settings: ContentWordFilterSettings | null = null;
   private toggleSubId: string | null = null;
+  /** v2 on-demand object lifecycle (see NostrMajlisAddonView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
     this.container = document.createElement('div');
     this.container.className =
       'view-content view-content--addon view-content--addon-wordfilter';
+    // v2 on-demand: the object loads the addon while it is open — released
+    // again in destroy() unless words are configured (always-on reason).
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('wordfilter');
+    }
     this.container.innerHTML = `
       <div class="back-padder">
         <h1>${_('Word Filter')}</h1>
@@ -67,5 +76,10 @@ export class WordFilterAddonView extends View {
     this.settings = null;
     this.container.innerHTML = '';
     this.contentEl = null;
+    // v2 on-demand release: unload after the object is left — unless the
+    // user has words configured (the filter stays active in the feeds).
+    if (this.v2OnDemand && !isWordFilterAutoLoaded()) {
+      void AddonLoader.getInstance().deactivateOnDemand('wordfilter');
+    }
   }
 }

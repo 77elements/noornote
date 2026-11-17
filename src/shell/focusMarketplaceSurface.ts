@@ -21,7 +21,10 @@ export const marketplaceSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
     navViewType: 'listing',
     listRoute: '/marketplace',
-    detailRoute: naddr => `/listing/${naddr}`,
+    detailRoute: naddr =>
+      // 'my-listings' is the dashboard (/my-listings — the "My Listings"
+      // button in the marketplace header navigates the classic route).
+      naddr === 'my-listings' ? '/my-listings' : `/listing/${naddr}`,
     createList: async () => {
       const { MarketplaceView } = await import(
         '../addons/marketplace/MarketplaceView'
@@ -46,6 +49,12 @@ export const marketplaceSurface = async (): Promise<FocusDomainSurface> => {
       };
     },
     createDetail: async naddr => {
+      if (naddr === 'my-listings') {
+        const { MyListingsView } = await import(
+          '../addons/marketplace/MyListingsView'
+        );
+        return new MyListingsView();
+      }
       const { ListingView } = await import('../addons/marketplace/ListingView');
       return new ListingView(naddr);
     },

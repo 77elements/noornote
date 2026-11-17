@@ -70,7 +70,11 @@ export class MyListingsView extends View {
     this.container
       .querySelector('[data-action="add-product"]')
       ?.addEventListener('click', () => {
-        this.router.navigate('/write-listing');
+        // Focus seam first (v2 composer /marketplace/post); classic
+        // /write-listing as the fallback.
+        if (!delegateToFocusUi('write-listing')) {
+          this.router.navigate('/write-listing');
+        }
       });
   }
 

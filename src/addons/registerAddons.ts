@@ -17,7 +17,10 @@ import { isBtcPriceEnabled } from './btc-price/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
 import { isLiveStreamsEnabled } from './live-streams/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
-import { isContentWordFilterEnabled } from './content-word-filter/index';
+import {
+  isContentWordFilterEnabled,
+  isWordFilterAutoLoaded,
+} from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
@@ -88,6 +91,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'wordfilter',
     isEnabled: isContentWordFilterEnabled,
+    // Boot-load only with at least one word configured — that is the
+    // addon's always-on reason (the filter must keep suppressing feed
+    // posts). Without words it is pure on-demand (the FV object).
+    bootLoad: () => isWordFilterAutoLoaded(),
     load: () => import('./content-word-filter/runtime').then(m => m.default),
   });
 
