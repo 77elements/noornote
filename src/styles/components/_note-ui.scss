@@ -15,8 +15,8 @@
 // you have a private petname note about them, green = they follow you.
 // Fixed SASS colors so it stays identical across themes. Rule order encodes
 // priority when classes collide on one avatar: red > orange > green.
-// 2px border on the --medium avatar (which already carries a 1px border, so
-// the extra 1px is the only layout change).
+// 2px border on the --medium avatar (the base avatar has no border, so the
+// ring adds 2px of layout).
 .profile-pic--medium.author-rel--follows,
 .profile-pic--mini.author-rel--follows {
   border: 2px solid $color-6;

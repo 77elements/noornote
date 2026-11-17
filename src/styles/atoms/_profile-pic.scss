@@ -22,7 +22,6 @@
   &--medium {
     width: 40px;
     height: 40px;
-    border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
 
     // Responsive: smaller in ultra-compact containers
     @container (max-width: 250px) {
