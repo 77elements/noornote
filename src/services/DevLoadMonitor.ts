@@ -26,6 +26,11 @@ import { ModuleLoader } from '../core/ModuleLoader';
 import { AddonLoader } from '../addons/AddonLoader';
 import { ViewMountingService } from './ViewMountingService';
 import { isFocusUiActive, isFocusUiEnabled } from '../helpers/focusUiSetting';
+import {
+  DEV_LOAD_EXPECTATIONS,
+  evaluateLoadGuard,
+  type LoadGuardResult,
+} from './DevLoadExpectations';
 
 const STORAGE_KEY = 'noornote_load_monitor';
 
@@ -215,28 +220,57 @@ function dumpLoadSnapshot(): DevLoadSnapshot {
   console.table(snapshot.intervals);
   console.groupEnd();
 
-  console.log(
+  console.debug(
     `Timeouts: ${snapshot.timeoutsActive} pending ` +
       `(executed ones are removed; growth = leak)`
   );
 
-  console.log(
+  console.debug(
     `Modules loaded: ${snapshot.modules.loaded.length}/${snapshot.modules.registered}`,
     snapshot.modules.loaded
   );
-  console.log(
+  console.debug(
     `Addons loaded: ${snapshot.addons.loaded.length}/${snapshot.addons.registered}`,
     snapshot.addons.loaded
   );
 
-  console.log('v1 remnants:', snapshot.v1);
+  console.debug('v1 remnants:', snapshot.v1);
 
   Object.entries(snapshot.sections).forEach(([id, data]) => {
-    console.log(`${id}:`, data);
+    console.debug(`${id}:`, data);
   });
 
   console.groupEnd();
   return snapshot;
+}
+
+/** Run the guard against the committed expectations and dump the outcome. */
+function runLoadGuard(): LoadGuardResult | null {
+  const snapshot = gatherSnapshot();
+  const result = evaluateLoadGuard(snapshot, DEV_LOAD_EXPECTATIONS);
+
+  console.groupCollapsed(
+    `%c── Load guard: ${result.ok ? 'PASS' : 'FAIL'} ` +
+      `(${result.violations.length} violation(s), ` +
+      `${result.warnings.length} warning(s)) ──`,
+    `font-weight:bold;color:${result.ok ? 'green' : 'red'}`
+  );
+  console.debug(
+    `Snapshot: ${snapshot.intervals.length} intervals (budget ` +
+      `${DEV_LOAD_EXPECTATIONS.maxIntervals}), ` +
+      `${snapshot.addons.loaded.length} addons (budget ` +
+      `${DEV_LOAD_EXPECTATIONS.maxAddons}), ` +
+      `${snapshot.relaySubscriptions.length} relay subs, ` +
+      `${snapshot.v1.primaryContentChildren} v1 primary content children`
+  );
+  result.violations.forEach(v => console.debug(`❌ ${v}`));
+  result.warnings.forEach(w => console.debug(`⚠️ ${w}`));
+  console.debug(
+    'Expectations are the contract in DevLoadExpectations.ts — fix the leak ' +
+      'or update the expectation WITH a reason in the same commit.'
+  );
+  console.groupEnd();
+  return result;
 }
 
 /** Console control surface: `__v2load()` dumps, `__loadmon` toggles. */
@@ -246,17 +280,26 @@ function exposeConsoleApi(): void {
   scope.__v2load = enabled
     ? dumpLoadSnapshot
     : () => {
-        console.log(
+        console.debug(
           'Load monitor is off — run __loadmon.enable() (reloads the app).'
         );
         return null;
       };
 
+  scope.__loadguard = {
+    run: () =>
+      enabled
+        ? runLoadGuard()
+        : console.debug(
+            'Load monitor is off — run __loadmon.enable() (reloads the app).'
+          ),
+  };
+
   scope.__loadmon = {
     enable: () => setLoadMonitorEnabled(true),
     disable: () => setLoadMonitorEnabled(false),
     status: () => {
-      console.log(
+      console.debug(
         `Load monitor: ${enabled ? 'ON' : 'OFF'} ` +
           `(persisted in localStorage "${STORAGE_KEY}", ` +
           'boot param ?loadmon=1|0 overrides once)'

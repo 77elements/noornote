@@ -89,7 +89,12 @@ export class NewNoteView extends View {
   private container: HTMLElement;
   private readonly onClose: () => void;
 
-  private readonly postsApi: PostsModuleApi | null;
+  /** Lazy getter (never cached in the constructor — ModuleLoader timing guard). */
+  private _postsApi: PostsModuleApi | null = null;
+  private get postsApi(): PostsModuleApi | null {
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
+  }
   private readonly relayConfig: RelayConfig;
   private readonly authService: AuthService;
   private readonly systemLogger: SystemLogger;
@@ -129,7 +134,6 @@ export class NewNoteView extends View {
   constructor(options?: NewNoteViewOptions) {
     super();
     this.onClose = options?.onClose ?? (() => {});
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();

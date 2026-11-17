@@ -30,7 +30,6 @@ import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { encodeNeventWithHints } from '../../helpers/encodeNeventWithHints';
-import { NostrTransport } from '../../services/transport/NostrTransport';
 import { decodeEventReference } from '../../helpers/nip19';
 import {
   saveScrollPosition,
@@ -247,7 +246,8 @@ export class SingleNoteView extends View {
     // boot. Relay stages below only run on store miss; the loaded note is
     // kept fresh by live updates.
     if (!event) {
-      event = await NostrTransport.getInstance().fetchEventFromStore(noteId);
+      event =
+        (await this.singleNoteApi.get()?.fetchEventFromStore(noteId)) ?? null;
       if (event) {
         this.systemLogger.info('SNV', 'Found in persistent event store');
       }

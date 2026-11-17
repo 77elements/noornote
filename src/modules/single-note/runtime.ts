@@ -1,6 +1,7 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from './contracts';
 import { NoteService } from '../../services/NoteService';
+import { NostrTransport } from '../../services/transport/NostrTransport';
 
 export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
   private orchestrator:
@@ -64,6 +65,8 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
     // resolves immediately once init() has run.
     return {
       getCachedNote: noteId => NoteService.getInstance().getCachedNote(noteId),
+      fetchEventFromStore: noteId =>
+        NostrTransport.getInstance().fetchEventFromStore(noteId),
       cacheNote: event => NoteService.getInstance().registerNote(event),
       fetchReplies: (noteId, authorPubkey) =>
         this.ready.then(

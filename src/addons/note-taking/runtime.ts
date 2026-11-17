@@ -23,7 +23,7 @@ export class NoteTakingRuntime implements AddonRuntime {
     this.initialized = true;
     // TEMP debug (user-requested): observe on-demand load/unload in console.
     // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Note taking: on');
+    console.log('Note taking: on'); // console-ok: TEMP user-requested lifecycle trace
     await NoteTakingService.getInstance().init();
     // Registers the publish-on-change hook + runs the initial relay sync.
     void NoteTakingSyncService.getInstance().start();
@@ -43,7 +43,7 @@ export class NoteTakingRuntime implements AddonRuntime {
     diagLog('system', 'note-taking: runtime destroy');
     // TEMP debug (user-requested): observe on-demand load/unload in console.
     // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Note taking: off');
+    console.log('Note taking: off'); // console-ok: TEMP user-requested lifecycle trace
   }
 }
 
