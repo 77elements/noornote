@@ -369,6 +369,19 @@ html.ui--focus {
   justify-self: center;
   align-self: start;
   gap: inherit; // mirror the responsive grid gap
+  // Packs rows at the natural top: the grid's default align-content
+  // (stretch) would otherwise spread rows over the full column height
+  // when the content is shorter (widgets-only stack) — widgets grew
+  // apart instead of stacking compactly.
+  align-content: start;
+  // Whole-stack move feedback: the dragged column dims so it is visible
+  // WHICH stack is being carried to the other side (the drop zone alone
+  // marks only the target).
+  transition: opacity 0.15s ease;
+
+  &.is-move-source {
+    opacity: 0.45;
+  }
 
   .focus-stage__grid.is-focused & {
     height: 100%;

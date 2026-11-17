@@ -1074,6 +1074,7 @@ export class FocusStage {
     e.stopPropagation();
     e.preventDefault(); // no text selection / native drag while moving
     const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
+    const sourceEl = this.sideStacks[side === 'left' ? 0 : 1];
     const startX = e.clientX;
     const startY = e.clientY;
     let dragging = false;
@@ -1086,6 +1087,10 @@ export class FocusStage {
         // pointer-events off: the translated icon must not shadow the
         // drop zone in elementFromPoint.
         icon.classList.add('is-drag-source');
+        // The SOURCE column dims while dragged — without it the stack
+        // just snaps across on drop (the drop zone alone gives no hint
+        // that THIS stack is the one moving).
+        sourceEl.classList.add('is-move-source');
         targetEl.classList.add('is-dropzone');
       }
       icon.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
@@ -1098,6 +1103,7 @@ export class FocusStage {
       window.removeEventListener('pointercancel', cleanup);
       icon.classList.remove('is-drag-source');
       icon.style.transform = '';
+      sourceEl.classList.remove('is-move-source');
       targetEl.classList.remove('is-dropzone');
     };
     const onUp = (): void => {
