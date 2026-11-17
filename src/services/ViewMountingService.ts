@@ -46,6 +46,9 @@ export class ViewMountingService {
   private static instance: ViewMountingService;
 
   private viewLifecycleManager = ViewLifecycleManager.getInstance();
+  /** Last view mounted via mountView — teardown source for the Focus-UI
+   *  switch (unmountCurrentView). Null for layout/onboarding views. */
+  private lastMountedView: { view: View; element: HTMLElement } | null = null;
   private systemLogger = SystemLogger.getInstance();
   private mainLayout: MainLayout | null = null;
 
@@ -107,6 +110,7 @@ export class ViewMountingService {
 
       if (view) {
         this.viewLifecycleManager.onViewMount(view);
+        this.lastMountedView = { view, element };
       }
     } catch (error) {
       // A view that throws during construction/render must not die as an
@@ -149,6 +153,30 @@ export class ViewMountingService {
       this.cachedProfile.destroy();
       this.cachedProfile = null;
     }
+  }
+
+  /**
+   * Focus UI (v2) switch teardown: stop and remove the currently mounted
+   * classic view. Hidden (display:none) it would otherwise keep its
+   * orchestrator polling and live subscriptions running under v2 — the
+   * v1-silencing rule. Same unmount lifecycle as navigating away, plus a
+   * full destroy (the switch is not a cache resume: returning to classic
+   * remounts fresh via navigate('/')).
+   */
+  public unmountCurrentView(): void {
+    const primaryContent = document.querySelector('.primary-content');
+    if (!primaryContent) return;
+    this.unmountCachedViews(primaryContent);
+    this.destroyAllCaches();
+    if (
+      this.lastMountedView &&
+      primaryContent.contains(this.lastMountedView.element)
+    ) {
+      this.viewLifecycleManager.onViewUnmount(this.lastMountedView.view);
+      this.lastMountedView.view.destroy();
+    }
+    this.lastMountedView = null;
+    primaryContent.innerHTML = '';
   }
 
   private unmountCachedViews(container: Element): void {

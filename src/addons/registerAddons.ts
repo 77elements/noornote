@@ -15,7 +15,11 @@ import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
 import { isBtcPriceEnabled } from './btc-price/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
-import { isLiveStreamsEnabled } from './live-streams/index';
+import {
+  isLiveStreamsEnabled,
+  isLiveStreamsSidebarWidget,
+  hasLiveStreamsBackgroundPin,
+} from './live-streams/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
 import {
   isContentWordFilterEnabled,
@@ -66,10 +70,15 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'live-streams',
     isEnabled: isLiveStreamsEnabled,
-    // Always-on whenever the addon is enabled — the TV renders notes with
-    // embedded live-stream players. The widget switch / a background pin
-    // do NOT gate the runtime (see isLiveStreamsAutoLoaded for the
-    // on-demand release guards).
+    // v2 (Focus UI): the runtime loads at login only while an always-on
+    // reason is active (sidebar widget shown, background stream pinned —
+    // isLiveStreamsAutoLoaded). The TV renders embedded players via
+    // dynamic import, which does not need the runtime.
+    // v1: the master switch alone governs (classic sidebar behavior).
+    bootLoad: () =>
+      !isFocusUiEnabled()
+        ? isLiveStreamsEnabled()
+        : isLiveStreamsSidebarWidget() || hasLiveStreamsBackgroundPin(),
     load: () => import('./live-streams/runtime').then(m => m.default),
   });
 
@@ -92,6 +101,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'feedback-board',
     isEnabled: isFeedbackBoardEnabled,
+    // v2: pure on-demand — the runtime has no background timers, it acts
+    // only while the board view is mounted (its own header says so).
+    // v1: login-managed as before.
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./feedback-board/runtime').then(m => m.default),
   });
 
@@ -133,6 +146,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'badges',
     isEnabled: isBadgesEnabled,
+    // v2: pure on-demand — the runtime has no background jobs, and the
+    // core consumers (profile badges, notification items) import
+    // BadgeService directly. v1: login-managed as before.
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./badges/runtime').then(m => m.default),
   });
 

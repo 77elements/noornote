@@ -21,6 +21,7 @@ import { NostrMajlisNativeReminders } from './NostrMajlisNativeReminders';
 import { NostrMajlisSidebarWidget } from './NostrMajlisSidebarWidget';
 import { NostrMajlisQuranWidget } from './NostrMajlisQuranWidget';
 import { DhikrService } from './DhikrService';
+import { getNostrMajlisSettings } from './index';
 
 export class NostrMajlisRuntime implements AddonRuntime {
   private initialized = false;
@@ -50,15 +51,32 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.quranWidget = new NostrMajlisQuranWidget();
     this.quranWidget.mount();
 
-    this.dhikr = new DhikrService();
-    void this.dhikr.start();
+    // Community Dhikr holds 3 live relay subscriptions on external
+    // relays — not a login reason. Start them only while a majlis widget
+    // is active (the widgets render dhikr state); the Community Dhikr
+    // tab starts them on demand (ensureDhikr).
+    const settings = getNostrMajlisSettings();
+    if (settings.sidebarWidget || settings.quranDaily) {
+      this.dhikr = new DhikrService();
+      void this.dhikr.start();
+    }
 
-    // On/off console marker (parity with live streams/custom-emojis).
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Nostr Majlis: on'); // console-ok: TEMP debug marker
     diagLog('addons', 'nostr-majlis: runtime init', {
       npub: ctx.npub?.slice(0, 12),
     });
+  }
+
+  /**
+   * Community Dhikr tab (and future consumers): start the dhikr relay
+   * subscriptions on demand. Idempotent; resolves with the running
+   * service (or null while the runtime is being torn down).
+   */
+  public async ensureDhikr(): Promise<DhikrService | null> {
+    if (!this.dhikr) {
+      this.dhikr = new DhikrService();
+      await this.dhikr.start();
+    }
+    return this.dhikr;
   }
 
   async destroy(): Promise<void> {
@@ -75,8 +93,6 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.dhikr?.destroy();
     this.dhikr = null;
     DiyanetService.getInstance().destroy();
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Nostr Majlis: off'); // console-ok: TEMP debug marker
     diagLog('addons', 'nostr-majlis: runtime destroy');
   }
 }

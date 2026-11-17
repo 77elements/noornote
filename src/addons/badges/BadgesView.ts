@@ -1,6 +1,8 @@
 import { View } from '../../components/views/View';
 import { BadgeService, type OwnBadgeDefinition } from './BadgeService';
 import { isBadgesEnabled, setBadgesEnabled } from './index';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
@@ -11,6 +13,8 @@ import { _ } from '../../i18n';
 export class BadgesView extends View {
   private container: HTMLElement;
   private badgeService: BadgeService | null = null;
+  /** v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -18,6 +22,9 @@ export class BadgesView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-badges';
     this.render();
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('badges');
+    }
   }
 
   public getElement(): HTMLElement {
@@ -26,6 +33,12 @@ export class BadgesView extends View {
 
   public destroy(): void {
     this.container.innerHTML = '';
+    // v2 on-demand release: unload after the object is left — unless the
+    // addon is user-enabled (its always-on reason; the toggle lives in
+    // this view).
+    if (this.v2OnDemand && !isBadgesEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('badges');
+    }
   }
 
   private render(): void {

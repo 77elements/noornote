@@ -419,6 +419,19 @@ export class NostrMajlisAddonView extends View {
     );
   }
 
+  /**
+   * Dhikr relay subscriptions start on demand (tab-open reason — the
+   * runtime only auto-starts them while a majlis widget is active).
+   * Resolves true once the service is running; re-render then.
+   */
+  private async ensureDhikrRunning(): Promise<boolean> {
+    const runtime =
+      AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis');
+    if (!runtime) return false;
+    const svc = await runtime.ensureDhikr();
+    return !!svc;
+  }
+
   /** Build the Community Dhikr tab: "Create new dhikr" button + the live actions table. */
   private renderDhikr(): void {
     const slot = this.container.querySelector(
@@ -456,6 +469,11 @@ export class NostrMajlisAddonView extends View {
       .querySelector('[data-action="create-dhikr"]')
       ?.addEventListener('click', () => new DhikrModal('create').open());
     this.renderDhikrList();
+    // Dhikr relays start on demand (widget/tab reason) — once running,
+    // re-render with the fetched state.
+    void this.ensureDhikrRunning().then(running => {
+      if (running) this.renderDhikrList();
+    });
   }
 
   // ---------- Daily Ayah tab ----------

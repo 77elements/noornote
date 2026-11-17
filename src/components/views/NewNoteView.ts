@@ -28,6 +28,7 @@ import type { GifItem } from '../../services/GifSearchService';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { AddonLoader } from '../../addons/AddonLoader';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { type TabMode } from '../modals/ModalEventHandlerManager';
 import { AppState } from '../../services/AppState';
 import { EditorStateManager } from '../post/EditorStateManager';
@@ -760,9 +761,12 @@ export class NewNoteView extends View {
     if (!isScheduledPostsEnabled()) {
       void AddonLoader.getInstance().deactivateOnDemand('scheduled-posts');
     }
-    // Custom emojis releases unconditionally — the stored preference
-    // only governs the login-time auto-load, never blocks the release.
-    void AddonLoader.getInstance().deactivateOnDemand('custom-emojis');
+    // Custom emojis releases only while the stored preference is OFF —
+    // an opted-in user keeps the login load (unloading would churn a
+    // fresh relay fetch on every composer session).
+    if (!isCustomEmojisEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('custom-emojis');
+    }
   }
 
   /**

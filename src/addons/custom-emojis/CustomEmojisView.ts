@@ -10,6 +10,7 @@
 import { View } from '../../components/views/View';
 import { CustomEmojisSettings } from './CustomEmojisSettings';
 import { AddonLoader } from '../AddonLoader';
+import { isCustomEmojisEnabled } from './index';
 import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { _ } from '../../i18n';
 
@@ -54,10 +55,11 @@ export class CustomEmojisView extends View {
     this.settings?.unmount();
     this.settings = null;
     this.container.innerHTML = '';
-    // v2 on-demand: leaving the object ALWAYS releases the addon — even
-    // with the stored preference ON (the preference only governs the
-    // login-time auto-load; the next use reloads on demand).
-    if (this.v2OnDemand) {
+    // v2 on-demand: leaving the object releases the addon — unless the
+    // stored preference is ON (the user opted in: the login load stays,
+    // unloading here would churn a fresh relay fetch on every composer
+    // session — see AddonLoader deactivateOnDemand contract).
+    if (this.v2OnDemand && !isCustomEmojisEnabled()) {
       void AddonLoader.getInstance().deactivateOnDemand('custom-emojis');
     }
   }

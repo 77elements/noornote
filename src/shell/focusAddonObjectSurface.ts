@@ -9,10 +9,12 @@
  * surface file (majlis tabs, feedback-board tickets).
  *
  * Ephemeral is for the on-demand addon objects (custom-emojis,
- * scheduled-posts): the stage destroys the surface on leave and the
- * view's destroy releases the addon runtime (AddonLoader
- * deactivateOnDemand). Always-on addons keep a cached surface instead —
- * their runtime is login-managed, the view survives visits.
+ * scheduled-posts, note-taking, analytics, bulk-delete,
+ * follower-notification, group-chats): the stage destroys the surface on
+ * leave and the view's destroy releases the addon runtime (AddonLoader
+ * deactivateOnDemand — each view guards its always-on reasons). Always-on
+ * addons keep a cached surface instead — their runtime is login-managed,
+ * the view survives visits.
  */
 
 import type { FocusDomainSurface } from './focusDomains';

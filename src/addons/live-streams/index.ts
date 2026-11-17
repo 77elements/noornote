@@ -72,11 +72,13 @@ export function hasLiveStreamsBackgroundPin(): boolean {
 }
 
 /**
- * The addon's release guards: when the addon is enabled (the TV renders
- * embedded live-stream players) or a background stream is pinned, the
- * runtime must STAY loaded after an on-demand path closes. Otherwise the
- * caller may unload (deactivateOnDemand).
+ * The addon's always-on reasons: while the sidebar widget is shown or a
+ * background stream is pinned, the runtime must STAY loaded after an
+ * on-demand path closes. Otherwise the caller may unload
+ * (deactivateOnDemand). The master switch alone is NOT a reason — the
+ * TV renders embedded players via dynamic import of the player module,
+ * which does not need the runtime.
  */
 export function isLiveStreamsAutoLoaded(): boolean {
-  return isLiveStreamsEnabled() || hasLiveStreamsBackgroundPin();
+  return isLiveStreamsSidebarWidget() || hasLiveStreamsBackgroundPin();
 }

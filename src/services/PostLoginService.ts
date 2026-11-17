@@ -145,7 +145,12 @@ export class PostLoginService {
 
       // Initialize AutoSyncService for Easy Mode list syncing
       const { AutoSyncService } = await import('./AutoSyncService');
-      AutoSyncService.getInstance();
+      const autoSync = AutoSyncService.getInstance();
+      // Focus UI (v2): the v1 list auto-sync (startup fetch, 5-min
+      // poller, event-driven relay pushes) is silenced — a v2 user
+      // carries only the diode trio. Idempotent; the switch bridge
+      // (syncBackgroundFetchGate) resumes it when returning to classic.
+      if (isFocusUiEnabled()) autoSync.pauseForFocusUi();
 
       // Sync petnames from relays (NIP-78 encrypted, non-blocking)
       void import('./PetnameService').then(({ PetnameService }) => {
@@ -237,9 +242,19 @@ export class PostLoginService {
           ArticleNotificationService.getInstance().stopPolling();
         }
       );
+      // Focus UI (v2): silence the v1 list auto-sync (idempotent pause;
+      // resume happens in the classic branch below).
+      void import('./AutoSyncService').then(({ AutoSyncService }) => {
+        AutoSyncService.getInstance().pauseForFocusUi();
+      });
       return;
     }
-    // Classic interface: start the poller (no-op when already running)…
+    // Classic interface: re-arm the v1 list auto-sync (no-op when
+    // already running)…
+    void import('./AutoSyncService').then(({ AutoSyncService }) => {
+      AutoSyncService.getInstance().resumeFromFocusUi();
+    });
+    // …start the article poller (no-op when already running)…
     void import('./ArticleNotificationService').then(
       ({ ArticleNotificationService }) => {
         ArticleNotificationService.getInstance().startPolling();

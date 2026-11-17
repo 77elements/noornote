@@ -87,6 +87,13 @@ interface AddonLoaderEntry {
   loadedForPubkey: string | null;
   /** An unload op is queued but not yet executed (dedupes on-demand unload logs). */
   unloadPending: boolean;
+  /**
+   * A destroy op is queued but not yet executed. Checked at execution
+   * time: ensureLoaded cancels a queued destroy by clearing this flag —
+   * the op then no-ops instead of tearing the runtime out under a
+   * freshly re-created surface (tab recreate race).
+   */
+  destroyQueued: boolean;
   /** Serialization chain: every lifecycle op for this addon appends here. */
   opChain: Promise<void>;
 }
@@ -133,6 +140,7 @@ export class AddonLoader {
       instance: null,
       loadedForPubkey: null,
       unloadPending: false,
+      destroyQueued: false,
       opChain: Promise.resolve(),
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
@@ -189,6 +197,15 @@ export class AddonLoader {
       void this.handleLogout();
     });
 
+    // Focus UI switch: re-evaluate every bootLoad gate under the new
+    // interface — v1→v2 unloads login addons that classic auto-loads but
+    // v2 keeps on-demand (analytics, bulk-delete, …); v2→v1 loads what
+    // classic expects. Same idempotent path as login.
+    this.eventBus.on('settings:focus-ui-changed', () => {
+      if (!this.currentPubkey) return;
+      void this.handleLogin(this.currentPubkey, this.currentNpub);
+    });
+
     diagLog('addons', 'addons_boot_scan', {
       registered: Array.from(this.entries.keys()),
       enabled: Array.from(this.entries.values())
@@ -222,6 +239,25 @@ export class AddonLoader {
   public isLoaded(id: string): boolean {
     const entry = this.entries.get(id);
     return !!(entry && entry.instance);
+  }
+
+  /** Dev diagnostics (DevLoadMonitor): read-only load state of all addons. */
+  public listLoadState(): Array<{
+    id: string;
+    loaded: boolean;
+    enabled: boolean;
+  }> {
+    return Array.from(this.entries.values()).map(entry => ({
+      id: entry.id,
+      loaded: !!entry.instance,
+      enabled: (() => {
+        try {
+          return entry.isEnabled();
+        } catch {
+          return false;
+        }
+      })(),
+    }));
   }
 
   /** Access the live runtime instance, typed. Returns null if not loaded. */
@@ -266,6 +302,7 @@ export class AddonLoader {
 
       if (!enabled) {
         if (entry.instance) {
+          entry.destroyQueued = true;
           this.enqueue(entry, () => this.runDestroy(entry));
         }
         continue;
@@ -273,6 +310,7 @@ export class AddonLoader {
       if (entry.instance && entry.loadedForPubkey !== pubkey) {
         // Account switch: tear down, then bring up for the new pubkey.
         this.enqueue(entry, async () => {
+          entry.destroyQueued = true;
           await this.runDestroy(entry);
           await this.runInit(entry);
         });
@@ -287,6 +325,7 @@ export class AddonLoader {
     this.currentNpub = null;
     for (const entry of this.entries.values()) {
       if (entry.instance) {
+        entry.destroyQueued = true;
         this.enqueue(entry, () => this.runDestroy(entry));
       }
     }
@@ -310,6 +349,7 @@ export class AddonLoader {
     const entry = this.entries.get(id);
     if (!entry) return;
     if (!entry.instance) return;
+    entry.destroyQueued = true;
     this.enqueue(entry, () => this.runDestroy(entry));
   }
 
@@ -323,7 +363,17 @@ export class AddonLoader {
    */
   public ensureLoaded(id: string): Promise<void> {
     const entry = this.entries.get(id);
-    if (!entry || entry.instance) return Promise.resolve();
+    if (!entry) return Promise.resolve();
+    // Recreate race: a destroy op is queued but not yet executed (the
+    // previous view's teardown). Cancel it instead of no-oping —
+    // otherwise the queued destroy tears the runtime out under the
+    // freshly created view and nothing re-loads it.
+    if (entry.instance && entry.destroyQueued) {
+      entry.destroyQueued = false;
+      entry.unloadPending = false;
+      return entry.opChain;
+    }
+    if (entry.instance) return Promise.resolve();
     diagLog('addons', 'addons_on_demand_load', {
       id,
       pubkey: this.currentPubkey,
@@ -346,6 +396,7 @@ export class AddonLoader {
     }
     diagLog('addons', 'addons_on_demand_unload', { id });
     entry.unloadPending = true;
+    entry.destroyQueued = true;
     this.enqueue(entry, () => this.runDestroy(entry));
     return entry.opChain;
   }
@@ -418,6 +469,10 @@ export class AddonLoader {
   }
 
   private async runDestroy(entry: AddonLoaderEntry): Promise<void> {
+    // Superseded: a queued ensureLoaded canceled this destroy (recreate
+    // race) — the runtime must stay up for its new user.
+    if (!entry.destroyQueued) return;
+    entry.destroyQueued = false;
     if (!entry.instance) return; // idempotent
     const start = performance.now();
     diagLog('addons', 'addons_destroy_start', { id: entry.id });

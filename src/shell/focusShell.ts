@@ -25,6 +25,7 @@ import { Switch } from '../components/ui/Switch';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { LayoutService } from '../services/LayoutService';
+import { ViewMountingService } from '../services/ViewMountingService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
 import { FocusStage } from './focusStage';
@@ -206,6 +207,10 @@ class EdgeDrawer {
 /** Mount the Focus Shell with edge drawers; ED-t hosts the TEMP switch. */
 export function mountFocusShell(): void {
   if (document.getElementById(SHELL_ID)) return;
+  // Focus UI switch mid-session: stop + remove the (about-to-be-hidden)
+  // classic view — it would otherwise keep its orchestrator polling and
+  // live subscriptions running under v2 (v1-silencing rule).
+  ViewMountingService.getInstance().unmountCurrentView();
   const shell = document.createElement('div');
   shell.id = SHELL_ID;
   shell.className = 'focus-shell';

@@ -188,6 +188,25 @@ export class ModuleLoader {
     return !!entry?.instance;
   }
 
+  /** Dev diagnostics (DevLoadMonitor): read-only load state of all modules. */
+  public listLoadState(): Array<{
+    id: string;
+    loaded: boolean;
+    enabled: boolean;
+  }> {
+    return Array.from(this.entries.values()).map(entry => ({
+      id: entry.id,
+      loaded: !!entry.instance,
+      enabled: (() => {
+        try {
+          return entry.isEnabled();
+        } catch {
+          return false;
+        }
+      })(),
+    }));
+  }
+
   public getApi<T>(id: string): T | null {
     const entry = this.entries.get(id);
     if (!entry?.instance) return null;

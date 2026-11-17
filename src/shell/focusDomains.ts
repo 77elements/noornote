@@ -411,7 +411,12 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-edit',
     addon: true,
     route: '/note-taking',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface) — unless a note's
+    // reminder still lies in the future (always-on reason, guarded in
+    // the view's destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { NoteTakingAddonView } = await import(
           '../addons/note-taking/NoteTakingAddonView'
@@ -444,7 +449,11 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-trending-up',
     addon: true,
     route: '/analytics',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface; the collector and
+    // its event subscriptions release with the view's destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { AnalyticsAddonView } = await import(
           '../addons/analytics/AnalyticsAddonView'
@@ -459,7 +468,11 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-badge',
     addon: true,
     route: '/badges',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface) — unless the addon is
+    // user-enabled (always-on reason, guarded in the view's destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { BadgesView } = await import('../addons/badges/BadgesView');
         return new BadgesView();
@@ -472,7 +485,11 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-grid-dots',
     addon: true,
     route: '/feedback-board',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface) — unless the addon is
+    // user-enabled (always-on reason, guarded in the view's destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { FeedbackBoardAddonView } = await import(
           '../addons/feedback-board/FeedbackBoardView'
@@ -513,7 +530,10 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-trash',
     addon: true,
     route: '/bulk-delete',
+    // On-demand addon object — the definition case: load while the user
+    // works with it, unload when they leave (ephemeral surface).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { BulkDeleteView } = await import(
           '../addons/bulk-delete/BulkDeleteView'
@@ -556,7 +576,12 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-bell',
     addon: true,
     route: '/follower-notification',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface) — unless the
+    // notification system is user-enabled (always-on reason, guarded in
+    // the view's destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { FollowerNotificationAddonView } = await import(
           '../addons/follower-notification/FollowerNotificationAddonView'
@@ -571,7 +596,12 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     icon: 'icon-message',
     addon: true,
     route: '/group-chats',
+    // On-demand addon object: entering the object loads the addon,
+    // leaving it unloads again (ephemeral surface) — unless Nostrord or
+    // Armada is user-enabled (always-on reasons, guarded in the view's
+    // destroy).
     createSurface: focusAddonObjectSurface({
+      ephemeral: true,
       load: async () => {
         const { GroupChatsAddonView } = await import(
           '../addons/group-chats/GroupChatsAddonView'

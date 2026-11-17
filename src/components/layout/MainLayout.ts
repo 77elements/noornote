@@ -261,8 +261,13 @@ export class MainLayout {
 
   /**
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
+   *
+   * Focus UI (v2): skipped — these managers are v1 sidebar machinery; the
+   * v2 objects create their own manager instances when opened. Re-created
+   * by the settings:focus-ui-changed bridge on the way back to classic.
    */
   private async loadListManagers(): Promise<void> {
+    if (isFocusUiEnabled() || this.followManager) return;
     const [{ FollowListManager }, { MuteListManager }] = await Promise.all([
       import('../../lists/follows'),
       import('../../lists/mutes'),
@@ -356,7 +361,11 @@ export class MainLayout {
     // diodes on the nav wheel's Lists item and the /lists overview tile.
     // Created AFTER the accordion is in the DOM so its first update finds
     // the count span.
-    this.listsCountManager = new ListsCountManager(this.element);
+    // Focus UI (v2): the sidebar (and its counters) is display:none — the
+    // shell mounts its own ListsCountManager on the diodes. Skip here.
+    if (!isFocusUiEnabled()) {
+      this.listsCountManager = new ListsCountManager(this.element);
+    }
 
     // Addons: always-visible sidebar entry
     this.insertAddonsSidebarEntry(listsMenuContainer);
@@ -885,14 +894,21 @@ export class MainLayout {
     // Focus shell: the classic chrome (incl. the scc column) is fully
     // display:none while active — the default tab content must not stay
     // mounted underneath. Remount on the way back to the classic interface.
+    // v1 machinery (badge/count/list managers) follows the same gate:
+    // destroyed under v2 (no double EventBus/relay traffic with the
+    // shell's own managers), re-created on the way back.
     this.eventBus.on(
       'settings:focus-ui-changed',
       (data: { enabled: boolean }) => {
         if (data.enabled) {
           this.unmountSccDefaultContent();
+          this.teardownClassicListManagers();
         } else {
           this.mountSystemLogPanel();
           this.activateSccDefault(getSccDefaultTab());
+          this.setupBadgeManagers();
+          this.recreateListsCountManager();
+          void this.loadListManagers();
         }
       }
     );
@@ -1578,11 +1594,56 @@ export class MainLayout {
    * Classic-Menu switch flips (the wheel and the classic list each carry
    * their own badge nodes).
    */
+  /**
+   * Focus UI (v2) teardown: the classic sidebar machinery stops while the
+   * shell is active (the shell runs its own managers on the diodes).
+   * Destroys what exists; re-created by setupBadgeManagers /
+   * recreateListsCountManager / loadListManagers on the way back.
+   */
+  private teardownClassicListManagers(): void {
+    this.badgeManager?.destroy();
+    this.dmBadgeManager?.destroy();
+    this.badgeManager = null;
+    this.dmBadgeManager = null;
+    this.listsCountManager?.destroy();
+    this.listsCountManager = null;
+    this.followManager?.destroy();
+    this.followManager = null;
+    this.muteManager?.destroy();
+    this.muteManager = null;
+    this.bookmarkManager?.destroy();
+    this.bookmarkManager = null;
+    this.tribeManager?.destroy();
+    this.tribeManager = null;
+    void import('../../services/BookmarkReadStateService').then(
+      ({ BookmarkReadStateService }) => {
+        void BookmarkReadStateService.getInstance().stop();
+      }
+    );
+  }
+
+  /** Re-create the sidebar Lists-counter manager (focus-ui switch-back). */
+  private recreateListsCountManager(): void {
+    if (this.listsCountManager || isFocusUiEnabled()) return;
+    this.listsCountManager = new ListsCountManager(this.element);
+  }
+
+  /**
+   * (Re-)create the notifications/DM badge managers targeting the badge
+   * elements of the VISIBLE nav container. Called on boot and whenever the
+   * Classic-Menu switch flips (the wheel and the classic list each carry
+   * their own badge nodes).
+   */
   private setupBadgeManagers(): void {
     this.badgeManager?.destroy();
     this.dmBadgeManager?.destroy();
     this.badgeManager = null;
     this.dmBadgeManager = null;
+
+    // Focus UI (v2): the shell mounts its own badge managers on the
+    // shell diodes — the hidden classic sidebar must not run duplicates
+    // (double EventBus traffic, double relay fetches).
+    if (isFocusUiEnabled()) return;
 
     const scope = isNavWheelActive() ? '.nn-wheel' : '.primary-nav';
 

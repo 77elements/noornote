@@ -39,6 +39,14 @@ if (__capturedRelayParam) {
   window.__noornote_relay_param = __capturedRelayParam;
 }
 
+// Dev-only: RAM/relay load monitor (`__v2load()` dump / `__loadmon` toggle
+// in the console; persisted switch + ?loadmon=1|0 boot param).
+if (import.meta.env.DEV) {
+  void import('./services/DevLoadMonitor').then(m =>
+    m.installDevLoadMonitorIfEnabled()
+  );
+}
+
 // Suppress NDK v3 serialization errors for malformed events from other clients
 window.addEventListener('unhandledrejection', event => {
   if (

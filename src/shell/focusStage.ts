@@ -33,6 +33,7 @@ import { TypedEventBus } from '../core/TypedEventBus';
 import {
   isLiveStreamsSidebarWidget,
   hasLiveStreamsBackgroundPin,
+  isLiveStreamsEnabled,
 } from '../addons/live-streams/index';
 import { getNostrMajlisSettings } from '../addons/nostr-majlis/index';
 import {
@@ -219,6 +220,18 @@ export class FocusStage {
       'router:history-changed',
       this.onRouterHistoryChanged
     );
+    if (import.meta.env.DEV) {
+      // Dev load monitor: report the cached surfaces + active object.
+      // (Shell → services import is allowed; prod builds drop this block.)
+      void import('../services/DevLoadMonitor').then(
+        ({ registerDevLoadSection }) =>
+          registerDevLoadSection('v2-stage', () => ({
+            active: this.activeId,
+            cachedSurfaces: Array.from(this.surfaces.keys()),
+            widgetHosts: Array.from(this.widgetHosts.keys()),
+          }))
+      );
+    }
   }
 
   /** Build the FS grid into the stage element. */
@@ -1396,6 +1409,12 @@ export class FocusStage {
    */
   private onWidgetToggle(enabled: boolean): void {
     this.setWidgetAvailable('live-streams', enabled);
+    if (!enabled) {
+      // Widget gone: release the runtime unless another always-on reason
+      // remains (background pin — the guard lives in
+      // live-streams/index.ts isLiveStreamsAutoLoaded).
+      void AddonLoader.getInstance().deactivateOnDemand('live-streams');
+    }
   }
 
   /**
@@ -1425,7 +1444,13 @@ export class FocusStage {
   private widgetFor(id: string): FocusWidgetLike | null {
     let addonId = 'live-streams';
     if (id === 'live-streams') {
-      if (!isLiveStreamsSidebarWidget()) return null;
+      // Same contract as classic: the widget exists only while the addon
+      // is enabled AND its "Show Live Streams Widget" switch is on —
+      // without the enabled gate a Master-OFF/Widget-ON combination
+      // would ensure-load a runtime whose widget never renders (zombie).
+      if (!isLiveStreamsEnabled() || !isLiveStreamsSidebarWidget()) {
+        return null;
+      }
     } else if (id === 'live-streams-mini-player') {
       // Shows only while a background stream is pinned — independent of
       // the sidebar-widget setting.

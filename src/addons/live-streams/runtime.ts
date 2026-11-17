@@ -38,9 +38,6 @@ export class LiveStreamsRuntime implements AddonRuntime {
     });
     this.widget.mount();
     this.miniPlayer = new LiveStreamsMiniPlayerWidget();
-    // On/off console marker (parity with custom-emojis/scheduled-posts).
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Live Streams: on');
     diagLog('addons', 'live-streams: runtime init', {
       npub: ctx.npub?.slice(0, 12),
     });
@@ -54,8 +51,6 @@ export class LiveStreamsRuntime implements AddonRuntime {
     this.widget = null;
     this.miniPlayer?.destroy();
     this.miniPlayer = null;
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Live Streams: off');
     diagLog('addons', 'live-streams: runtime destroy');
   }
 }

@@ -8,6 +8,11 @@
  *
  * const nameBlinker = new TextBlinker(nameElement);
  * nameBlinker.start(currentName, firstEncounterName);
+ *
+ * Lifecycle: blink timers self-destroy once their element leaves the DOM
+ * (isConnected check in the tick) — teardown paths that never reach
+ * destroy() (closure-held blinkers, detached cache views) cannot leak a
+ * running timer. A later start() re-arms after re-mount.
  */
 
 const BLINK_INTERVAL = 2000; // 2 seconds
@@ -55,6 +60,13 @@ export class TextBlinker {
 
     // Start blinking interval
     this.interval = setInterval(() => {
+      // Self-cleanup: an element that left the DOM must not keep its blink
+      // timer running. Closure-held blinkers (e.g. repost renderers) are
+      // unreachable for destroy() — the tick is the last chance to stop.
+      if (!this.textElement.isConnected) {
+        this.destroy();
+        return;
+      }
       // Fade out
       this.textElement.style.opacity = '0';
 
@@ -146,6 +158,11 @@ export class ProfileBlinker {
 
     // Start blinking interval
     this.interval = setInterval(() => {
+      // Self-cleanup on detached element (see TextBlinker.start).
+      if (!this.imgElement.isConnected) {
+        this.destroy();
+        return;
+      }
       // Fade out
       this.imgElement.style.opacity = '0';
 

@@ -195,6 +195,14 @@ export class BulkDeleteView extends View {
       TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
+    // Detach the broadcast-progress feed — otherwise relay events keep
+    // scheduling poll timers on the destroyed view (timer chain).
+    this.progressUnsub?.();
+    this.progressUnsub = null;
+    if (this.pollTimer) {
+      window.clearTimeout(this.pollTimer);
+      this.pollTimer = 0;
+    }
     if (this.progressRaf) {
       cancelAnimationFrame(this.progressRaf);
       this.progressRaf = 0;

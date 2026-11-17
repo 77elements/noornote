@@ -13,14 +13,10 @@ import type { AddonRuntime } from '../AddonLoader';
 const runtime: AddonRuntime = {
   async init(_ctx) {
     // TEMP debug (user-requested): observe on-demand load/unload in console.
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Bulk Delete: on');
     /* no-op — view-only addon, see file header */
   },
   async destroy() {
     // TEMP debug (user-requested): observe on-demand load/unload in console.
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Bulk Delete: off');
     /* no-op — see file header */
   },
 };

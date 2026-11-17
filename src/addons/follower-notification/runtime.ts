@@ -14,8 +14,6 @@ export class FollowerNotificationRuntime implements AddonRuntime {
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return; // idempotent
     // TEMP debug (user-requested): observe on-demand load/unload in console.
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Follower Notification: on');
     const { FollowerNotificationService } = await import(
       './FollowerNotificationService'
     );
@@ -28,8 +26,6 @@ export class FollowerNotificationRuntime implements AddonRuntime {
     this.service.destroy();
     this.service = null;
     // TEMP debug (user-requested): observe on-demand load/unload in console.
-    // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Follower Notification: off');
   }
 }
 
