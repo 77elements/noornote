@@ -12688,7 +12688,7 @@ msgstr "Tablet-Modus (2 Spalten, zentriert)"
 #: src/shell/focusStage.ts:1732
 #: src/shell/focusStage.ts:1752
 msgid "Distribute circles evenly"
-msgstr ""
+msgstr "Kreise gleichmäßig verteilen"
 
 #: src/components/settings/UISettingsSection.ts:232
 #: src/shell/focusSettings.ts:163
@@ -12713,20 +12713,20 @@ msgstr ""
 
 #: src/shell/focusStage.ts:1749
 msgid "Move all circles"
-msgstr ""
+msgstr "Alle Kreise verschieben"
 
 #: src/shell/focusStage.ts:1728
 msgid "Move all circles to the left column"
-msgstr ""
+msgstr "Alle Kreise in die linke Spalte verschieben"
 
 #: src/shell/focusStage.ts:1727
 msgid "Move all circles to the right column"
-msgstr ""
+msgstr "Alle Kreise in die rechte Spalte verschieben"
 
 #: src/shell/focusStage.ts:532
 #: src/shell/focusStage.ts:690
 msgid "Reorder"
-msgstr ""
+msgstr "Neu anordnen"
 
 #: src/components/settings/UISettingsSection.ts:242
 #: src/shell/focusSettings.ts:173
@@ -12756,7 +12756,7 @@ msgstr "Notiz schreiben"
 
 #: src/components/views/NewNoteView.ts:297
 msgid "Write new note"
-msgstr ""
+msgstr "Neue Notiz schreiben"
 
 #: src/components/settings/PrivacySettingsSection.ts:134
 #: src/shell/focusSettings.ts:564
@@ -12804,7 +12804,7 @@ msgstr "Anzeige posten"
 #: src/shell/focusStage.ts:1459
 #: src/shell/focusStage.ts:1466
 msgid "Move widget"
-msgstr ""
+msgstr "Widget verschieben"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
