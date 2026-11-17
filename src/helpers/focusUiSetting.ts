@@ -40,6 +40,18 @@ export function isFocusUiEnabled(): boolean {
   );
 }
 
+/**
+ * The APPLIED interface mode (the `ui--focus` gate class), not the
+ * preference: the Router's boot URL rewrite drops query params, so a
+ * `?focusui=0` deep link is invisible to a later isFocusUiEnabled() re-read
+ * (it then answers from the stored flag). Consumers that must match what
+ * the user actually sees — the shell-owned route handlers — read this.
+ * Safe at any time: setupUI applies the class before the boot navigate.
+ */
+export function isFocusUiActive(): boolean {
+  return document.documentElement.classList.contains('ui--focus');
+}
+
 export function setFocusUiEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI, enabled);
   applyFocusUi();

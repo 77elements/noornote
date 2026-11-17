@@ -31,7 +31,7 @@ export const focusSearchSurface = async (): Promise<FocusDomainSurface> => {
   const searchView = new GlobalSearchView();
 
   const container = document.createElement('div');
-  container.className = 'focus-search-object';
+  container.className = 'view-content focus-search-object';
   container.innerHTML = `
       <div class="back-padder focus-flow-root">
         <h1>${_('Search')}</h1>

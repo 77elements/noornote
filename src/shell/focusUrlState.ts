@@ -209,6 +209,9 @@ export function parseFocusUrl(
       case 'search':
         // The Search object (v2): its own circle in the SV.
         return { defId: 'search', kind: 'list' };
+      case 'recipes':
+        // The Recipes object (v2): the scc recipes tab as its own circle.
+        return { defId: 'recipes', kind: 'list' };
       case 'my-listings':
         // '/my-listings' is the marketplace dashboard (detail of the
         // marketplace object — the surface swaps the manager view in).

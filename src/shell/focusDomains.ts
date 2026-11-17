@@ -24,6 +24,7 @@ import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
 import { focusTabbedObjectSurface } from './focusTabbedObjectSurface';
 import { focusAddonObjectSurface } from './focusAddonObjectSurface';
 import { focusSearchSurface } from './focusSearchSurface';
+import { focusRecipesSurface } from './focusRecipesSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -224,7 +225,15 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     viewTypes: ['write-video'],
     createSurface: mediaSurface,
   },
-  { id: 'recipes', label: _('Recipes'), icon: 'icon-book-open' },
+  {
+    id: 'recipes',
+    label: _('Recipes'),
+    icon: 'icon-book-open',
+    route: '/recipes',
+    // The v1 scc recipes tab as its own object; card clicks go to
+    // /article/:naddr (the stage morphs to the Articles object).
+    createSurface: focusRecipesSurface,
+  },
   {
     id: 'notifications',
     label: _('Notifications'),

@@ -34,7 +34,7 @@ import { ModuleLoader } from './core/ModuleLoader';
 import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
-import { isFocusUiEnabled } from './helpers/focusUiSetting';
+import { isFocusUiActive } from './helpers/focusUiSetting';
 import { _ } from './i18n';
 
 /** Maps viewName to the AppState key that stores the route parameter */
@@ -1001,13 +1001,27 @@ export class App {
     // /search → the Search object (v2, own circle in the SV; the stage
     // re-derives its state from the URL). Classic has no search page (the
     // Spotlight lives in the shell chrome) — classic navigates home so the
-    // nip19 catch-all cannot hijack the path.
+    // nip19 catch-all cannot hijack the path. The APPLIED gate decides
+    // (isFocusUiActive), not the preference re-read: boot strips query
+    // params, so a ?focusui=0 deep link would answer from the stored flag.
     this.router.register(
       '/search',
       () => {
-        if (!isFocusUiEnabled()) this.router.navigate('/');
+        if (!isFocusUiActive()) this.router.navigate('/');
       },
       'search',
+      true
+    );
+    // /recipes → the Recipes object (v2, own circle; the scc recipes tab
+    // as its surface). Classic has no recipes page (the feed lives in the
+    // secondary column's default-content dropdown) — classic navigates
+    // home so the nip19 catch-all cannot hijack the path.
+    this.router.register(
+      '/recipes',
+      () => {
+        if (!isFocusUiActive()) this.router.navigate('/');
+      },
+      'recipes',
       true
     );
     // /addons (no slug) → overview page with all addon tiles

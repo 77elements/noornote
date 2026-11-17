@@ -139,16 +139,20 @@ export class ArticleView extends View {
       .getApi<PostsModuleApi>('posts')
       ?.registerNote(event);
 
-    // Create article structure with replies container
+    // Create article structure with replies container. The wrapper carries
+    // the v2 flow-root marker (clearance below the card — the card itself
+    // must not grow: its background/radius would show the padding). In
+    // classic the bare wrapper is layout-neutral (block, full width).
     this.container.innerHTML = `
-      <div class="article-view-content" data-event-id="${event.id}">
-        <div class="article-header">
-          ${metadata.image ? `<img src="${escapeHtmlAttr(metadata.image)}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
-          <div class="article-title-row">
-            <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
-            ${
-              isOwnArticle
-                ? `
+      <div class="article-view-wrapper focus-flow-root">
+        <div class="article-view-content" data-event-id="${event.id}">
+          <div class="article-header">
+            ${metadata.image ? `<img src="${escapeHtmlAttr(metadata.image)}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
+            <div class="article-title-row">
+              <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
+              ${
+                isOwnArticle
+                  ? `
               <div class="article-title-row__actions">
                 <button class="btn btn--medium btn--passive" data-action="edit-article" title="${_('Edit article')}">
                   <svg width="14" height="14"><use href="#icon-edit"/></svg>
@@ -157,14 +161,15 @@ export class ArticleView extends View {
                 <button class="btn btn--medium btn--danger" data-action="delete-article" title="${_('Delete article')}">${_('Delete')}</button>
               </div>
             `
-                : ''
-            }
+                  : ''
+              }
+            </div>
+            ${metadata.summary ? `<p class="article-summary">${escapeHtml(metadata.summary)}</p>` : ''}
+            <div class="article-author-container"></div>
           </div>
-          ${metadata.summary ? `<p class="article-summary">${escapeHtml(metadata.summary)}</p>` : ''}
-          <div class="article-author-container"></div>
+          <div class="article-body">${articleHtml}</div>
+          <div class="article-replies-container"></div>
         </div>
-        <div class="article-body">${articleHtml}</div>
-        <div class="article-replies-container"></div>
       </div>
     `;
 
