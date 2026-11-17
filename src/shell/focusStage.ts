@@ -1126,7 +1126,47 @@ export class FocusStage {
     dragId: string,
     el: HTMLElement
   ): void {
+    this.startStackItemDrag({
+      e,
+      el,
+      dragClasses: ['is-drag-source', 'is-column-drag'],
+      itemsIn: stack =>
+        (
+          [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
+        ).filter(c => !c.classList.contains('is-column-drag')),
+      dropTarget: (x, y) => this.columnDropTarget(x, y),
+      onDrop: t => {
+        if (!t || !this.sideStacks) return;
+        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+        this.moveCircleTo(dragId, side, t.index);
+      },
+    });
+  }
+
+  /**
+   * Shared drag mechanics for side-stack items (circle drag ↔ widget
+   * drag): the item is lifted OUT of its stack (position: fixed — the
+   * stack's overflow clipping would otherwise cut the visual mid-flight)
+   * and follows the cursor; its slot closes up and an insertion line
+   * marks the exact drop position in BOTH stacks. Dead-zone activation
+   * (6px), pointerup/pointercancel cleanup, `onDrop` persists.
+   */
+  private startStackItemDrag(opts: {
+    e: PointerEvent;
+    el: HTMLElement;
+    /** Classes toggled while dragging (e.g. is-drag-source). */
+    dragClasses: string[];
+    /** Droppable items of a stack (excluding the dragged element). */
+    itemsIn: (stack: HTMLElement) => HTMLElement[];
+    dropTarget: (
+      x: number,
+      y: number
+    ) => { stack: HTMLElement; index: number } | null;
+    onDrop: (t: { stack: HTMLElement; index: number } | null) => void;
+  }): void {
+    const el = opts.el;
     if (this.morphing || !this.sideStacks) return;
+    const e = opts.e;
     e.stopPropagation();
     e.preventDefault(); // no text selection / native drag while moving
     const startX = e.clientX;
@@ -1139,18 +1179,16 @@ export class FocusStage {
     let target: { stack: HTMLElement; index: number } | null = null;
 
     // Insertion line into the target stack at the boundary of `index`
-    // (0 = above the first visible circle). Absolute inside the stack, so
+    // (0 = above the first visible item). Absolute inside the stack, so
     // no grid rows shift while it moves; coordinates are content-space
     // (scroll-aware).
     const placeLine = (t: { stack: HTMLElement; index: number }): void => {
       const stackRect = t.stack.getBoundingClientRect();
       const scrollTop = t.stack.scrollTop;
-      const circles = (
-        [...t.stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
-      ).filter(c => !c.classList.contains('is-column-drag'));
+      const items = opts.itemsIn(t.stack);
       const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
       let y: number;
-      if (circles.length === 0) {
+      if (items.length === 0) {
         const tools = t.stack.querySelector(
           '[data-focus-stack-tools]'
         ) as HTMLElement | null;
@@ -1160,13 +1198,13 @@ export class FocusStage {
             scrollTop +
             halfGap
           : halfGap;
-      } else if (t.index >= circles.length) {
-        const last = circles[circles.length - 1];
+      } else if (t.index >= items.length) {
+        const last = items[items.length - 1];
         if (!last) return;
         const r = last.getBoundingClientRect();
         y = r.bottom - stackRect.top + scrollTop + halfGap;
       } else {
-        const next = circles[t.index];
+        const next = items[t.index];
         if (!next) return;
         const r = next.getBoundingClientRect();
         y = r.top - stackRect.top + scrollTop - halfGap;
@@ -1174,7 +1212,6 @@ export class FocusStage {
       if (!line) {
         line = document.createElement('div');
         line.className = 'focus-side-stack__drop-line';
-        t.stack.appendChild(line);
       }
       line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
       if (line.parentElement !== t.stack) t.stack.appendChild(line);
@@ -1186,7 +1223,7 @@ export class FocusStage {
         dragging = true;
         // Fixed lift: escapes the stack's overflow clipping; the hole in
         // the source column closes (the insertion line takes its place).
-        el.classList.add('is-drag-source', 'is-column-drag');
+        el.classList.add(...opts.dragClasses);
         el.style.position = 'fixed';
         el.style.left = `${rect.left}px`;
         el.style.top = `${rect.top}px`;
@@ -1195,7 +1232,7 @@ export class FocusStage {
       }
       el.style.left = `${ev.clientX - grabX}px`;
       el.style.top = `${ev.clientY - grabY}px`;
-      const next = this.columnDropTarget(ev.clientX, ev.clientY);
+      const next = opts.dropTarget(ev.clientX, ev.clientY);
       if (
         !!next !== !!target ||
         (next &&
@@ -1212,7 +1249,7 @@ export class FocusStage {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cleanup);
-      el.classList.remove('is-drag-source', 'is-column-drag');
+      el.classList.remove(...opts.dragClasses);
       el.style.position = '';
       el.style.left = '';
       el.style.top = '';
@@ -1224,9 +1261,7 @@ export class FocusStage {
     const onUp = (): void => {
       const t = target;
       cleanup();
-      if (!t || !this.sideStacks) return;
-      const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
-      this.moveCircleTo(dragId, side, t.index);
+      opts.onDrop(t);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -1547,104 +1582,18 @@ export class FocusStage {
     id: string,
     host: HTMLElement
   ): void {
-    if (this.morphing || !this.sideStacks) return;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
-    const rect = host.getBoundingClientRect();
-    const grabX = e.clientX - rect.left;
-    const grabY = e.clientY - rect.top;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    let dragging = false;
-    let line: HTMLElement | null = null;
-    let target: { stack: HTMLElement; index: number } | null = null;
-
-    // Insertion line into the target stack at the boundary of `index`
-    // (same content-space math as the circle drag).
-    const placeLine = (t: { stack: HTMLElement; index: number }): void => {
-      const stackRect = t.stack.getBoundingClientRect();
-      const scrollTop = t.stack.scrollTop;
-      const items = this.stackItems(t.stack, host);
-      const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
-      let y: number;
-      if (items.length === 0) {
-        const tools = t.stack.querySelector(
-          '[data-focus-stack-tools]'
-        ) as HTMLElement | null;
-        y = tools
-          ? tools.getBoundingClientRect().bottom -
-            stackRect.top +
-            scrollTop +
-            halfGap
-          : halfGap;
-      } else if (t.index >= items.length) {
-        const last = items[items.length - 1];
-        if (!last) return;
-        const r = last.getBoundingClientRect();
-        y = r.bottom - stackRect.top + scrollTop + halfGap;
-      } else {
-        const next = items[t.index];
-        if (!next) return;
-        const r = next.getBoundingClientRect();
-        y = r.top - stackRect.top + scrollTop - halfGap;
-      }
-      if (!line) {
-        line = document.createElement('div');
-        line.className = 'focus-side-stack__drop-line';
-      }
-      line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
-      if (line.parentElement !== t.stack) t.stack.appendChild(line);
-    };
-
-    const onMove = (ev: PointerEvent): void => {
-      if (!dragging) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
-        dragging = true;
-        host.classList.add('is-drag-source');
-        host.style.position = 'fixed';
-        host.style.left = `${rect.left}px`;
-        host.style.top = `${rect.top}px`;
-        host.style.width = `${rect.width}px`;
-        host.style.height = `${rect.height}px`;
-      }
-      host.style.left = `${ev.clientX - grabX}px`;
-      host.style.top = `${ev.clientY - grabY}px`;
-      const next = this.widgetDropTarget(ev.clientX, ev.clientY, host);
-      if (
-        !!next !== !!target ||
-        (next &&
-          target &&
-          (next.stack !== target.stack || next.index !== target.index))
-      ) {
-        line?.remove();
-        line = null;
-        if (next) placeLine(next);
-        target = next;
-      }
-    };
-    const cleanup = (): void => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', cleanup);
-      host.classList.remove('is-drag-source');
-      host.style.position = '';
-      host.style.left = '';
-      host.style.top = '';
-      host.style.width = '';
-      host.style.height = '';
-      line?.remove();
-      line = null;
-    };
-    const onUp = (): void => {
-      const t = target;
-      cleanup();
-      if (!t || !this.sideStacks) return;
-      const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
-      this.moveWidgetTo(id, side, t.index);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', cleanup);
+    this.startStackItemDrag({
+      e,
+      el: host,
+      dragClasses: ['is-drag-source'],
+      itemsIn: stack => this.stackItems(stack, host),
+      dropTarget: (x, y) => this.widgetDropTarget(x, y, host),
+      onDrop: t => {
+        if (!t || !this.sideStacks) return;
+        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+        this.moveWidgetTo(id, side, t.index);
+      },
+    });
   }
 
   /**
