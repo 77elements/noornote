@@ -1059,17 +1059,15 @@ export class FocusStage {
 
   /**
    * Pointer drag on a side stack's move handle (focused state only).
-   * Dragging it toward the OPPOSITE stack highlights that stack as the
-   * drop zone; dropping there moves ALL circles into it — in the user's
-   * stored order — and persists the side (the source column empties as
-   * the future secondary-widget area). Same dead-zone mechanics as
-   * startOrderDrag.
+   * The WHOLE column rides at the cursor tip (same feel as the SV order
+   * drag) — transform only, so its grid slot stays occupied and the stage
+   * does not reflow mid-drag. Dragging it toward the OPPOSITE stack
+   * highlights that stack as the drop zone; dropping there moves ALL
+   * circles into it — in the user's stored order — and persists the side
+   * (the source column empties as the future secondary-widget area). Same
+   * dead-zone mechanics as startOrderDrag.
    */
-  private startStackDrag(
-    e: PointerEvent,
-    side: 'left' | 'right',
-    icon: HTMLElement
-  ): void {
+  private startStackDrag(e: PointerEvent, side: 'left' | 'right'): void {
     if (this.morphing || !this.sideStacks) return;
     e.stopPropagation();
     e.preventDefault(); // no text selection / native drag while moving
@@ -1084,16 +1082,12 @@ export class FocusStage {
       if (!dragging) {
         if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
         dragging = true;
-        // pointer-events off: the translated icon must not shadow the
+        // pointer-events off: the translated column must not shadow the
         // drop zone in elementFromPoint.
-        icon.classList.add('is-drag-source');
-        // The SOURCE column dims while dragged — without it the stack
-        // just snaps across on drop (the drop zone alone gives no hint
-        // that THIS stack is the one moving).
-        sourceEl.classList.add('is-move-source');
+        sourceEl.classList.add('is-drag-source');
         targetEl.classList.add('is-dropzone');
       }
-      icon.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
+      sourceEl.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
       over = !!hit && hit.closest('[data-focus-stack]') === targetEl;
     };
@@ -1101,9 +1095,8 @@ export class FocusStage {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cleanup);
-      icon.classList.remove('is-drag-source');
-      icon.style.transform = '';
-      sourceEl.classList.remove('is-move-source');
+      sourceEl.classList.remove('is-drag-source');
+      sourceEl.style.transform = '';
       targetEl.classList.remove('is-dropzone');
     };
     const onUp = (): void => {
@@ -1706,9 +1699,7 @@ export class FocusStage {
       const move = tools.querySelector(
         '[data-focus-stack-move]'
       ) as HTMLElement;
-      move.addEventListener('pointerdown', ev =>
-        this.startStackDrag(ev, side, move)
-      );
+      move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
       tools
         .querySelector('[data-focus-stack-reset]')
         ?.addEventListener('click', () => this.resetStackSide());

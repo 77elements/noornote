@@ -374,14 +374,6 @@ html.ui--focus {
   // when the content is shorter (widgets-only stack) — widgets grew
   // apart instead of stacking compactly.
   align-content: start;
-  // Whole-stack move feedback: the dragged column dims so it is visible
-  // WHICH stack is being carried to the other side (the drop zone alone
-  // marks only the target).
-  transition: opacity 0.15s ease;
-
-  &.is-move-source {
-    opacity: 0.45;
-  }
 
   .focus-stage__grid.is-focused & {
     height: 100%;
@@ -394,6 +386,16 @@ html.ui--focus {
       display: none;
     }
   }
+}
+
+// Whole-stack move drag (FV): the column travels at the cursor tip
+// (transform set inline by focusStage.startStackDrag) — same feel as the
+// SV order drag. It must ride above the other stack's sticky tools and
+// drop-zone outline, and must not shadow the drop zone in elementFromPoint.
+.focus-side-stack.is-drag-source {
+  pointer-events: none;
+  z-index: $z-fullscreen-overlay;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 // Stack top tools: move handle (drag moves ALL circles) + reset (back to
