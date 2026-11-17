@@ -8,6 +8,7 @@
  */
 
 import { View } from '../../components/views/View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { Router } from '../../services/Router';
 import { ListingService } from './ListingService';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -65,11 +66,7 @@ export class ListingEditorView extends View {
   private listingService: ListingService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -573,7 +570,7 @@ export class ListingEditorView extends View {
     if (uploadBtn) uploadBtn.disabled = true;
 
     try {
-      const api = this.mediaApi;
+      const api = this.mediaApi.get();
       if (!api) return;
 
       const result = await api.uploadFile(file);

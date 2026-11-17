@@ -14,6 +14,7 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 
@@ -96,18 +97,10 @@ interface EditorSnapshot {
 export class ArticleEditorView extends View {
   private container: HTMLElement;
   private router: Router;
-  private _articlesApi?: ArticlesModuleApi | null;
-  private get articlesApi(): ArticlesModuleApi | null {
-    return (this._articlesApi ??=
-      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles'));
-  }
+  private articlesApi = new LazyModuleApi<ArticlesModuleApi>('articles');
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -199,7 +192,7 @@ export class ArticleEditorView extends View {
     });
 
     // Generate initial identifier
-    this.identifier = this.articlesApi?.generateIdentifier() ?? '';
+    this.identifier = this.articlesApi.get()?.generateIdentifier() ?? '';
 
     this.loadRelayConfiguration();
 
@@ -232,7 +225,7 @@ export class ArticleEditorView extends View {
         `Loading article: ${naddr.slice(0, 30)}...`
       );
       const event =
-        (await this.articlesApi?.fetchAddressableEvent(naddr)) ?? null;
+        (await this.articlesApi.get()?.fetchAddressableEvent(naddr)) ?? null;
 
       if (!event) {
         this.systemLogger.error(
@@ -244,7 +237,9 @@ export class ArticleEditorView extends View {
       }
 
       // Extract metadata and pre-fill fields
-      const metadata = this.articlesApi?.extractArticleMetadata(event) ?? {
+      const metadata = this.articlesApi
+        .get()
+        ?.extractArticleMetadata(event) ?? {
         title: '',
         image: '',
         summary: '',
@@ -707,7 +702,7 @@ export class ArticleEditorView extends View {
         if (this.title && !this.identifier.includes('-')) {
           // Only auto-generate if identifier hasn't been customized
           this.identifier =
-            this.articlesApi?.generateIdentifier(this.title) ?? '';
+            this.articlesApi.get()?.generateIdentifier(this.title) ?? '';
           const identifierInput = this.container.querySelector(
             '[data-field="identifier"]'
           ) as HTMLInputElement;
@@ -738,8 +733,9 @@ export class ArticleEditorView extends View {
    */
   private async uploadContentImage(file: File): Promise<string | null> {
     try {
-      if (!this.mediaApi) return null;
-      const result = await this.mediaApi.uploadFile(file);
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) return null;
+      const result = await mediaApi.uploadFile(file);
       if (result.success && result.url) {
         this.systemLogger.info(
           'ArticleEditorView',
@@ -807,9 +803,10 @@ export class ArticleEditorView extends View {
     }
 
     try {
-      if (!this.mediaApi) return;
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) return;
 
-      const result = await this.mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.image = result.url;
@@ -1140,7 +1137,7 @@ export class ArticleEditorView extends View {
         content: this.content,
         identifier:
           this.identifier ||
-          this.articlesApi?.generateIdentifier(this.title) ||
+          this.articlesApi.get()?.generateIdentifier(this.title) ||
           '',
         relays: Array.from(this.selectedRelays),
         scheduledAt,
@@ -1217,7 +1214,7 @@ export class ArticleEditorView extends View {
         content: this.content,
         identifier:
           this.identifier ||
-          this.articlesApi?.generateIdentifier(this.title) ||
+          this.articlesApi.get()?.generateIdentifier(this.title) ||
           '',
         relays: Array.from(this.selectedRelays),
       };
@@ -1229,8 +1226,8 @@ export class ArticleEditorView extends View {
       if (this.publishedAt) articleData.publishedAt = this.publishedAt;
 
       const naddr = isDraft
-        ? ((await this.articlesApi?.saveDraft(articleData)) ?? null)
-        : ((await this.articlesApi?.publishArticle(articleData)) ?? null);
+        ? ((await this.articlesApi.get()?.saveDraft(articleData)) ?? null)
+        : ((await this.articlesApi.get()?.publishArticle(articleData)) ?? null);
 
       // After successful save, update snapshot so dirty-check won't trigger
       this.saveSnapshot();

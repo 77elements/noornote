@@ -3,10 +3,10 @@
  * Modal for entering password when switching NoorSigner accounts
  */
 
-import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
 import { _ } from '../../i18n';
 import { KeySignerClient } from '../../services/KeySignerClient';
+import { wireNoorSignerPasswordModal } from './noorSignerPasswordModalShared';
 
 export interface KeySignerPasswordModalOptions {
   npub: string;
@@ -19,7 +19,6 @@ export class KeySignerPasswordModal {
   private modalService: ModalService;
   private keySignerClient: KeySignerClient;
   private options: KeySignerPasswordModalOptions;
-  private isSubmitting: boolean = false;
 
   constructor(options: KeySignerPasswordModalOptions) {
     this.modalService = ModalService.getInstance();
@@ -92,67 +91,30 @@ export class KeySignerPasswordModal {
 
     if (!input || !cancelBtn || !submitBtn || !errorEl) return;
 
-    const handleSubmit = async () => {
-      if (this.isSubmitting) return;
+    let switchResult: { pubkey: string; npub: string } | null = null;
 
-      const password = input.value;
-      if (!password) {
-        this.showError(_('Please enter your password'));
-        return;
-      }
-
-      this.isSubmitting = true;
-      submitBtn.textContent = _('Switching...');
-      submitBtn.setAttribute('disabled', 'true');
-      errorEl.style.display = 'none';
-
-      try {
-        const result = await this.keySignerClient.switchAccount(
+    wireNoorSignerPasswordModal({
+      input,
+      cancelBtn,
+      submitBtn,
+      errorEl,
+      busyLabel: 'Switching...',
+      idleLabel: 'Switch Account',
+      submit: async () => {
+        switchResult = await this.keySignerClient.switchAccount(
           this.options.npub,
-          password
+          input.value
         );
-        this.modalService.hide();
-        this.options.onSuccess(result);
-      } catch (error) {
-        const errorMessage = errMessage(error);
-        // NoorSigner returns various error messages for wrong password
-        const isPasswordError =
-          errorMessage.includes('invalid password') ||
-          errorMessage.includes('corrupted') ||
-          errorMessage.includes('decrypt');
-        this.showError(
-          isPasswordError ? _('Incorrect password') : errorMessage
-        );
-        input.value = '';
-        input.focus();
-      } finally {
-        this.isSubmitting = false;
-        submitBtn.textContent = _('Switch Account');
-        submitBtn.removeAttribute('disabled');
-      }
-    };
-
-    const handleCancel = () => {
-      this.modalService.hide();
-      if (this.options.onCancel) {
-        this.options.onCancel();
-      }
-    };
-
-    cancelBtn.addEventListener('click', handleCancel);
-    submitBtn.addEventListener('click', handleSubmit);
-
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        void handleSubmit();
-      } else if (e.key === 'Escape') {
-        handleCancel();
-      }
-    });
-
-    // Clear error when typing
-    input.addEventListener('input', () => {
-      errorEl.style.display = 'none';
+      },
+      // NoorSigner returns various error messages for wrong password
+      isPasswordError: message =>
+        message.includes('invalid password') ||
+        message.includes('corrupted') ||
+        message.includes('decrypt'),
+      hide: () => this.modalService.hide(),
+      onSuccess: () => this.options.onSuccess(switchResult!),
+      onCancel: () => this.options.onCancel?.(),
+      showError: message => this.showError(message),
     });
   }
 

@@ -15,8 +15,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
-import { parseListingMetadata, formatPrice } from './marketplace-helpers';
-import { encodeNaddr } from '../../services/NostrToolsAdapter';
+import { getListingCardBasics } from './marketplace-helpers';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getTag } from '../../helpers/tagUtils';
@@ -147,20 +146,8 @@ export class MyListingsView extends View {
   }
 
   private createListingRow(event: NostrEvent): HTMLElement {
-    const meta = parseListingMetadata(event);
-    const naddr = encodeNaddr({
-      kind: 30402,
-      pubkey: event.pubkey,
-      identifier: meta.identifier,
-      relays: [],
-    });
-
-    const priceDisplay = formatPrice(
-      meta.price,
-      meta.priceCurrency,
-      meta.priceFrequency
-    );
-    const firstImage = meta.images[0] || '';
+    const { meta, naddr, priceDisplay, firstImage } =
+      getListingCardBasics(event);
 
     const row = document.createElement('div');
     row.className = 'post-item my-listings__row';

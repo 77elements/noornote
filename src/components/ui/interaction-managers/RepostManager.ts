@@ -6,7 +6,7 @@
  * - Button state updates
  */
 
-import { ModuleLoader } from '../../../core/ModuleLoader';
+import { LazyModuleApi } from '../../../core/LazyModuleApi';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { _ } from '../../../i18n';
@@ -28,11 +28,7 @@ export interface RepostManagerConfig extends BaseInteractionConfig {
 }
 
 export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
 
   /**
    * In-flight guard: while a publish or removal runs, further repost clicks
@@ -51,9 +47,9 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    */
   public async checkInteractionStatus(): Promise<void> {
     try {
-      const reposted = await (this.postsApi?.hasUserReposted(
-        this.config.noteId
-      ) ?? Promise.resolve(false));
+      const reposted = await (this.postsApi
+        .get()
+        ?.hasUserReposted(this.config.noteId) ?? Promise.resolve(false));
       // A click that landed while this check was in flight wins — never
       // overwrite an optimistic flip with the pre-publish snapshot.
       if (this.publishing) return;
@@ -162,10 +158,10 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // (Amethyst pattern) internally — no relays passed.
       const isStandardNote = unwrappedEvent.kind === 1;
       const result = isStandardNote
-        ? await (this.postsApi?.publishRepost({
+        ? await (this.postsApi.get()?.publishRepost({
             originalEvent: unwrappedEvent,
           }) ?? Promise.resolve({ success: false }))
-        : await (this.postsApi?.publishGenericRepost({
+        : await (this.postsApi.get()?.publishGenericRepost({
             originalEvent: unwrappedEvent,
           }) ?? Promise.resolve({ success: false }));
 
@@ -222,7 +218,9 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
     this.updateStats('repost', -1);
 
     try {
-      const result = await this.postsApi?.removeRepost(this.config.noteId);
+      const result = await this.postsApi
+        .get()
+        ?.removeRepost(this.config.noteId);
 
       if (!result?.success) {
         // Revert optimistic update on failure

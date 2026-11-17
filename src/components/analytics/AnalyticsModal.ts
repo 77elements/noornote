@@ -5,6 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type {
@@ -51,11 +52,7 @@ function modalConfig(): { title: string; width: string; height: string } {
 
 export class AnalyticsModal {
   private static instance: AnalyticsModal | null = null;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private userProfileService: UserProfileService;
   private router: Router;
   private modalService: ModalService;
@@ -99,7 +96,7 @@ export class AnalyticsModal {
 
     // Fetch detailed stats
     try {
-      const stats = await this.reactionsApi?.getDetailedStats(noteId);
+      const stats = await this.reactionsApi.get()?.getDetailedStats(noteId);
       if (!stats) {
         this.modalService.show({
           ...modalConfig(),
@@ -257,7 +254,7 @@ export class AnalyticsModal {
       .map(e => e.id)
       .filter((id): id is string => !!id);
     const reactionTree =
-      (await this.reactionsApi?.fetchReactionTree(rootIds)) ??
+      (await this.reactionsApi.get()?.fetchReactionTree(rootIds)) ??
       new Map<string, NostrEvent[]>();
 
     // Collect all pubkeys for profile fetching (top-level + nested reactors)
@@ -341,7 +338,7 @@ export class AnalyticsModal {
     const likesBody = container.querySelector('[data-likes-body]');
     if (likesBody && stats.reactionEvents.length > 0) {
       const ctx: ReactionThreadContext = {
-        reactionsApi: this.reactionsApi,
+        reactionsApi: this.reactionsApi.get(),
         tree: reactionTree,
         profiles: profileMap,
         dropdowns: this.activeDropdowns,

@@ -10,8 +10,8 @@
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-import { ModalService } from '../../services/ModalService';
 import { BookmarkReadStateService } from '../../services/BookmarkReadStateService';
+import { confirmResetBookmarkReadState } from '../../services/confirmResetBookmarkReadState';
 import {
   isBookmarksEnabled,
   setBookmarksEnabled,
@@ -173,35 +173,7 @@ export class BookmarksAddonView extends View {
 
     this.container
       .querySelector('[data-action="reset-read-state"]')
-      ?.addEventListener('click', () => {
-        void ModalService.getInstance()
-          .confirm({
-            title: _('Reset read state'),
-            message: _(
-              'Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync.'
-            ),
-            confirmText: _('Reset'),
-            confirmDestructive: true,
-          })
-          .then(confirmed => {
-            if (!confirmed) return;
-            BookmarkReadStateService.getInstance()
-              .reset()
-              .then(() =>
-                ToastService.show(
-                  _('Read state reset, all bookmarks unread'),
-                  'success'
-                )
-              )
-              .catch(error =>
-                ToastService.show(
-                  _('Reset failed: %s', String(error)),
-                  'error',
-                  8000
-                )
-              );
-          });
-      });
+      ?.addEventListener('click', () => confirmResetBookmarkReadState());
   }
 
   /** Show/hide sync settings with the addon toggle (no reload — SPA rule). */

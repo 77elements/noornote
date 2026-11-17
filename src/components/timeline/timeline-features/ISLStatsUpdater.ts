@@ -5,7 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ModuleLoader } from '../../../core/ModuleLoader';
+import { LazyModuleApi } from '../../../core/LazyModuleApi';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { formatCount } from '../../../helpers/formatCount';
@@ -13,11 +13,7 @@ import { NoteUI } from '../../ui/NoteUI';
 
 export class ISLStatsUpdater {
   private container: HTMLElement;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private fetchedNoteIds = new Set<string>();
 
   constructor(container: HTMLElement) {
@@ -34,7 +30,7 @@ export class ISLStatsUpdater {
       if (!noteIdForStats) return;
 
       const cachedStats =
-        this.reactionsApi?.getCachedStats(noteIdForStats) ?? null;
+        this.reactionsApi.get()?.getCachedStats(noteIdForStats) ?? null;
       if (cachedStats) {
         const islElement = this.container.querySelector(
           `.isl[data-note-id="${noteIdForStats}"]`
@@ -89,7 +85,7 @@ export class ISLStatsUpdater {
 
     await Promise.all(
       chunks.map(async chunk => {
-        const statsMap = await this.reactionsApi?.batchFetchStats(chunk);
+        const statsMap = await this.reactionsApi.get()?.batchFetchStats(chunk);
         if (!statsMap) return;
 
         for (const [noteId, stats] of statsMap) {

@@ -10,6 +10,7 @@ import {
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { positionPickerNearTrigger } from '../../helpers/pickerPositioning';
 import { _ } from '../../i18n';
 
 // Handle both default and named export patterns
@@ -650,36 +651,10 @@ export class EmojiPicker {
    * Position picker relative to trigger element
    */
   private positionPicker(trigger: HTMLElement): void {
-    const rect = trigger.getBoundingClientRect();
-    const pickerHeight = 450; // From CSS
-    const pickerWidth = 300; // From CSS
-    const margin = 10;
-
-    // Try to position above trigger, if not enough space, position below
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
-
-    if (spaceAbove >= pickerHeight || spaceAbove > spaceBelow) {
-      // Position above
-      this.container.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      this.container.style.top = 'auto';
-    } else {
-      // Position below
-      this.container.style.top = `${rect.bottom + 10}px`;
-      this.container.style.bottom = 'auto';
-    }
-
-    // Horizontal: open to the right (left edge over the trigger) by default, but
-    // flip to open leftward (right edge over the trigger) when there isn't room —
-    // e.g. when the note sits in the right-hand secondary pane. Collision-based,
-    // so it needs no layout-mode knowledge.
-    if (rect.left + pickerWidth > window.innerWidth - margin) {
-      this.container.style.right = `${window.innerWidth - rect.right}px`;
-      this.container.style.left = 'auto';
-    } else {
-      this.container.style.left = `${rect.left}px`;
-      this.container.style.right = 'auto';
-    }
+    positionPickerNearTrigger(this.container, trigger, {
+      pickerHeight: 450, // From CSS
+      pickerWidth: 300, // From CSS
+    });
   }
 
   /**

@@ -4,6 +4,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _, tp } from '../../i18n';
 import type { NotificationType } from '../../services/orchestration/NotificationsOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -57,11 +58,7 @@ export class NotificationItem {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
   private authService: AuthService;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private _notificationsApi?: NotificationsModuleApi | null;
   private get notificationsApi(): NotificationsModuleApi | null {
     return (this._notificationsApi ??=
@@ -346,8 +343,8 @@ export class NotificationItem {
     // Fetch stats to get zap events — batch-aware: joins the view-wide
     // micro-batch, then reads the cache (a second getDetailedStats call is a
     // pure cache hit, never its own relay round-trip).
-    await this.reactionsApi?.ensureStatsBatched(eventId);
-    const stats = await this.reactionsApi?.getDetailedStats(eventId);
+    await this.reactionsApi.get()?.ensureStatsBatched(eventId);
+    const stats = await this.reactionsApi.get()?.getDetailedStats(eventId);
 
     if (stats && stats.zapEvents && stats.zapEvents.length > 0) {
       this.zapsList = new ZapsList(stats.zapEvents);

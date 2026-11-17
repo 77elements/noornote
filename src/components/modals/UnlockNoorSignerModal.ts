@@ -4,6 +4,7 @@
  */
 
 import { errMessage } from '../../helpers/errorMessage';
+import { wireNoorSignerPasswordModal } from './noorSignerPasswordModalShared';
 import { ModalService } from '../../services/ModalService';
 import { _ } from '../../i18n';
 import { KeySignerClient } from '../../services/KeySignerClient';
@@ -17,7 +18,6 @@ export class UnlockNoorSignerModal {
   private modalService: ModalService;
   private keySignerClient: KeySignerClient;
   private options: UnlockNoorSignerModalOptions;
-  private isSubmitting = false;
 
   constructor(options: UnlockNoorSignerModalOptions) {
     this.modalService = ModalService.getInstance();
@@ -87,74 +87,39 @@ export class UnlockNoorSignerModal {
 
     if (!input || !cancelBtn || !submitBtn || !errorEl) return;
 
-    const handleSubmit = async () => {
-      if (this.isSubmitting) return;
-
-      const password = input.value;
-      if (!password) {
-        this.showError(_('Please enter your password'));
-        return;
-      }
-
-      this.isSubmitting = true;
-      submitBtn.textContent = _('Unlocking...');
-      submitBtn.setAttribute('disabled', 'true');
-      errorEl.style.display = 'none';
-
-      try {
+    wireNoorSignerPasswordModal({
+      input,
+      cancelBtn,
+      submitBtn,
+      errorEl,
+      busyLabel: 'Unlocking...',
+      idleLabel: 'Unlock',
+      submit: async () => {
         // Daemon process is already running (started before modal appeared)
         // Submit password to it — if no process, prepare a new one first
         try {
-          await this.keySignerClient.submitDaemonPassword(password);
+          await this.keySignerClient.submitDaemonPassword(input.value);
         } catch (prepError) {
           const msg = errMessage(prepError);
           if (msg.includes('No daemon process')) {
             // Process died or wasn't prepared — restart and retry
             await this.keySignerClient.prepareDaemonForUnlock();
-            await this.keySignerClient.submitDaemonPassword(password);
+            await this.keySignerClient.submitDaemonPassword(input.value);
           } else {
             throw prepError;
           }
         }
-        this.modalService.hide();
-        this.options.onSuccess();
-      } catch (error) {
-        const errorMessage = errMessage(error);
-        const isPasswordError =
-          errorMessage.includes('invalid_password') ||
-          errorMessage.includes('Invalid password');
-        this.showError(
-          isPasswordError ? _('Incorrect password') : errorMessage
-        );
-        // Re-prepare daemon for next attempt (previous process consumed)
-        this.keySignerClient.prepareDaemonForUnlock().catch(() => {});
-        input.value = '';
-        input.focus();
-      } finally {
-        this.isSubmitting = false;
-        submitBtn.textContent = _('Unlock');
-        submitBtn.removeAttribute('disabled');
-      }
-    };
-
-    const handleCancel = () => {
-      this.modalService.hide();
-      this.options.onCancel?.();
-    };
-
-    cancelBtn.addEventListener('click', handleCancel);
-    submitBtn.addEventListener('click', handleSubmit);
-
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        void handleSubmit();
-      } else if (e.key === 'Escape') {
-        handleCancel();
-      }
-    });
-
-    input.addEventListener('input', () => {
-      errorEl.style.display = 'none';
+      },
+      isPasswordError: message =>
+        message.includes('invalid_password') ||
+        message.includes('Invalid password'),
+      // Re-prepare daemon for next attempt (previous process consumed)
+      onPasswordError: () =>
+        this.keySignerClient.prepareDaemonForUnlock().catch(() => {}),
+      hide: () => this.modalService.hide(),
+      onSuccess: () => this.options.onSuccess(),
+      onCancel: () => this.options.onCancel?.(),
+      showError: message => this.showError(message),
     });
   }
 

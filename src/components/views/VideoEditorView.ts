@@ -12,6 +12,7 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 
@@ -49,11 +50,7 @@ export class VideoEditorView extends View {
   private readonly onClose: (() => void) | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -377,12 +374,13 @@ export class VideoEditorView extends View {
         this.kindOverride = false;
       }
 
-      if (!this.mediaApi) {
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) {
         ToastService.show(_('Media module not available'), 'error');
         return;
       }
 
-      const result = await this.mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.videoUrl = result.url;
@@ -484,9 +482,10 @@ export class VideoEditorView extends View {
     }
 
     try {
-      if (!this.mediaApi) return;
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) return;
 
-      const result = await this.mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.thumbnailUrl = result.url;
@@ -588,7 +587,8 @@ export class VideoEditorView extends View {
       if (topics.length > 0) videoData.topics = topics;
       if (this.kindOverride) videoData.kindOverride = this.detectedKind;
 
-      const nevent = (await this.mediaApi?.publishVideo(videoData)) ?? null;
+      const nevent =
+        (await this.mediaApi.get()?.publishVideo(videoData)) ?? null;
 
       if (nevent) {
         ModuleLoader.getInstance()

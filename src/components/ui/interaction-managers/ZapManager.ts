@@ -7,6 +7,7 @@
  */
 
 import { AuthGuard } from '../../../services/AuthGuard';
+import { LazyModuleApi } from '../../../core/LazyModuleApi';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import { _ } from '../../../i18n';
@@ -41,11 +42,7 @@ export class ZapManager {
       ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
   }
   private authService: AuthService;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private eventBus: TypedEventBus;
   private userProfileService: UserProfileService;
   private zapButton: HTMLElement | null = null;
@@ -220,7 +217,7 @@ export class ZapManager {
         this.updateButtonState(true);
 
         // Clear stale cache before triggering stats refresh
-        this.reactionsApi?.clearCache(this.config.noteId);
+        this.reactionsApi.get()?.clearCache(this.config.noteId);
 
         if (this.config.onStatsUpdate && zapAmount > 0) {
           this.config.onStatsUpdate(zapAmount);
@@ -250,7 +247,7 @@ export class ZapManager {
         this.updateButtonState(true);
 
         // Clear stale cache before triggering stats refresh
-        this.reactionsApi?.clearCache(this.config.noteId);
+        this.reactionsApi.get()?.clearCache(this.config.noteId);
 
         if (this.config.onStatsUpdate) {
           this.config.onStatsUpdate(amount);

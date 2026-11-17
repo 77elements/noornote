@@ -14,7 +14,7 @@
 import { Switch } from '../components/ui/Switch';
 import { NnDropdown } from '../components/ui/NnDropdown';
 import { NotificationPrioritySection } from '../components/settings/NotificationPrioritySection';
-import { ModalService } from '../services/ModalService';
+import { confirmResetBookmarkReadState } from '../services/confirmResetBookmarkReadState';
 import { BookmarkReadStateService } from '../services/BookmarkReadStateService';
 import {
   isReadSyncEnabled,
@@ -484,35 +484,7 @@ export class FocusBookmarksSettings extends FocusSettingsPanel {
 
     el.querySelector(
       '[data-focus-setting="reset-read-state"]'
-    )?.addEventListener('click', () => {
-      void ModalService.getInstance()
-        .confirm({
-          title: _('Reset read state'),
-          message: _(
-            'Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync.'
-          ),
-          confirmText: _('Reset'),
-          confirmDestructive: true,
-        })
-        .then(confirmed => {
-          if (!confirmed) return;
-          BookmarkReadStateService.getInstance()
-            .reset()
-            .then(() =>
-              ToastService.show(
-                _('Read state reset, all bookmarks unread'),
-                'success'
-              )
-            )
-            .catch(error =>
-              ToastService.show(
-                _('Reset failed: %s', String(error)),
-                'error',
-                8000
-              )
-            );
-        });
-    });
+    )?.addEventListener('click', () => confirmResetBookmarkReadState());
   }
 }
 

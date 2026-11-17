@@ -10,6 +10,77 @@ import { type ThreadNode } from './threadTree';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 /**
+ * Build the "X quoted this …" card for an embedded quoted repost: content
+ * stripped of the quoted reference, clickable header link (SPA routing),
+ * NoteUI preview element, appended to `container`. Returns the wrapper
+ * element. The header markup and the content-strip pattern differ between
+ * the reply view (quoted note) and the thread view (repost) — passed in.
+ */
+export async function renderQuotedNoteCard(opts: {
+  quoteEvent: NostrEvent;
+  container: Element;
+  /** Strip these nostr: references from the quoted content. */
+  stripPattern: RegExp;
+  /** Header inner HTML; receives username + nevent. */
+  headerHtml: (username: string, nevent: string) => string;
+  /** Profile lookup (service is owned by the caller). */
+  getUsername: (pubkey: string) => Promise<string | null>;
+}): Promise<HTMLElement | null> {
+  const quoteEventId = opts.quoteEvent.id;
+  if (!quoteEventId) return null;
+
+  const cleanedEvent = {
+    ...opts.quoteEvent,
+    content: opts.quoteEvent.content.replace(opts.stripPattern, '').trim(),
+  };
+
+  const quoteWrapper = document.createElement('div');
+  quoteWrapper.className = 'snv-quoted-repost';
+  quoteWrapper.dataset.eventId = quoteEventId;
+
+  const username =
+    (await opts.getUsername(opts.quoteEvent.pubkey)) ?? 'Anonymous';
+  // Dynamic imports: this helper module is also loaded by unit tests (node
+  // env) where Router / encodeNeventWithHints / NoteUI pull in the
+  // UserHoverCard → lists/follows chain and boot services at module scope.
+  const [{ encodeNeventWithHints }, { Router }, { NoteUI }] = await Promise.all(
+    [
+      import('./encodeNeventWithHints'),
+      import('../services/Router'),
+      import('../components/ui/NoteUI'),
+    ]
+  );
+  const nevent = encodeNeventWithHints(opts.quoteEvent);
+
+  const quoteHeader = document.createElement('div');
+  quoteHeader.className = 'snv-quoted-repost__header';
+  quoteHeader.innerHTML = opts.headerHtml(username, nevent);
+  const link = quoteHeader.querySelector(
+    '.snv-quoted-repost__link'
+  ) as HTMLAnchorElement | null;
+  link?.addEventListener('click', e => {
+    e.preventDefault();
+    void Router.getInstance().navigate(`/note/${nevent}`);
+  });
+
+  // Use NoteUI to render the quote (disable auto-setup — will be set up
+  // manually after DOM insertion by the caller if needed).
+  const noteElement = NoteUI.createNoteElement(cleanedEvent, {
+    collapsible: false,
+    islFetchStats: false,
+    isLoggedIn: false,
+    headerSize: 'small',
+    depth: 0,
+  });
+
+  // Assemble: header + note
+  quoteWrapper.appendChild(quoteHeader);
+  quoteWrapper.appendChild(noteElement);
+  opts.container.appendChild(quoteWrapper);
+  return quoteWrapper;
+}
+
+/**
  * Fetch quoted reposts (kind 1 or 6 referencing this note via NIP-18 'q',
  * addressable '#a', or legacy e-tag-mention + nostr: URI in content).
  * Candidates are deduped by event id.

@@ -21,8 +21,8 @@
  */
 
 import { _ } from '../../i18n';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { ModalService } from '../../services/ModalService';
-import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { GifItem } from '../../services/GifSearchService';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -30,9 +30,7 @@ import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { switchComposerTab } from '../../helpers/switchComposerTab';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
-import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from '../post/RelaySelector';
-import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { Switch } from '../ui/Switch';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
@@ -43,14 +41,15 @@ import { NoteUI } from '../ui/NoteUI';
 import { ZapReceiptRenderer } from '../ui/note-rendering/ZapReceiptRenderer';
 import { ContentValidationManager } from '../post/ContentValidationManager';
 import { EditorStateManager } from '../post/EditorStateManager';
-import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
+import { type TabMode } from '../modals/ModalEventHandlerManager';
 import {
-  ModalEventHandlerManager,
-  type TabMode,
-} from '../modals/ModalEventHandlerManager';
-import { ToastService } from '../../services/ToastService';
-import {
+  ComposerControls,
+  runComposerPublish,
+  createComposerToolbar,
+  composerEditorEditHtml,
+  composerInsertMedia,
+  composerInsertEmoji,
   composerDraftsTabLabel,
   updateComposerDraftsBadge,
   setComposerActiveTab,
@@ -74,35 +73,17 @@ import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
 export class ReplyModal {
   private static instance: ReplyModal;
   private modalService: ModalService;
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private eventBus: TypedEventBus;
 
-  // Sub-components
-  private relaySelector: RelaySelector | null = null;
-  private toolbar: PostEditorToolbar | null = null;
-  private nsfwSwitch: Switch | null = null;
+  // Sub-components (shared teardown — see ComposerControls.destroy)
+  private controls = new ComposerControls();
   private commentSwitch: Switch | null = null;
-  private mentionAutocomplete: MentionAutocomplete | null = null;
-  private customEmojiAutocomplete:
-    | import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete
-    | null = null;
-  private customEmojiService:
-    | import('../../addons/custom-emojis/EmojiService').EmojiService
-    | null = null;
-  private eventHandlerManager: ModalEventHandlerManager | null = null;
 
   // State
   private currentTab: TabMode = 'edit';
@@ -304,6 +285,7 @@ export class ReplyModal {
       const receiptId = this.parentEvent.id;
       if (card) {
         void this.reactionsApi
+          .get()
           ?.getDetailedStats(receiptId)
           .then(stats => {
             if (stats && stats.reactionEvents.length > 0) {
@@ -323,7 +305,7 @@ export class ReplyModal {
    */
   private renderTabs(): string {
     // Create relay selector component
-    this.relaySelector = new RelaySelector({
+    this.controls.relaySelector = new RelaySelector({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
@@ -383,13 +365,10 @@ export class ReplyModal {
    */
   private renderEditor(): string {
     if (this.currentTab === 'edit') {
-      return `
-        <textarea
-          class="textarea"
-          placeholder="${_('Write your reply...')}"
-          data-textarea
-        >${this.content}</textarea>
-      `;
+      return composerEditorEditHtml({
+        content: this.content,
+        placeholder: _('Write your reply...'),
+      });
     } else {
       const currentUser = this.authService.getCurrentUser();
       return renderComposerPreviewContent(
@@ -406,7 +385,7 @@ export class ReplyModal {
    */
   private renderActions(): string {
     // Create toolbar component
-    this.toolbar = new PostEditorToolbar({
+    this.controls.toolbar = createComposerToolbar({
       onMediaUploaded: url => this.handleMediaUploaded(url),
       onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
       onGifSelected: gif => this.handleGifSelected(gif),
@@ -425,7 +404,7 @@ export class ReplyModal {
     return `
       <div class="l-row l-row--split">
         <div>
-          ${this.toolbar.render()}
+          ${this.controls.toolbar.render()}
           <div class="post-note-options" id="reply-note-options-container"></div>
         </div>
         <div>
@@ -448,14 +427,16 @@ export class ReplyModal {
     this.mountParentNote(modal);
 
     // Mount relay selector into modal__header (outside overflow container)
-    if (this.relaySelector) {
-      mountRelaySelectorInHeader(modal, this.relaySelector);
+    if (this.controls.relaySelector) {
+      mountRelaySelectorInHeader(modal, this.controls.relaySelector);
     }
 
     // Setup toolbar
     const toolbarContainer = modal.querySelector('.post-note-toolbar');
-    if (this.toolbar && toolbarContainer) {
-      this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
+    if (this.controls.toolbar && toolbarContainer) {
+      this.controls.toolbar.setupEventListeners(
+        toolbarContainer as HTMLElement
+      );
     }
 
     // Paste-to-upload: pasted media goes through the same upload path as the button.
@@ -465,7 +446,7 @@ export class ReplyModal {
     if (pasteTarget)
       setupPasteUpload(
         pasteTarget,
-        files => void this.toolbar?.handleFileUpload(files)
+        files => void this.controls.toolbar?.handleFileUpload(files)
       );
 
     // Setup Comment/Reply switch (only for kind:1 parents)
@@ -474,7 +455,7 @@ export class ReplyModal {
     }
 
     // Setup mention autocomplete
-    this.mentionAutocomplete = createMentionAutocomplete('ReplyModal');
+    this.controls.mentionAutocomplete = createMentionAutocomplete('ReplyModal');
 
     // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
     if (isCustomEmojisEnabled()) {
@@ -482,7 +463,7 @@ export class ReplyModal {
     }
 
     // Setup event handler manager (tab switching, textarea, action buttons)
-    this.eventHandlerManager = createComposerEventHandlers({
+    this.controls.eventHandlerManager = createComposerEventHandlers({
       modalSelector: '.reply-modal',
       currentTab: this.currentTab,
       onTabSwitch: tab => this.switchTab(tab),
@@ -533,7 +514,8 @@ export class ReplyModal {
       modalSelector: '.reply-modal',
       tab,
       renderEditorHtml: () => this.renderEditor(),
-      onEditRendered: () => this.eventHandlerManager?.refreshTextareaListener(),
+      onEditRendered: () =>
+        this.controls.eventHandlerManager?.refreshTextareaListener(),
       buildPreviewHtml: () => {
         const currentUser = this.authService.getCurrentUser();
         return buildComposerPreviewHtml(
@@ -596,7 +578,9 @@ export class ReplyModal {
    * Handle media uploaded callback
    */
   private handleMediaUploaded(url: string): void {
-    EditorStateManager.handleMediaUploaded(url, '[data-textarea]', {
+    composerInsertMedia({
+      textareaSelector: '[data-textarea]',
+      url,
       onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
@@ -617,7 +601,9 @@ export class ReplyModal {
    * Handle emoji selected callback
    */
   private handleEmojiSelected(emoji: string): void {
-    EditorStateManager.handleEmojiSelected(emoji, '[data-textarea]', {
+    composerInsertEmoji({
+      textareaSelector: '[data-textarea]',
+      emoji,
       onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
@@ -630,9 +616,9 @@ export class ReplyModal {
    */
   private showNSFWSwitch(): void {
     // Don't create switch if it already exists
-    if (this.nsfwSwitch) return;
+    if (this.controls.nsfwSwitch) return;
 
-    this.nsfwSwitch = createNsfwSwitchIn(
+    this.controls.nsfwSwitch = createNsfwSwitchIn(
       '#reply-note-options-container',
       this.isNSFW,
       checked => {
@@ -657,86 +643,82 @@ export class ReplyModal {
    * Handle post button click (publish reply or comment)
    */
   private async handlePost(): Promise<void> {
-    // Validate content before posting
-    const validation = ContentValidationManager.validate({
-      content: this.content,
-      selectedRelays: this.selectedRelays,
-    });
-
-    if (!validation.isValid) {
-      return;
-    }
-
-    const label = 'reply to';
-
-    // Check authentication before posting (Write Event)
-    if (!AuthGuard.requireAuth(`${label} this note`)) {
-      return;
-    }
-
     if (!this.parentEvent) {
       this.systemLogger.error('ReplyModal', 'No parent event available');
       return;
     }
 
-    // Hide emoji picker if open
-    if (this.toolbar) {
-      this.toolbar.hideEmojiPicker();
-    }
+    // runComposerPublish validates content + auth-guards, hides the modal
+    // behind the signer toast and dispatches success/failure. The reply
+    // itself goes through createReply (wrapped as the createPost call).
+    let replyEvent: import('@nostr-dev-kit/ndk').NostrEvent | null | undefined;
 
-    // Temporarily hide modal to allow extension popup to appear
-    const modalContainer = document.querySelector('.modal') as HTMLElement;
-    let originalDisplay = '';
-    if (modalContainer) {
-      originalDisplay = modalContainer.style.display;
-      modalContainer.style.display = 'none';
-    }
-
-    const loadingId = ToastService.loading(_('Waiting for signer approval…'));
-    try {
-      this.systemLogger.info(
-        'ReplyModal',
-        `Calling PostService.createReply...`
-      );
-
-      const replyEvent = await this.postsApi?.createReply({
-        content: this.content,
-        parentEvent: this.parentEvent,
-        relays: Array.from(this.selectedRelays),
-        contentWarning: this.isNSFW,
-        asComment: this.isComment,
-      });
-
-      this.systemLogger.info(
-        'ReplyModal',
-        `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`
-      );
-
-      ToastService.dismiss(loadingId);
-
-      if (replyEvent && replyEvent.id) {
+    await runComposerPublish({
+      isHighlight: false,
+      authLabel: 'reply to this note',
+      content: this.content,
+      selectedRelays: this.selectedRelays,
+      pollData: null,
+      isNSFW: this.isNSFW,
+      customClientTag: '',
+      scheduledAt: null,
+      imageTagsPayload: [],
+      gateScheduleOnPreference: false,
+      hideEmojiPicker: () => this.controls.toolbar?.hideEmojiPicker(),
+      createPost: async () => {
+        this.systemLogger.info(
+          'ReplyModal',
+          `Calling PostService.createReply...`
+        );
+        replyEvent = await this.postsApi.get()?.createReply({
+          content: this.content,
+          parentEvent: this.parentEvent!,
+          relays: Array.from(this.selectedRelays),
+          contentWarning: this.isNSFW,
+          asComment: this.isComment,
+        });
+        this.systemLogger.info(
+          'ReplyModal',
+          `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`
+        );
+        return !!(replyEvent && replyEvent.id);
+      },
+      // Temporarily hide modal to allow extension popup to appear.
+      beforePublish: () => {
+        const modalContainer = document.querySelector('.modal') as HTMLElement;
+        let originalDisplay = '';
+        if (modalContainer) {
+          originalDisplay = modalContainer.style.display;
+          modalContainer.style.display = 'none';
+        }
+        return { modalContainer, originalDisplay };
+      },
+      onSuccess: () => {
+        const event = replyEvent!;
         // Update parent note's reply count (cache invalidation + optimistic UI update)
         if (this.parentEvent?.id) {
-          this.reactionsApi?.clearCacheOnly(this.parentEvent.id);
+          this.reactionsApi.get()?.clearCacheOnly(this.parentEvent.id);
         }
 
         // Emit event for optimistic UI update (SingleNoteView listens to this)
         this.systemLogger.info(
           'ReplyModal',
-          `Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`
+          `Emitting reply:created event for ${event.id?.slice(0, 8)}`
         );
-        this.eventBus.emit('reply:created', replyEvent);
+        this.eventBus.emit('reply:created', event);
 
         this.cleanup();
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Reply posted successfully');
-      } else {
-        this.handlePostFailure(modalContainer, originalDisplay);
-      }
-    } catch (error) {
-      ToastService.dismiss(loadingId);
-      this.handlePostFailure(modalContainer, originalDisplay, error);
-    }
+      },
+      onFailure: (_label, error, ctx) => {
+        this.handlePostFailure(
+          ctx?.modalContainer ?? null,
+          ctx?.originalDisplay ?? '',
+          error
+        );
+      },
+    });
   }
 
   /**
@@ -789,34 +771,11 @@ export class ReplyModal {
    * Cleanup sub-components
    */
   private cleanup(): void {
-    if (this.relaySelector) {
-      this.relaySelector.destroy();
-      this.relaySelector = null;
-    }
-
-    if (this.toolbar) {
-      this.toolbar.destroy();
-      this.toolbar = null;
-    }
-
-    if (this.nsfwSwitch) {
-      this.nsfwSwitch.destroy();
-      this.nsfwSwitch = null;
-    }
+    this.controls.destroy();
 
     if (this.commentSwitch) {
       this.commentSwitch.destroy();
       this.commentSwitch = null;
-    }
-
-    if (this.customEmojiAutocomplete) {
-      this.customEmojiAutocomplete.destroy();
-      this.customEmojiAutocomplete = null;
-    }
-    this.customEmojiService = null;
-    if (this.mentionAutocomplete) {
-      this.mentionAutocomplete.destroy();
-      this.mentionAutocomplete = null;
     }
 
     this.parentEvent = null;
@@ -829,11 +788,14 @@ export class ReplyModal {
   private async initCustomEmojiAutocomplete(): Promise<void> {
     const loaded = await loadComposerEmojiAutocomplete('ReplyModal');
     if (!loaded) return;
-    this.customEmojiService = loaded.service;
-    this.customEmojiAutocomplete = loaded.autocomplete;
+    this.controls.customEmojiService = loaded.service;
+    this.controls.customEmojiAutocomplete = loaded.autocomplete;
   }
 
   private buildPreviewEmojiTags(content: string): string[][] {
-    return scanComposerEmojiShortcodes(content, this.customEmojiService);
+    return scanComposerEmojiShortcodes(
+      content,
+      this.controls.customEmojiService
+    );
   }
 }

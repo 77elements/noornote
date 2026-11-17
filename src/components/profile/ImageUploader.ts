@@ -10,7 +10,7 @@
  * - Uses MediaUploadService (configured in Settings)
  */
 
-import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { escapeCssUrl } from '../../helpers/escapeHtml';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -36,11 +36,7 @@ export interface ImageUploaderConfig {
 
 export class ImageUploader {
   private config: ImageUploaderConfig;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
   private systemLogger: SystemLogger;
   private container: HTMLElement | null = null;
   private fileInput: HTMLInputElement | null = null;
@@ -147,7 +143,7 @@ export class ImageUploader {
     this.showProgressCircle();
 
     try {
-      const api = this.mediaApi;
+      const api = this.mediaApi.get();
       if (!api) {
         ToastService.show(
           'Media module is not available. Please try again later.',

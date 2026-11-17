@@ -8,7 +8,10 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { FREQUENCY_INTERVALS, getTimelineListingFrequency } from './index';
-import { parseListingMetadata, formatPrice } from './marketplace-helpers';
+import {
+  parseListingMetadata,
+  getListingCardBasics,
+} from './marketplace-helpers';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
 import { UserService } from '../../services/UserService';
@@ -184,20 +187,8 @@ export class MarketplaceTimelineInjector {
   }
 
   private createTimelineListingCard(event: NostrEvent): HTMLElement {
-    const meta = parseListingMetadata(event);
-    const naddr = encodeNaddr({
-      kind: 30402,
-      pubkey: event.pubkey,
-      identifier: meta.identifier,
-      relays: [],
-    });
-
-    const priceDisplay = formatPrice(
-      meta.price,
-      meta.priceCurrency,
-      meta.priceFrequency
-    );
-    const firstImage = meta.images[0] || '';
+    const { meta, naddr, priceDisplay, firstImage } =
+      getListingCardBasics(event);
 
     const card = document.createElement('div');
     card.className = 'timeline-listing-card';

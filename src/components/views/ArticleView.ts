@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { NoteHeader } from '../ui/NoteHeader';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
@@ -48,11 +49,7 @@ import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 export class ArticleView extends View {
   private container: HTMLElement;
   private naddrRef: string;
-  private _articlesApi?: ArticlesModuleApi | null;
-  private get articlesApi(): ArticlesModuleApi | null {
-    return (this._articlesApi ??=
-      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles'));
-  }
+  private articlesApi = new LazyModuleApi<ArticlesModuleApi>('articles');
   private _zapsListController: SnvZapsListController | null = null;
   private get zapsListController(): SnvZapsListController {
     if (!this._zapsListController) {
@@ -119,7 +116,7 @@ export class ArticleView extends View {
    * Render the loaded article
    */
   private renderArticle(event: NostrEvent & { id: string }): void {
-    const metadata = this.articlesApi?.extractArticleMetadata(event) ?? {
+    const metadata = this.articlesApi.get()?.extractArticleMetadata(event) ?? {
       title: '',
       image: '',
       summary: '',

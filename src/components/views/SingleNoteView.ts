@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { NoteUI } from '../ui/NoteUI';
 import { ThreadManager } from './managers/ThreadManager';
@@ -45,16 +46,8 @@ export class SingleNoteView extends View {
   private container: HTMLElement;
   private noteId: string;
   private relayConfig: RelayConfig;
-  private _singleNoteApi?: SingleNoteModuleApi | null;
-  private get singleNoteApi(): SingleNoteModuleApi | null {
-    return (this._singleNoteApi ??=
-      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
-  }
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private singleNoteApi = new LazyModuleApi<SingleNoteModuleApi>('single-note');
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
@@ -106,7 +99,7 @@ export class SingleNoteView extends View {
     this.router = Router.getInstance();
     this.eventBus = TypedEventBus.getInstance();
 
-    this.reactionsApi?.resetFetchCounter();
+    this.reactionsApi.get()?.resetFetchCounter();
     this.setupMuteListener();
     window.addEventListener('scroll', this.handleScrollCapture, true);
     void this.render();
@@ -245,7 +238,7 @@ export class SingleNoteView extends View {
     // the timeline) resolves instantly from the NoteService LRU and doesn't depend
     // on the read relays still carrying it — old notes often aren't there anymore.
     let event: NostrEvent | null =
-      this.singleNoteApi?.getCachedNote(noteId) ?? null;
+      this.singleNoteApi.get()?.getCachedNote(noteId) ?? null;
 
     // Stage 0: persistent event store (NDK Dexie/IndexedDB, direct read). A
     // note seen in ANY previous session resolves here in milliseconds —
@@ -432,7 +425,7 @@ export class SingleNoteView extends View {
         const isl = NoteUI.getInteractionStatusLine(noteId);
         void isl?.waitForInitialFetch().then(() => {
           isl.updateStats({ replies, quotedReposts });
-          this.reactionsApi?.updateCachedStats(noteId, {
+          this.reactionsApi.get()?.updateCachedStats(noteId, {
             replies,
             quotedReposts,
           });
@@ -548,8 +541,8 @@ export class SingleNoteView extends View {
         'SNV',
         `Stopping live updates for note ${this.currentNoteId.slice(0, 8)}`
       );
-      this.singleNoteApi?.stopLiveReplies(this.currentNoteId);
-      this.reactionsApi?.stopLiveReactions(this.currentNoteId);
+      this.singleNoteApi.get()?.stopLiveReplies(this.currentNoteId);
+      this.reactionsApi.get()?.stopLiveReactions(this.currentNoteId);
     }
 
     this.container.remove();

@@ -5,6 +5,7 @@ import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { uploadImageToUrlField } from '../../helpers/mediaUpload';
 import { _ } from '../../i18n';
 
 export class BadgesView extends View {
@@ -112,45 +113,14 @@ export class BadgesView extends View {
         ToastService.show(_('Please select an image file'), 'error');
         return;
       }
-      const status = this.container.querySelector(
-        '[data-role="upload-status"]'
-      ) as HTMLElement | null;
-      if (status) {
-        status.textContent = _('Uploading…');
-        status.classList.add('pulsate');
-      }
-      try {
-        const { ModuleLoader } = await import('../../core/ModuleLoader');
-        type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-        const mediaApi =
-          await ModuleLoader.getInstance().ensure<MediaApi>('media');
-        if (!mediaApi) {
-          ToastService.show(_('Media module not available'), 'error');
-          return;
-        }
-        const result = await mediaApi.uploadFile(file);
-        if (result.success && result.url) {
-          const urlInput = this.container.querySelector(
-            '[data-field="imageUrl"]'
-          ) as HTMLInputElement | null;
-          if (urlInput) urlInput.value = result.url;
-          ToastService.show(_('Image uploaded'), 'success');
-        } else {
-          ToastService.show(result.error || _('Upload failed'), 'error');
-        }
-      } catch (err) {
-        ToastService.show(
-          (err as Error).message || _('Upload failed'),
-          'error'
-        );
-      } finally {
-        if (status) {
-          status.textContent = '';
-          status.classList.remove('pulsate');
-        }
-      }
+      await uploadImageToUrlField({
+        scope: this.container,
+        file,
+        urlInputSelector: '[data-field="imageUrl"]',
+        statusSelector: '[data-role="upload-status"]',
+        successMessage: _('Image uploaded'),
+      });
     });
-
     const btn = this.container.querySelector('[data-action="create-badge"]');
     if (!btn) return;
 

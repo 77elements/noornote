@@ -8,6 +8,7 @@
  */
 
 import { NoteUI } from '../../ui/NoteUI';
+import { LazyModuleApi } from '../../../core/LazyModuleApi';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
@@ -16,9 +17,7 @@ import { applyAuthorRelationshipRing } from '../../../helpers/applyAuthorRelatio
 import { SystemLogger } from '../../../services/SystemLogger';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { RelayConfig } from '../../../services/RelayConfig';
-import { Router } from '../../../services/Router';
 import { LayoutService } from '../../../services/LayoutService';
-import { encodeNeventWithHints } from '../../../helpers/encodeNeventWithHints';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import {
   fetchQuotedRepostCandidates,
@@ -26,12 +25,10 @@ import {
   pinAuthorReplies,
   isAuthorTopLevelReply,
   renderThreadedReplyNodes,
+  renderQuotedNoteCard,
 } from '../../../helpers/quotedReposts';
 import { filterVisibleEvents } from '../../../lists/mutes';
-import {
-  buildThreadTree as buildSharedThreadTree,
-  type ThreadNode,
-} from '../../../helpers/threadTree';
+import { buildThreadTree as buildSharedThreadTree } from '../../../helpers/threadTree';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { _ } from '../../../i18n';
 
@@ -52,11 +49,7 @@ export interface ThreadManagerConfig {
 
 export class ThreadManager {
   private config: ThreadManagerConfig;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private profileService: UserProfileService;
@@ -181,10 +174,15 @@ export class ThreadManager {
 
       for (const comment of comments) {
         if (comment.type === 'reply') {
-          this.renderThreadedReply(
-            comment.node,
-            repliesList,
-            isAuthorTopLevelReply(comment, this.config.noteAuthor)
+          // isAuthorPin applies ONLY to the pinned node itself (depth 0) —
+          // replies below it must NOT inherit the (Author) badge.
+          renderThreadedReplyNodes(comment.node, repliesList, (event, depth) =>
+            this.createReplyElement(
+              event,
+              depth,
+              isAuthorTopLevelReply(comment, this.config.noteAuthor) &&
+                depth === 0
+            )
           );
         } else {
           await this.renderQuotedRepost(comment.event, repliesList);
@@ -201,19 +199,6 @@ export class ThreadManager {
         </div>
       `;
     }
-  }
-
-  private renderThreadedReply(
-    node: ThreadNode,
-    container: Element,
-    isAuthorPin: boolean = false
-  ): void {
-    renderThreadedReplyNodes(node, container, (event, depth) =>
-      // isAuthorPin applies ONLY to the pinned node itself (depth 0) — the
-      // callback runs for the whole subtree, and replies hanging below the
-      // pinned author reply must NOT inherit the (Author) badge.
-      this.createReplyElement(event, depth, isAuthorPin && depth === 0)
-    );
   }
 
   private createReplyElement(
@@ -277,7 +262,7 @@ export class ThreadManager {
     if (isl) {
       await isl.waitForInitialFetch();
       isl.updateStats({ replies, quotedReposts });
-      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+      this.reactionsApi.get()?.updateCachedStats(this.config.noteId, {
         replies,
         quotedReposts,
       });
@@ -292,7 +277,7 @@ export class ThreadManager {
     if (isl && currentStats) {
       const newReplies = currentStats.replies + 1;
       isl.updateStats({ replies: newReplies });
-      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+      this.reactionsApi.get()?.updateCachedStats(this.config.noteId, {
         replies: newReplies,
       });
     }
@@ -377,7 +362,7 @@ export class ThreadManager {
     if (isl && currentStats) {
       const newQuotes = currentStats.quotedReposts + 1;
       isl.updateStats({ quotedReposts: newQuotes });
-      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+      this.reactionsApi.get()?.updateCachedStats(this.config.noteId, {
         quotedReposts: newQuotes,
       });
     }
@@ -397,47 +382,16 @@ export class ThreadManager {
     quoteEvent: NostrEvent,
     container: Element
   ): Promise<void> {
-    const eventId = quoteEvent.id;
-    if (!eventId) return;
-
-    const cleanedEvent = {
-      ...quoteEvent,
-      content: quoteEvent.content
-        .replace(/nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi, '')
-        .trim(),
-    };
-
-    const quoteWrapper = document.createElement('div');
-    quoteWrapper.className = 'snv-quoted-repost';
-    quoteWrapper.dataset.eventId = eventId;
-
-    const profile = await this.profileService.getUserProfile(quoteEvent.pubkey);
-    const username = profile?.display_name || profile?.name || 'Anonymous';
-
-    const nevent = encodeNeventWithHints(quoteEvent);
-
-    const quoteHeader = document.createElement('div');
-    quoteHeader.className = 'snv-quoted-repost__header';
-    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><svg class="snv-quoted-repost__icon" width="14" height="14"><use href="#icon-repost"/></svg><span><strong>${escapeHtml(username)}</strong> quoted this in a repost · open original →</span></a>`;
-
-    const link = quoteHeader.querySelector(
-      '.snv-quoted-repost__link'
-    ) as HTMLAnchorElement;
-    link?.addEventListener('click', e => {
-      e.preventDefault();
-      Router.getInstance().navigate(`/note/${nevent}`);
+    await renderQuotedNoteCard({
+      quoteEvent,
+      container,
+      stripPattern: /nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi,
+      headerHtml: (username, nevent) =>
+        `<a href="/note/${nevent}" class="snv-quoted-repost__link"><svg class="snv-quoted-repost__icon" width="14" height="14"><use href="#icon-repost"/></svg><span><strong>${escapeHtml(username)}</strong> quoted this in a repost · open original →</span></a>`,
+      getUsername: async pubkey => {
+        const profile = await this.profileService.getUserProfile(pubkey);
+        return profile?.display_name || profile?.name || null;
+      },
     });
-
-    const noteElement = NoteUI.createNoteElement(cleanedEvent, {
-      collapsible: false,
-      islFetchStats: false,
-      isLoggedIn: false,
-      headerSize: 'small',
-      depth: 0,
-    });
-
-    quoteWrapper.appendChild(quoteHeader);
-    quoteWrapper.appendChild(noteElement);
-    container.appendChild(quoteWrapper);
   }
 }

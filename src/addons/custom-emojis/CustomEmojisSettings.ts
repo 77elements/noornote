@@ -18,6 +18,7 @@ import {
 } from './EmojiService';
 import { UserSearchInput } from '../../components/user-search/UserSearchInput';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { uploadImageToUrlField } from '../../helpers/mediaUpload';
 import { _, tn } from '../../i18n';
 
 export class CustomEmojisSettings extends SettingsSection {
@@ -270,9 +271,6 @@ export class CustomEmojisSettings extends SettingsSection {
     const urlInput = zone.querySelector(
       '[data-url-input]'
     ) as HTMLInputElement | null;
-    const status = zone.querySelector(
-      '[data-upload-status]'
-    ) as HTMLElement | null;
     if (!urlInput) return;
 
     if (!file.type.startsWith('image/')) {
@@ -280,38 +278,13 @@ export class CustomEmojisSettings extends SettingsSection {
       return;
     }
 
-    if (status) {
-      status.textContent = _('Uploading…');
-      status.classList.add('pulsate');
-    }
-
-    try {
-      const { ModuleLoader } = await import('../../core/ModuleLoader');
-      type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-      const mediaApi =
-        await ModuleLoader.getInstance().ensure<MediaApi>('media');
-      if (!mediaApi) {
-        ToastService.show(_('Media module not available'), 'error');
-        return;
-      }
-      const result = await mediaApi.uploadFile(file);
-      if (result.success && result.url) {
-        urlInput.value = result.url;
-        ToastService.show(
-          'Uploaded — give it a shortcode and click Add',
-          'success'
-        );
-      } else {
-        ToastService.show(result.error || _('Upload failed'), 'error');
-      }
-    } catch (err) {
-      ToastService.show((err as Error).message || _('Upload failed'), 'error');
-    } finally {
-      if (status) {
-        status.textContent = '';
-        status.classList.remove('pulsate');
-      }
-    }
+    await uploadImageToUrlField({
+      scope: zone,
+      file,
+      urlInputSelector: '[data-url-input]',
+      statusSelector: '[data-upload-status]',
+      successMessage: 'Uploaded — give it a shortcode and click Add',
+    });
   }
 
   private async handleRemove(shortcode: string): Promise<void> {

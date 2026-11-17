@@ -9,7 +9,7 @@
  */
 
 import { _, tn } from '../../i18n';
-import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModalService } from '../../services/ModalService';
@@ -39,11 +39,7 @@ export interface PostEditorToolbarConfig {
 
 export class PostEditorToolbar {
   private config: PostEditorToolbarConfig;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
   private systemLogger: SystemLogger;
   private modalService: ModalService;
   private emojiPicker: EmojiPicker | null = null;
@@ -171,7 +167,7 @@ export class PostEditorToolbar {
     `;
 
     try {
-      const api = this.mediaApi;
+      const api = this.mediaApi.get();
       if (!api) {
         this.systemLogger.error('PostEditorToolbar', 'Media module not loaded');
         this.modalService.show({
