@@ -55,7 +55,7 @@ export class NostrMajlisRuntime implements AddonRuntime {
 
     // On/off console marker (parity with live streams/custom-emojis).
     // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Nostr Majlis: on');
+    console.log('Nostr Majlis: on'); // console-ok: TEMP debug marker
     diagLog('addons', 'nostr-majlis: runtime init', {
       npub: ctx.npub?.slice(0, 12),
     });
@@ -76,7 +76,7 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.dhikr = null;
     DiyanetService.getInstance().destroy();
     // eslint-disable-next-line no-console -- TEMP, remove before release
-    console.log('Nostr Majlis: off');
+    console.log('Nostr Majlis: off'); // console-ok: TEMP debug marker
     diagLog('addons', 'nostr-majlis: runtime destroy');
   }
 }
