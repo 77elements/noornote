@@ -167,6 +167,16 @@ export class PostLoginService {
           .catch(() => {});
       });
 
+      // Bookmark read-state sync (unread counter) — part of the bookmark
+      // diode: cross-device read markers must sync on EVERY interface (v1
+      // also starts it via the sidebar managers; start() is idempotent).
+      // No-op unless the bookmarks addon and its sync toggle are on.
+      void import('./BookmarkReadStateService').then(
+        ({ BookmarkReadStateService }) => {
+          void BookmarkReadStateService.getInstance().start();
+        }
+      );
+
       // Runtime interface switch (instant, no reload): keep the v1-only
       // background fetches in sync with the active interface.
       if (!this.focusUiToggleSubscriptionId) {

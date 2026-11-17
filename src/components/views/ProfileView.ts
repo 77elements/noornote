@@ -2088,20 +2088,17 @@ export class ProfileView extends View {
   }
 
   /**
-   * Wire the profile content tabs: switch the visible section on click and load
-   * each section's content the first time its tab is opened. Notes is the
-   * default and loads via the timeline; the others load on demand.
+   * Wire the profile content tabs: switch the visible section on click and
+   * load each section's content on demand — the FIRST time its tab is opened
+   * (load principle: opening a PV must not fan out seven section fetches for
+   * tabs the visitor never opens; relay traffic only for what is looked at).
+   * Notes is the default and loads via the timeline. Every tab button is
+   * visible up front; an empty section shows the empty hint after its single
+   * load (the carousels self-gate empty results to display:none).
    */
   private setupProfileTabs(): void {
     const tabRow = this.container.querySelector('.profile-tabs');
     if (!tabRow) return;
-
-    // Every non-notes tab starts hidden; it appears once its section loads with
-    // at least one item. Notes is always present and is the default.
-    tabRow.querySelectorAll('.tab').forEach(btn => {
-      const t = (btn as HTMLElement).dataset.tab;
-      if (t && t !== 'notes') (btn as HTMLElement).hidden = true;
-    });
 
     const activate = (tab: string): void => {
       tabRow.querySelectorAll('.tab').forEach(btn => {
@@ -2116,15 +2113,7 @@ export class ProfileView extends View {
       });
     };
 
-    tabRow.querySelectorAll('.tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = (btn as HTMLElement).dataset.tab;
-        if (tab) activate(tab);
-      });
-    });
-
-    // Load each content section into its (hidden) mount up front, then reveal
-    // its tab if it ended up with at least one item.
+    // Each non-notes section loads exactly once, on its first tab open.
     const sections: Array<{ tab: string; loader: () => Promise<void> }> = [
       { tab: 'articles', loader: () => this.loadArticlesCarousel() },
       { tab: 'videos', loader: () => this.loadVideosCarousel() },
@@ -2134,33 +2123,48 @@ export class ProfileView extends View {
       { tab: 'calendar', loader: () => this.loadCalendarSection() },
       { tab: 'badges', loader: () => this.loadBadgesCarousel() },
     ];
-    sections.forEach(({ tab, loader }) => {
-      void loader()
-        .then(() => this.revealTabIfHasItems(tab))
-        .catch(() => {});
-    });
-  }
+    const loadState = new Map<string, 'loading' | 'loaded'>();
 
-  /**
-   * Reveal a content tab if its section rendered at least one item. Articles /
-   * videos / listings self-gate by setting display:none on an empty carousel;
-   * badges / zapstore render nothing into the mount when empty — so a section
-   * "has items" iff it holds a child that isn't display:none.
-   */
-  private revealTabIfHasItems(tab: string): void {
-    const section = this.container.querySelector(
-      `.profile-section[data-section="${tab}"]`
-    );
-    const hasItems =
-      !!section &&
-      [...section.children].some(
-        c => (c as HTMLElement).style.display !== 'none'
-      );
-    if (!hasItems) return;
-    const tabBtn = this.container.querySelector(
-      `.profile-tabs .tab[data-tab="${tab}"]`
-    ) as HTMLElement | null;
-    if (tabBtn) tabBtn.hidden = false;
+    const loadSection = (tab: string, loader: () => Promise<void>): void => {
+      if (loadState.has(tab)) return;
+      loadState.set(tab, 'loading');
+      void loader()
+        .then(() => {
+          loadState.set(tab, 'loaded');
+          // Empty result: nothing (or a display:none self-gated carousel)
+          // ended up in the mount — show the empty hint so the activated
+          // tab does not sit on a blank area.
+          const section = this.container.querySelector(
+            `.profile-section[data-section="${tab}"]`
+          );
+          const hasItems =
+            !!section &&
+            [...section.children].some(
+              c => (c as HTMLElement).style.display !== 'none'
+            );
+          if (section && !hasItems) {
+            const hint = document.createElement('p');
+            hint.className = 'setting__desc';
+            hint.textContent = _(
+              'Nothing published here yet, or not available on your relays.'
+            );
+            section.appendChild(hint);
+          }
+        })
+        .catch(() => {
+          loadState.delete(tab); // transient failure — retry on next click
+        });
+    };
+
+    tabRow.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.tab;
+        if (!tab) return;
+        activate(tab);
+        const entry = sections.find(s => s.tab === tab);
+        if (entry) loadSection(tab, entry.loader);
+      });
+    });
   }
 
   /**

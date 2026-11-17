@@ -1599,6 +1599,10 @@ export class MainLayout {
    * shell is active (the shell runs its own managers on the diodes).
    * Destroys what exists; re-created by setupBadgeManagers /
    * recreateListsCountManager / loadListManagers on the way back.
+   *
+   * NOT stopped here: BookmarkReadStateService — it is part of the bookmark
+   * diode (cross-device read-marker sync) and keeps running under v2
+   * (started at login, stopped only by the addon/sync toggles).
    */
   private teardownClassicListManagers(): void {
     this.badgeManager?.destroy();
@@ -1615,11 +1619,6 @@ export class MainLayout {
     this.bookmarkManager = null;
     this.tribeManager?.destroy();
     this.tribeManager = null;
-    void import('../../services/BookmarkReadStateService').then(
-      ({ BookmarkReadStateService }) => {
-        void BookmarkReadStateService.getInstance().stop();
-      }
-    );
   }
 
   /** Re-create the sidebar Lists-counter manager (focus-ui switch-back). */
