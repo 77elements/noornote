@@ -28,15 +28,19 @@ import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isFeedbackBoardEnabled } from './feedback-board/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isBadgesEnabled } from './badges/index';
-import { isNoteTakingEnabled } from './note-taking/index';
+import {
+  isNoteTakingEnabled,
+  isNoteTakingAutoLoaded,
+} from './note-taking/index';
 import { isBulkDeleteEnabled } from './bulk-delete/index';
 import {
   isNostrMajlisEnabled,
   isNostrMajlisAutoLoaded,
 } from './nostr-majlis/index';
-import { isGroupChatsEnabled } from './group-chats/index';
+import { isGroupChatsEnabled, isArmadaEnabled } from './group-chats/index';
 import { isAnalyticsEnabled } from './analytics/index';
 import { isCalendarEnabled } from './calendar/index';
+import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -78,6 +82,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'follower-notification',
     isEnabled: isFollowerNotificationEnabled,
+    // Always-on whenever user-enabled — ON means the follower scan keeps
+    // running while the object is closed (the switch is the preference).
+    // v1 (no Focus UI): always governed by the switch alone.
+    bootLoad: () => !isFocusUiEnabled() || isFollowerNotificationEnabled(),
     load: () => import('./follower-notification/runtime').then(m => m.default),
   });
 
@@ -131,12 +139,19 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'note-taking',
     isEnabled: isNoteTakingEnabled,
+    // Always-on while a note's reminder still lies in the future — the
+    // reminder scheduler must stay alive to fire it (isNoteTakingAutoLoaded;
+    // a past due time self-expires the reason). Otherwise pure on-demand.
+    bootLoad: () => isNoteTakingAutoLoaded(),
     load: () => import('./note-taking/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'bulk-delete',
     isEnabled: isBulkDeleteEnabled,
+    // Pure on-demand in the Focus UI: a tool has no always-on reason, and
+    // entering the object IS enabling (no switch in v2).
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./bulk-delete/runtime').then(m => m.default),
   });
 
@@ -153,12 +168,20 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'group-chats',
     isEnabled: isGroupChatsEnabled,
+    // Always-on whenever Nostrord or Armada is user-enabled — ON means the
+    // community polling keeps running while the object is closed.
+    bootLoad: () =>
+      !isFocusUiEnabled() || isGroupChatsEnabled() || isArmadaEnabled(),
     load: () => import('./group-chats/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'analytics',
     isEnabled: isAnalyticsEnabled,
+    // Pure on-demand in the Focus UI: analytics is visit-driven (relay
+    // sweeps only run while the user looks at the page — by design), and
+    // entering the object IS enabling (no switch in v2).
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./analytics/runtime').then(m => m.default),
   });
 

@@ -10,6 +10,8 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { Router } from '../../services/Router';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { _ } from '../../i18n';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
@@ -140,9 +142,18 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
 
     const handleSearch = () => {
       const hashtag = searchInput.value.trim().replace(/^#/, '');
-      if (hashtag) {
+      if (!hashtag) return;
+      searchInput.value = '';
+      // v2 Focus UI: the Search object owns search — hand it the hashtag
+      // via the captured search param (same pattern as the ?q= boot deep
+      // link; the Router rewrites URLs without queries) and navigate.
+      // '#' prefix runs the object's hashtag flow. Classic keeps the
+      // aside search event.
+      if (isFocusUiEnabled()) {
+        window.__noornote_search_param = `#${hashtag}`;
+        Router.getInstance().navigate('/search');
+      } else {
         this.eventBus.emit('hashtagSearch:start', { hashtag });
-        searchInput.value = '';
       }
     };
 

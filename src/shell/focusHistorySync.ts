@@ -15,6 +15,7 @@
  */
 
 import { Router } from '../services/Router';
+import { stripSccQueryParam } from './focusUrlState';
 
 let selfNavDepth = 0;
 
@@ -35,10 +36,10 @@ export function isSelfNav(): boolean {
 
 /** Push a new history step for a shell navigation (no route resolution). */
 export function pushFocusUrl(path: string): void {
-  runSelfNav(() => Router.getInstance().pushUrl(path));
+  runSelfNav(() => Router.getInstance().pushUrl(stripSccQueryParam(path)));
 }
 
 /** Rewrite the current entry in place (canonicalize / restore-adjacent). */
 export function replaceFocusUrl(path: string): void {
-  runSelfNav(() => Router.getInstance().replaceUrl(path));
+  runSelfNav(() => Router.getInstance().replaceUrl(stripSccQueryParam(path)));
 }

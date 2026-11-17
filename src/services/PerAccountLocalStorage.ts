@@ -296,6 +296,13 @@ export const StorageKeys = {
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',
+  // Note taking reminder mirror — the LATEST reminder timestamp (unix sec)
+  // across all non-deleted, non-trashed notes (0 = none). Written by
+  // NoteTakingService on every mutation and by the reminder scan. The
+  // always-on check `max > now` self-expires as time passes, so the flag
+  // needs no scheduler: a past reminder stops keeping the runtime alive
+  // by itself (v2 on-demand always-on reason, see isNoteTakingAutoLoaded).
+  NOTE_TAKING_MAX_REMINDER_AT: 'noornote_note_taking_max_reminder_at_map',
   NOSTR_MAJLIS_ENABLED: 'noornote_nostr_majlis_enabled_map',
   NOSTR_MAJLIS_SETTINGS: 'noornote_nostr_majlis_settings_map',
   // Persistent Diyanet prayer-time cache — Record<ilceId, DiyanetDayTimes[]>.

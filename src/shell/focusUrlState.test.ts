@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseFocusUrl } from './focusUrlState';
+import { parseFocusUrl, stripSccQueryParam } from './focusUrlState';
 
 /**
  * Regression tests for the focus URL → state mapper (v2 history sync):
@@ -275,5 +275,26 @@ describe('parseFocusUrl', () => {
     expect(parseFocusUrl('/')).toBeNull();
     // btc-price has no FV object — stays classic.
     expect(parseFocusUrl('/addons/btc-price')).toBeNull();
+  });
+
+  /**
+   * Regression tests for the v1 `scc` query-param strip: shell-written
+   * URLs must never carry a stale right-pane tab — a surviving scc
+   * re-applied an old tab state on every object switch (the "looping"
+   * bug). Other query params survive; paths without a query are untouched.
+   */
+  it('strips the v1 scc query param (stripSccQueryParam)', () => {
+    expect(stripSccQueryParam('/note/nevent1?scc=timeline')).toBe(
+      '/note/nevent1'
+    );
+    expect(stripSccQueryParam('/timeline?scc=x')).toBe('/timeline');
+    // Strips only scc, keeps other query params.
+    expect(stripSccQueryParam('/media?a=1&scc=x&b=2')).toBe('/media?a=1&b=2');
+    expect(stripSccQueryParam('/media?scc=x&a=1')).toBe('/media?a=1');
+    // Paths without a query / without scc stay untouched.
+    expect(stripSccQueryParam('/timeline')).toBe('/timeline');
+    expect(stripSccQueryParam('/marketplace?sort=price')).toBe(
+      '/marketplace?sort=price'
+    );
   });
 });

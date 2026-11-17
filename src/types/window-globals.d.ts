@@ -6,6 +6,8 @@
 interface Window {
   /** Captured ?scc= param before the router strips it (restored in MainLayout). */
   __noornote_scc_param?: string;
+  /** Captured ?q= search deep link before the router strips it (Search object). */
+  __noornote_search_param?: string;
   /** Captured relay param pre-router (deep-link handling in App.ts). */
   __noornote_relay_param?: string;
   /** Dev-console debug handles (diagnose helpers, dev builds only). */

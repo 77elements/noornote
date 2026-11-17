@@ -21,6 +21,15 @@ if (__capturedSccParam) {
   window.__noornote_scc_param = __capturedSccParam;
 }
 
+// Capture ?q= search deep link immediately (the Search object consumes it
+// on its first attach; Router boot rewrites the URL without the query).
+const __capturedSearchParam = new URLSearchParams(window.location.search).get(
+  'q'
+);
+if (__capturedSearchParam) {
+  window.__noornote_search_param = __capturedSearchParam;
+}
+
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
 const __capturedRelayParam = new URLSearchParams(window.location.search).get(
   'r'

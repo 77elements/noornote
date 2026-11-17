@@ -13,7 +13,7 @@ import type {
   UserSearchResult,
 } from '../../modules/search/contracts';
 import { hexToNpub } from '../../helpers/nip19';
-import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { renderUserSearchRows } from '../user-search/userSearchRows';
 import { resolveNip05 } from '../../helpers/Nip05Resolver';
 import { Tooltip } from '../ui/Tooltip';
 import { _ } from '../../i18n';
@@ -357,29 +357,7 @@ export class SearchSpotlight {
     }
 
     // Render user results
-    const usersHtml = this.userResults
-      .slice(0, 8)
-      .map((user, index) => {
-        const displayName = user.displayName || user.name || _('Anonymous');
-        const picture = user.picture || '';
-        const followBadge = user.isFollowing
-          ? `<span class="badge badge--accent">${_('Following')}</span>`
-          : '';
-
-        return `
-        <div class="search-spotlight__user-item" data-pubkey="${user.pubkey}" data-user-index="${index}">
-          <div class="search-spotlight__user-avatar">
-            ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
-          </div>
-          <div class="search-spotlight__user-info">
-            <span class="search-spotlight__user-name">${escapeHtml(displayName)}</span>
-            ${user.nip05 ? `<span class="search-spotlight__user-nip05">${escapeHtml(user.nip05)}</span>` : ''}
-          </div>
-          ${followBadge}
-        </div>
-      `;
-      })
-      .join('');
+    const usersHtml = renderUserSearchRows(this.userResults);
 
     this.userSuggestionsElement.innerHTML = `
       <div class="search-spotlight__user-section">

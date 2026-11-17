@@ -23,6 +23,7 @@ import { marketplaceSurface } from './focusMarketplaceSurface';
 import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
 import { focusTabbedObjectSurface } from './focusTabbedObjectSurface';
 import { focusAddonObjectSurface } from './focusAddonObjectSurface';
+import { focusSearchSurface } from './focusSearchSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
 import { profileSurface } from './focusProfileSurface';
@@ -290,6 +291,16 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     createSettings: profileSettings,
     // list = own profile (circle click), detail = foreign profile (seam
     // 'profile'), secondary = the flat profile editor (/profile/edit).
+  },
+  {
+    id: 'search',
+    label: _('Search'),
+    icon: 'icon-search',
+    route: '/search',
+    // The Search object (v2): its own circle. Result clicks navigate via
+    // the Router (shared detail routes) — the stage morphs to the owning
+    // object (SNV in Social, DMV in Messages).
+    createSurface: focusSearchSurface,
   },
   {
     id: 'custom-emojis',

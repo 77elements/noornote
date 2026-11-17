@@ -134,6 +134,7 @@ export class NoteTakingService {
       id: record.id.slice(0, 8),
     });
     this.notifyChange(record);
+    void this.refreshReminderMirror();
     return record;
   }
 
@@ -154,6 +155,7 @@ export class NoteTakingService {
     };
     await this.store.put(updated);
     this.notifyChange(updated);
+    void this.refreshReminderMirror();
     return updated;
   }
 
@@ -191,6 +193,32 @@ export class NoteTakingService {
       id: id.slice(0, 8),
     });
     this.notifyChange(tombstone);
+    void this.refreshReminderMirror();
+  }
+
+  /**
+   * Reminder mirror for the v2 on-demand lifecycle: the LATEST reminder
+   * timestamp across all live notes (listNotes semantics — no deleted, no
+   * trash), 0 when none. The always-on check "mirror > now" self-expires
+   * as time passes, so only mutations (local edit or remote sync) rewrite
+   * it — no scheduler needed. Cheap consumers read it via
+   * isNoteTakingAutoLoaded() (index.ts).
+   */
+  private async refreshReminderMirror(): Promise<void> {
+    this.updateReminderMirror(await this.listNotes());
+  }
+
+  /** Mirror update from an already-listed notes array (the reminder scan
+   * refreshes it too, covering boot + sync-driven changes within a poll). */
+  public updateReminderMirror(notes: NoteRecord[]): void {
+    const maxReminderAt = notes.reduce(
+      (max, note) => (note.reminderAt > max ? note.reminderAt : max),
+      0
+    );
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.NOTE_TAKING_MAX_REMINDER_AT,
+      maxReminderAt
+    );
   }
 
   // ── Tombstone set (resurrection guard) ─────────────────────────────────────
@@ -267,6 +295,7 @@ export class NoteTakingService {
     if (local && local.updatedAt >= payload.updatedAt) return false;
 
     await this.store.put({ ...payload, dirty: false });
+    void this.refreshReminderMirror();
     return true;
   }
 

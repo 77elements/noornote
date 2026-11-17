@@ -221,6 +221,24 @@ export function parseFocusUrl(
   return null;
 }
 
+/**
+ * Strip the v1 `scc` query param from a shell URL write. The scc param
+ * addresses the v1 right-pane tab; the shell's states live in its own
+ * routes. A carried-over scc would re-apply a stale right-pane tab on
+ * every object switch (the observed "looping" bug) — shell-written URLs
+ * are therefore always scc-free. Any other query params survive.
+ */
+export function stripSccQueryParam(path: string): string {
+  const qIndex = path.indexOf('?');
+  if (qIndex === -1) return path;
+  const params = new URLSearchParams(path.slice(qIndex + 1));
+  if (!params.has('scc')) return path;
+  params.delete('scc');
+  const query = params.toString();
+  const base = path.slice(0, qIndex);
+  return query ? `${base}?${query}` : base;
+}
+
 /** Resolve a shared detail route to a domain: prefer the active object. */
 function resolveShared(key: string, activeDefId?: string | null): string {
   const owners = SHARED_DETAIL_ROUTES[key] ?? [];

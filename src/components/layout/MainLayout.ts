@@ -198,7 +198,11 @@ export class MainLayout {
     // wallet-balance is managed by AddonLoader + src/addons/wallet-balance/runtime.ts
     this.setupKeyboardShortcuts();
     this.setupSpacebarScroll();
-    void this.initializeGlobalSearchView();
+    // v2 Focus UI: the Search object hosts the search surface in its own
+    // circle — the classic scc/aside instance stays unconstructed, so a
+    // search is not double-executed (its listeners would race the object's)
+    // and no ?scc= is written over the shell's URL.
+    if (!isFocusUiEnabled()) void this.initializeGlobalSearchView();
     this.setupActiveNavigation();
     this.setupBackBar();
     this.initializeViewTabManager();

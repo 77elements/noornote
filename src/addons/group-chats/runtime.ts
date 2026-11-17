@@ -25,6 +25,9 @@ export class GroupChatsRuntime implements AddonRuntime {
 
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return; // idempotent
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
+    // eslint-disable-next-line no-console -- TEMP, remove before release
+    console.log('Group Chats: on');
 
     // GroupChatsService (NIP-29 / Nostrord notifier)
     const { GroupChatsService } = await import('./GroupChatsService');
@@ -49,6 +52,9 @@ export class GroupChatsRuntime implements AddonRuntime {
       this.armadaService.destroy();
       this.armadaService = null;
     }
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
+    // eslint-disable-next-line no-console -- TEMP, remove before release
+    console.log('Group Chats: off');
   }
 }
 

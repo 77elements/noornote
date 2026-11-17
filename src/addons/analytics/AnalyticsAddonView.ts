@@ -17,6 +17,8 @@ import { Tooltip } from '../../components/ui/Tooltip';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { Router } from '../../services/Router';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import {
   setupTabClickHandlers,
   switchTabWithContent,
@@ -283,46 +285,64 @@ export class AnalyticsAddonView extends View {
   private runFinishedSubscriptionId: string | null = null;
   private followersProgressSubscriptionId: string | null = null;
   private engagementTooltipDisposers: (() => void)[] = [];
+  /**
+   * v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand) — PURE
+   * on-demand, no always-on reason: analytics is visit-driven, runs only
+   * while the user looks at the page (relay-friendliness is the design).
+   * The enable switch is hidden in v2 — entering the object IS enabling.
+   */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
     this.container = document.createElement('div');
     this.container.className =
       'view-content view-content--addon view-content--addon-analytics';
+    // v2 on-demand: the object loads the addon regardless of the stored
+    // preference — the stats render either way. Released in destroy().
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('analytics');
+    }
     this.render();
   }
 
   private render(): void {
-    this.enableSwitch?.destroy();
+    if (!this.v2OnDemand) {
+      this.enableSwitch?.destroy();
 
-    this.enableSwitch = new Switch({
-      label: '',
-      checked: isAnalyticsEnabled(),
-      onChange: checked => {
-        setAnalyticsEnabled(checked);
-        TypedEventBus.getInstance().emit('analytics:addon-toggle', {
-          enabled: checked,
-        });
-        ToastService.show(
-          checked
-            ? _('%s enabled', _('Analytics'))
-            : _('%s disabled', _('Analytics')),
-          'success'
-        );
-        this.renderContentZone();
-      },
-    });
+      this.enableSwitch = new Switch({
+        label: '',
+        checked: isAnalyticsEnabled(),
+        onChange: checked => {
+          setAnalyticsEnabled(checked);
+          TypedEventBus.getInstance().emit('analytics:addon-toggle', {
+            enabled: checked,
+          });
+          ToastService.show(
+            checked
+              ? _('%s enabled', _('Analytics'))
+              : _('%s disabled', _('Analytics')),
+            'success'
+          );
+          this.renderContentZone();
+        },
+      });
+    }
 
     this.container.innerHTML = `
       <div class="back-padder focus-flow-root">
         <h1>${_('Analytics')}</h1>
-        <section class="section">
+        ${
+          this.v2OnDemand
+            ? ''
+            : `<section class="section">
           <div class="setting">
             <span class="setting__label">${_('Enable Analytics')}</span>
-            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <div class="setting__control">${this.enableSwitch?.render() ?? ''}</div>
             <p class="setting__desc">${_('Your personal Nostr stats, posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history, all-time, not a fixed window, as far as relay retention allows.')}</p>
           </div>
-        </section>
+        </section>`
+        }
         <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
           <button class="tab tab--active" data-tab="overview">${_('Overview')}</button>
           <button class="tab" data-tab="top-posts">${_('Top Posts')}</button>
@@ -333,7 +353,7 @@ export class AnalyticsAddonView extends View {
         <div class="tab-content" data-tab-content="diagrams" data-addon-content="diagrams"></div>
       </div>
     `;
-    this.enableSwitch.setupEventListeners(this.container);
+    this.enableSwitch?.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, tabId =>
       switchTabWithContent(this.container, tabId)
     );
@@ -375,7 +395,7 @@ export class AnalyticsAddonView extends View {
     const diagrams = this.diagramsZone();
     if (!overview || !topZone || !diagrams) return;
 
-    if (!isAnalyticsEnabled()) {
+    if (!isAnalyticsEnabled() && !this.v2OnDemand) {
       if (tabsBar) tabsBar.hidden = true;
       const note = `<p class="form__note">${_('Enable Analytics to see your stats.')}</p>`;
       overview.innerHTML = note;
@@ -820,5 +840,10 @@ export class AnalyticsAddonView extends View {
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
     this.container.innerHTML = '';
+    // v2 on-demand release: leaving the object ALWAYS releases the addon —
+    // analytics has no always-on reason (visit-driven by design).
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().deactivateOnDemand('analytics');
+    }
   }
 }
