@@ -31,6 +31,11 @@ import { pushFocusUrl, replaceFocusUrl } from './focusHistorySync';
 export interface SurfaceViewHandle {
   getElement(): HTMLElement;
   destroy(): void;
+  /**
+   * Tabbed views notify their surface when the user switches a tab, so the
+   * surface can sync the URL (focusTabbedObjectSurface wires this).
+   */
+  onTabChange?: (tabId: string) => void;
 }
 
 export interface FocusListDetailSurfaceConfig {

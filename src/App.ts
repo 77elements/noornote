@@ -869,6 +869,134 @@ export class App {
       'adv',
       true
     );
+    // Short aliases (v2 Focus UI URLs): every addon object that is a FV
+    // object also answers on its short canonical path — else the nip19
+    // catch-all (/:entity) hijacks these one-segment paths and navigates
+    // home. The /addons/<slug> forms above stay as classic aliases.
+    this.registerRoute(
+      '/wallet-balance',
+      'addon-wallet-balance',
+      'addon-wallet-balance',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/calendar',
+      'addon-calendar',
+      'addon-calendar',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/calendar/booking',
+      'addon-calendar',
+      'addon-calendar',
+      'adv',
+      true,
+      () => 'booking'
+    );
+    this.registerRoute(
+      '/custom-emojis',
+      'addon-custom-emojis',
+      'addon-custom-emojis',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/wordfilter',
+      'addon-wordfilter',
+      'addon-wordfilter',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/follow-packs',
+      'addon-follow-packs',
+      'addon-follow-packs',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/follower-notification',
+      'addon-follower-notification',
+      'addon-follower-notification',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/feedback-board/:naddr',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/feedback-board',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/scheduled-posts',
+      'addon-scheduled-posts',
+      'addon-scheduled-posts',
+      'adv',
+      true
+    );
+    this.registerRoute('/badges', 'addon-badges', 'addon-badges', 'adv', true);
+    this.registerRoute(
+      '/note-taking',
+      'addon-note-taking',
+      'addon-note-taking',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/bulk-delete',
+      'addon-bulk-delete',
+      'addon-bulk-delete',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/nostr-majlis',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true
+    );
+    // Tab-addressable variant so a dhikr notification can deep-link straight to the Community Dhikr tab.
+    this.registerRoute(
+      '/nostr-majlis/:tab',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true,
+      params => params.tab
+    );
+    this.registerRoute(
+      '/group-chats',
+      'addon-group-chats',
+      'addon-group-chats',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/analytics',
+      'addon-analytics',
+      'addon-analytics',
+      'adv',
+      true
+    );
     // /addons (no slug) → overview page with all addon tiles
     this.registerRoute(
       '/addons',

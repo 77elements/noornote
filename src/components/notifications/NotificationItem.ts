@@ -1452,7 +1452,7 @@ export class NotificationItem {
       type === 'dhikr_commit' ||
       type === 'dhikr_complete'
     ) {
-      Router.getInstance().navigate('/addons/nostr-majlis/dhikr');
+      Router.getInstance().navigate('/nostr-majlis/dhikr');
       return;
     }
 

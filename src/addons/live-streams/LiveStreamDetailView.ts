@@ -25,7 +25,7 @@ export class LiveStreamDetailView extends View {
       'view-content view-content--addon view-content--live-stream-detail';
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <div class="live-stream-detail" data-detail-mount>
           <p class="live-stream-detail__loading pulsate">${_('Loading stream…')}</p>
         </div>

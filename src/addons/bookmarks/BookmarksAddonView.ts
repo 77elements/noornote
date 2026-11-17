@@ -118,7 +118,7 @@ export class BookmarksAddonView extends View {
     ).join('');
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Bookmarks')}</h1>
         <section class="section">
           <div class="setting">

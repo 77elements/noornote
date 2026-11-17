@@ -150,7 +150,7 @@ export class LiveStreamsSidebarWidget {
     this.el.innerHTML = items
       .map(
         item => `
-        <a class="live-streams-widget__item" href="/addons/live-streams/stream/${escapeHtmlAttr(item.naddr)}">
+        <a class="live-streams-widget__item" href="/live-streams/stream/${escapeHtmlAttr(item.naddr)}">
           <img class="live-streams-widget__avatar" data-host="${escapeHtmlAttr(item.host)}" src="${escapeHtmlAttr(profiles.getDisplayPicture(item.host))}" alt="" />
           <span class="live-streams-widget__info">
             <span class="live-streams-widget__title">${escapeHtml(item.title || _('Untitled Stream'))}</span>

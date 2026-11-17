@@ -188,7 +188,7 @@ export class ListingEditorView extends View {
     });
 
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="article-editor">
           <header class="l-spread">
             <h1>${this.isEditMode ? _('Edit Listing') : _('New Listing')}</h1>

@@ -42,7 +42,7 @@ export class MyListingsView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="marketplace-timeline">
           <div class="marketplace-timeline__sticky-header">
             <header class="marketplace-view__header">

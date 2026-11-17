@@ -138,12 +138,12 @@ export class TimelineUIStateHandler {
     );
 
     const link = document.createElement('a');
-    link.href = '/addons/follow-packs';
+    link.href = '/follow-packs';
     link.className = 'timeline-curated-banner__link';
     link.textContent = _('Follow Packs');
     link.addEventListener('click', e => {
       e.preventDefault();
-      Router.getInstance().navigate('/addons/follow-packs');
+      Router.getInstance().navigate('/follow-packs');
     });
     text.appendChild(link);
     text.append('.');

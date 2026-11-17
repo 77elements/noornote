@@ -25,22 +25,26 @@ export interface FocusViewHeaderOptions {
 export function createFocusViewHeader(
   options: FocusViewHeaderOptions
 ): HTMLElement {
+  const h1 = document.createElement('h1');
+  if (options.titleClass) h1.className = options.titleClass;
+  h1.textContent = options.title;
+
+  // Title-only (no action): the bare h1 — a split row around a single
+  // child is pointless DOM. The slot's `> h1` rule owns the spacing.
+  if (!options.actionLabel) {
+    return h1;
+  }
+
   const row = document.createElement('div');
   row.className = 'l-row--split focus-view-header';
-
-  const h1 = document.createElement('h1');
-  h1.className = options.titleClass ?? '';
-  h1.textContent = options.title;
   row.appendChild(h1);
 
-  if (options.actionLabel) {
-    const action = document.createElement('button');
-    action.type = 'button';
-    action.className = 'btn focus-view-header__action';
-    action.textContent = options.actionLabel;
-    action.addEventListener('click', e => options.onAction?.(e));
-    row.appendChild(action);
-  }
+  const action = document.createElement('button');
+  action.type = 'button';
+  action.className = 'btn focus-view-header__action';
+  action.textContent = options.actionLabel;
+  action.addEventListener('click', e => options.onAction?.(e));
+  row.appendChild(action);
 
   return row;
 }

@@ -17,7 +17,7 @@ export class FollowPacksView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-follow-packs';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Follow Packs')}</h1>
         <section class="section" id="follow-packs-settings-content"></section>
         <div data-addon-content="follow-packs"></div>

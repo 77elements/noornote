@@ -65,7 +65,7 @@ export class AboutView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <h1 class="about-title">${_('About NoorNote')}</h1>
 
           <section class="about-section">

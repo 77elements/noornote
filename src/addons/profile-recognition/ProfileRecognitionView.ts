@@ -12,7 +12,7 @@ export class ProfileRecognitionView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-profile-recognition';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Profile Recognition')}</h1>
         <section class="section" id="profile-recognition-settings-content"></section>
         <div data-addon-content="profile-recognition"></div>

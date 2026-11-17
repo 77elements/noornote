@@ -134,7 +134,43 @@ describe('parseFocusUrl', () => {
     });
   });
 
-  it('maps every addon object list route to its owning domain', () => {
+  it('maps the addon object list routes (short canonical forms)', () => {
+    expect(parseFocusUrl('/custom-emojis')).toEqual({
+      defId: 'custom-emojis',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/scheduled-posts')).toEqual({
+      defId: 'scheduled-posts',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/nostr-majlis')).toEqual({
+      defId: 'majlis',
+      kind: 'list',
+    });
+    // Classic slug without hyphen.
+    expect(parseFocusUrl('/wordfilter')).toEqual({
+      defId: 'word-filter',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/wallet-balance')).toEqual({
+      defId: 'wallet-balance',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/follow-packs')).toEqual({
+      defId: 'follow-packs',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/calendar')).toEqual({
+      defId: 'calendar',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/note-taking')).toEqual({
+      defId: 'note-taking',
+      kind: 'list',
+    });
+  });
+
+  it('keeps the classic /addons/:slug aliases working', () => {
     expect(parseFocusUrl('/addons/custom-emojis')).toEqual({
       defId: 'custom-emojis',
       kind: 'list',
@@ -165,13 +201,46 @@ describe('parseFocusUrl', () => {
       defId: 'follow-packs',
       kind: 'list',
     });
+    expect(parseFocusUrl('/addons/calendar')).toEqual({
+      defId: 'calendar',
+      kind: 'list',
+    });
+  });
+
+  it('maps the search object', () => {
+    expect(parseFocusUrl('/search')).toEqual({
+      defId: 'search',
+      kind: 'list',
+    });
   });
 
   it('maps the addon object param deep links', () => {
+    // Canonical short tab deep links.
+    expect(parseFocusUrl('/nostr-majlis/daily-ayah')).toEqual({
+      defId: 'majlis',
+      kind: 'detail',
+      param: 'daily-ayah',
+    });
+    expect(parseFocusUrl('/calendar/booking')).toEqual({
+      defId: 'calendar',
+      kind: 'detail',
+      param: 'booking',
+    });
+    expect(parseFocusUrl('/feedback-board/naddr1abc')).toEqual({
+      defId: 'feedback-board',
+      kind: 'detail',
+      param: 'naddr1abc',
+    });
+    // Classic aliases keep working.
     expect(parseFocusUrl('/addons/nostr-majlis/daily-ayah')).toEqual({
       defId: 'majlis',
       kind: 'detail',
       param: 'daily-ayah',
+    });
+    expect(parseFocusUrl('/addons/calendar/booking')).toEqual({
+      defId: 'calendar',
+      kind: 'detail',
+      param: 'booking',
     });
     expect(parseFocusUrl('/addons/feedback-board/naddr1abc')).toEqual({
       defId: 'feedback-board',

@@ -149,6 +149,9 @@ export class NostrMajlisAddonView extends View {
   /** v2 on-demand object lifecycle (see LiveStreamsAddonView.v2OnDemand). */
   private readonly v2OnDemand = isFocusUiEnabled();
 
+  /** Wired by focusTabbedObjectSurface: user tab switches sync the URL. */
+  onTabChange?: (tabId: string) => void;
+
   constructor(initialTab?: string) {
     super();
     this.container = document.createElement('div');
@@ -187,7 +190,7 @@ export class NostrMajlisAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Nostr-Majlis')}</h1>
         <section class="section">
           <div class="setting">
@@ -209,9 +212,10 @@ export class NostrMajlisAddonView extends View {
       </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
-    setupTabClickHandlers(this.container, tabId =>
-      switchTabWithContent(this.container, tabId)
-    );
+    setupTabClickHandlers(this.container, tabId => {
+      switchTabWithContent(this.container, tabId);
+      this.onTabChange?.(tabId);
+    });
     void this.renderSalah();
     this.renderHolidays();
     this.renderDhikr();

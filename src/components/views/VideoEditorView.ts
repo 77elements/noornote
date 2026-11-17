@@ -119,7 +119,7 @@ export class VideoEditorView extends View {
     });
 
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="video-editor">
           <header class="video-editor__header">
             <h1 class="video-editor__title">${_('Post Media')}</h1>

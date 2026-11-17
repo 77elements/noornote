@@ -36,7 +36,7 @@ export class WalletBalanceDisplay {
   private onWidgetClick: (e: MouseEvent) => void = e => {
     if ((e.target as HTMLElement | null)?.closest('.wallet-balance-toggle'))
       return;
-    Router.getInstance().navigate('/addons/wallet-balance');
+    Router.getInstance().navigate('/wallet-balance');
   };
   private onNwcRestored: () => void = () => this.loadBalance();
   private onZapSent: () => void = () => {

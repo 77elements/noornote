@@ -32,7 +32,7 @@ export class BadgesView extends View {
     const enabled = isBadgesEnabled();
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Badges')}</h1>
         <section class="section" data-role="toggle-section"></section>
         ${

@@ -21,7 +21,7 @@ import { bookmarksSurface } from './focusBookmarksSurface';
 import { followsSurface } from './focusFollowsSurface';
 import { marketplaceSurface } from './focusMarketplaceSurface';
 import { focusLiveStreamsSurface } from './focusLiveStreamsSurface';
-import { focusMajlisSurface } from './focusMajlisSurface';
+import { focusTabbedObjectSurface } from './focusTabbedObjectSurface';
 import { focusAddonObjectSurface } from './focusAddonObjectSurface';
 import { mediaSurface } from './focusMediaSurface';
 import { mutesSurface } from './focusMutesSurface';
@@ -296,7 +296,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Custom Emojis'),
     icon: 'icon-emoji',
     addon: true,
-    route: '/addons/custom-emojis',
+    route: '/custom-emojis',
     // On-demand addon object: entering the object loads the addon,
     // leaving it unloads again (ephemeral surface).
     createSurface: focusAddonObjectSurface({
@@ -340,7 +340,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Follow Packs'),
     icon: 'icon-tribes-circles',
     addon: true,
-    route: '/addons/follow-packs',
+    route: '/follow-packs',
     viewTypes: ['follow-pack'],
     createSurface: async () => {
       const { FocusListDetailSurface } = await import(
@@ -351,7 +351,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
       );
       const surface = new FocusListDetailSurface({
         navViewType: 'follow-pack',
-        listRoute: '/addons/follow-packs',
+        listRoute: '/follow-packs',
         detailRoute: naddr => `/follow-pack/${naddr}`,
         createList: async () => new FollowPacksView(),
         createDetail: async naddr => {
@@ -369,14 +369,20 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Calendar'),
     icon: 'icon-calendar',
     addon: true,
-    route: '/addons/calendar',
-    createSurface: focusAddonObjectSurface({
-      load: async () => {
+    route: '/calendar',
+    // Tabbed object: detail = the booking tab deep link
+    // (/calendar/booking); personal is the default tab (bare route).
+    createSurface: focusTabbedObjectSurface({
+      create: async initialTab => {
         const { CalendarAddonView } = await import(
           '../addons/calendar/CalendarAddonView'
         );
-        return new CalendarAddonView();
+        return new CalendarAddonView(initialTab ?? undefined);
       },
+      tabFromState: state =>
+        state.kind === 'detail' && state.param === 'booking' ? 'booking' : null,
+      defaultTab: 'personal',
+      tabUrl: tab => (tab === 'booking' ? '/calendar/booking' : '/calendar'),
     }),
   },
   {
@@ -384,7 +390,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Note taking'),
     icon: 'icon-edit',
     addon: true,
-    route: '/addons/note-taking',
+    route: '/note-taking',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { NoteTakingAddonView } = await import(
@@ -399,7 +405,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Scheduled Posts'),
     icon: 'icon-clock',
     addon: true,
-    route: '/addons/scheduled-posts',
+    route: '/scheduled-posts',
     // On-demand addon object: entering the object loads the addon,
     // leaving it unloads again (ephemeral surface).
     createSurface: focusAddonObjectSurface({
@@ -417,7 +423,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Analytics'),
     icon: 'icon-trending-up',
     addon: true,
-    route: '/addons/analytics',
+    route: '/analytics',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { AnalyticsAddonView } = await import(
@@ -432,7 +438,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Badges'),
     icon: 'icon-badge',
     addon: true,
-    route: '/addons/badges',
+    route: '/badges',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { BadgesView } = await import('../addons/badges/BadgesView');
@@ -445,7 +451,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Feedback Board'),
     icon: 'icon-grid-dots',
     addon: true,
-    route: '/addons/feedback-board',
+    route: '/feedback-board',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { FeedbackBoardAddonView } = await import(
@@ -453,7 +459,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
         );
         return new FeedbackBoardAddonView();
       },
-      // '/addons/feedback-board/:naddr' opens the ticket modal
+      // '/feedback-board/:naddr' opens the ticket modal
       // (deep link — the view ignores invalid/non-board naddrs).
       restore: (handle, state) => {
         if (state.kind === 'detail' && state.param) {
@@ -471,7 +477,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Hashtag Subscriptions'),
     icon: 'icon-tag',
     addon: true,
-    route: '/addons/hashtag-subscriptions',
+    route: '/hashtag-subscriptions',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { HashtagSubscriptionsAddonView } = await import(
@@ -486,7 +492,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Bulk Delete'),
     icon: 'icon-trash',
     addon: true,
-    route: '/addons/bulk-delete',
+    route: '/bulk-delete',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { BulkDeleteView } = await import(
@@ -501,20 +507,35 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Nostr Majlis'),
     icon: 'icon-globe',
     addon: true,
-    route: '/addons/nostr-majlis',
+    route: '/nostr-majlis',
     // On-demand addon object (ephemeral surface): entering the object
     // loads the addon, leaving it unloads again — unless one of the two
     // majlis widgets is active (always-on reasons, see
     // nostr-majlis/index.ts isNostrMajlisAutoLoaded). Detail = a tab
-    // deep link (/addons/nostr-majlis/:tab).
-    createSurface: focusMajlisSurface,
+    // deep link (/nostr-majlis/:tab; salah is the default tab,
+    // the bare route).
+    createSurface: focusTabbedObjectSurface({
+      ephemeral: true,
+      create: async initialTab => {
+        const { NostrMajlisAddonView } = await import(
+          '../addons/nostr-majlis/NostrMajlisAddonView'
+        );
+        return new NostrMajlisAddonView(initialTab ?? undefined);
+      },
+      tabFromState: state =>
+        state.kind === 'detail' && state.param && state.param !== 'salah'
+          ? state.param
+          : null,
+      defaultTab: 'salah',
+      tabUrl: tab => (tab ? `/nostr-majlis/${tab}` : '/nostr-majlis'),
+    }),
   },
   {
     id: 'follower-notification',
     label: _('Follower Notification'),
     icon: 'icon-bell',
     addon: true,
-    route: '/addons/follower-notification',
+    route: '/follower-notification',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { FollowerNotificationAddonView } = await import(
@@ -529,7 +550,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Group Chats'),
     icon: 'icon-message',
     addon: true,
-    route: '/addons/group-chats',
+    route: '/group-chats',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { GroupChatsAddonView } = await import(
@@ -544,7 +565,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Wallet Balance'),
     icon: 'icon-zap',
     addon: true,
-    route: '/addons/wallet-balance',
+    route: '/wallet-balance',
     createSurface: focusAddonObjectSurface({
       load: async () => {
         const { WalletBalanceAddonView } = await import(
@@ -562,7 +583,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     // Classic slug (no hyphen) — keep the v1 URL canonical. On-demand
     // addon object: ON while the object is open, OFF after leaving —
     // unless words are configured (always-on, see isWordFilterAutoLoaded).
-    route: '/addons/wordfilter',
+    route: '/wordfilter',
     createSurface: focusAddonObjectSurface({
       ephemeral: true,
       load: async () => {

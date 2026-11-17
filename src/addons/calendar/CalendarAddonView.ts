@@ -26,6 +26,9 @@ import {
   LEAD_OPTIONS,
 } from './CalendarReminderService';
 
+/** The tabs of the calendar view, for deep-link whitelisting. */
+const CALENDAR_TABS: string[] = ['personal', 'booking'];
+
 export class CalendarAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
@@ -33,12 +36,18 @@ export class CalendarAddonView extends View {
   private grid: CalendarGridView | null = null;
   private bookingManager: BookingManager | null = null;
   private importExport: CalendarImportExportManager | null = null;
+  // Which tab to open on mount (deep-link support: /addons/calendar/booking).
+  private initialTab: string;
 
-  constructor() {
+  /** Wired by focusTabbedObjectSurface: user tab switches sync the URL. */
+  onTabChange?: (tabId: string) => void;
+
+  constructor(initialTab?: string) {
     super();
     this.container = document.createElement('div');
     this.container.className =
       'view-content view-content--addon view-content--addon-calendar';
+    this.initialTab = initialTab ?? 'personal';
     this.render();
   }
 
@@ -63,7 +72,7 @@ export class CalendarAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Calendar')}</h1>
         <section class="section">
           <div class="setting">
@@ -92,12 +101,23 @@ export class CalendarAddonView extends View {
     `;
     this.enableSwitch.setupEventListeners(this.container);
     this.renderLeadDropdown();
-    setupTabClickHandlers(this.container, tabId =>
-      switchTabWithContent(this.container, tabId)
-    );
+    setupTabClickHandlers(this.container, tabId => {
+      switchTabWithContent(this.container, tabId);
+      this.onTabChange?.(tabId);
+    });
     this.renderGrid();
     this.renderBooking();
     this.renderImportExport();
+
+    // Deep-link: open the requested tab (/addons/calendar/booking).
+    // Whitelist the id so a malformed URL falls back to the default
+    // (personal) instead of a blank pane.
+    if (
+      this.initialTab !== 'personal' &&
+      CALENDAR_TABS.includes(this.initialTab)
+    ) {
+      switchTabWithContent(this.container, this.initialTab);
+    }
   }
 
   /** Mount the import/export section inline when enabled. */

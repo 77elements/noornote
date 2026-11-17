@@ -20,7 +20,7 @@ export class MarketplaceView extends View {
   }
 
   private render(): void {
-    this.container.innerHTML = `<div class="marketplace-view__content"></div>`;
+    this.container.innerHTML = `<div class="marketplace-view__content focus-flow-root"></div>`;
 
     this.timeline = new MarketplaceTimeline();
     const contentArea = this.container.querySelector(

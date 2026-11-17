@@ -85,11 +85,11 @@ export class LiveStreamsAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Live Streams')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">${_('Enable Live Streams')}</span>
+            <span class="setting__label">${isFocusUiEnabled() ? _('Enable Live Streams in Timeline') : _('Enable Live Streams')}</span>
             <div class="setting__control"></div>
             <p class="setting__desc">${_('Play NIP-53 live streams inline right from the timeline, no need to leave NoorNote. Uses hls.js; large providers like zap.stream are supported out of the box. Currently running streams are listed below.')}</p>
           </div>

@@ -314,7 +314,7 @@ export class AnalyticsAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Analytics')}</h1>
         <section class="section">
           <div class="setting">

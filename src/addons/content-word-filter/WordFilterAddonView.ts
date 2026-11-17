@@ -28,7 +28,7 @@ export class WordFilterAddonView extends View {
       void AddonLoader.getInstance().ensureLoaded('wordfilter');
     }
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Word Filter')}</h1>
         <section class="section" id="content-word-filter-settings-content"></section>
         <div data-addon-content="wordfilter"></div>

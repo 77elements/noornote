@@ -786,11 +786,12 @@ export class ViewMountingService {
 
       case 'addon-calendar':
         return {
-          factory: async () => {
+          factory: async param => {
             const { CalendarAddonView } = await import(
               '../addons/calendar/CalendarAddonView'
             );
-            const view = new CalendarAddonView();
+            // param: tab deep link ('booking'), undefined = personal.
+            const view = new CalendarAddonView(param ?? undefined);
             return { element: view.getElement(), view };
           },
         };

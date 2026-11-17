@@ -210,7 +210,7 @@ export class ArticleEditorView extends View {
   private async loadExistingArticle(naddr: string): Promise<void> {
     // Show loading state
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
           <p>${_('Loading article...')}</p>
@@ -333,7 +333,7 @@ export class ArticleEditorView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
       <div class="article-editor">
         <header class="l-spread">
           <h1>${this.isEditMode ? _('Edit Article') : _('Write Article')}</h1>

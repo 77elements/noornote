@@ -44,7 +44,7 @@ export const bookmarksSurface = async (): Promise<FocusDomainSurface> => {
         content.className = 'view-content view-content--lists';
         content.innerHTML = `
           <div class="bookmarks-empty-state">
-            <p>${_('Enable the Bookmarks addon in Settings → Addons.')}</p>
+            <p>${_('Enable Bookmarks in Settings.')}</p>
           </div>
         `;
         slot.appendChild(content);

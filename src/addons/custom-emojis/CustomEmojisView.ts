@@ -32,7 +32,7 @@ export class CustomEmojisView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-custom-emojis';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Custom Emojis')}</h1>
         ${this.v2OnDemand ? '' : '<section class="section" id="custom-emojis-settings-content"></section>'}
         <div data-addon-content="custom-emojis"></div>

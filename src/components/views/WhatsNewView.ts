@@ -69,7 +69,7 @@ export class WhatsNewView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1 class="about-title">${_("What's New")}</h1>
 
         <div class="whats-new-highlight">

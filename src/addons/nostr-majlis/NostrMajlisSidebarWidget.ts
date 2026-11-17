@@ -104,7 +104,7 @@ export class NostrMajlisSidebarWidget {
       void this.refetch();
       return;
     }
-    Router.getInstance().navigate('/addons/nostr-majlis');
+    Router.getInstance().navigate('/nostr-majlis');
   };
 
   /** Find the sidebar slot and render according to the current setting. */

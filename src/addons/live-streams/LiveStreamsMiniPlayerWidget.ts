@@ -76,7 +76,7 @@ export class LiveStreamsMiniPlayerWidget {
     }
 
     this.el.innerHTML = `
-      <a class="live-streams-mini-player__title" href="/addons/live-streams/stream/${escapeHtmlAttr(pinned.naddr)}">${escapeHtml(pinned.title || _('Untitled Stream'))}</a>
+      <a class="live-streams-mini-player__title" href="/live-streams/stream/${escapeHtmlAttr(pinned.naddr)}">${escapeHtml(pinned.title || _('Untitled Stream'))}</a>
       <button type="button" class="btn btn--passive btn--mini live-streams-mini-player__btn" data-action="toggle-play" aria-label="${playing ? _('Pause') : _('Play')}">
         <svg width="14" height="14"><use href="#${playing ? 'icon-pause' : 'icon-play'}"/></svg>
       </button>

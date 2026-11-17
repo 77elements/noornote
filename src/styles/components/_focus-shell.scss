@@ -515,11 +515,13 @@ html.ui--focus {
   height: 100%;
   // ED-b clearance, uniform for EVERY focus view: the slot's content box
   // ends $fv-padding-bottom above the bottom edge, so height:100% view
-  // roots — including their internal scrollers (timeline, media feed) —
-  // end above the closed ED-b tab. Views that grow beyond their height-
-  // fixed root (the editors) overflow the slot and scroll into the
-  // padding: the scrollable area of a scroll container includes its
-  // padding-bottom.
+  // roots — including their internal scrollers (timeline, media feed,
+  // muted) — end above the closed ED-b tab. Measured caveat (Chromium):
+  // a scroll container's OWN padding-bottom is excluded from its scroll
+  // extent, so this rule alone cannot clear views whose content simply
+  // overflows the slot (addon views, marketplace, composers) — those get
+  // the clearance on their flow root instead (the .back-padder rule and
+  // the marketplace rule below).
   padding-bottom: $fv-padding-bottom;
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling
@@ -535,6 +537,22 @@ html.ui--focus {
 // manages its own spacing.
 .ui--focus .view-content {
   padding: 0;
+}
+
+// Focus flow root (v2): the element that wraps a slot-scrolled view's
+// whole content at natural height. Chromium excludes the scroll
+// container's own padding-bottom from its scroll extent, so the slot
+// rule's clearance cannot clear such views — theirs goes HERE, on the
+// flow root, extending the slot's scrollable area instead. The slot rule
+// keeps serving the internal-scroller views (timeline, media, muted):
+// their height:100% roots shrink with the slot's content box.
+// (.back-padder, the v1 relic these roots also carry, stays untouched —
+// the optional back-button padding is v1 business; v2 marks the roots
+// with its own class. The extra .view-content descendant beats the v1
+// `.view-content > .back-padder` clearance (same value family, later
+// source order) so the v2 amount wins on shared roots.)
+.ui--focus .view-content .focus-flow-root {
+  padding-bottom: $fv-padding-bottom;
 }
 
 // The classic note-card hover panel is a v1 feed affordance — the shell's
@@ -560,6 +578,13 @@ html.ui--focus {
 
 html:not(.ui--focus) .focus-view-header__action {
   display: none;
+}
+
+// Title-only headers (createFocusViewHeader without an action) render the
+// bare h1 — no split row wrapper. The heading takes over the row's
+// vertical spacing.
+.focus-object__content > h1 {
+  margin-bottom: $gap;
 }
 
 // Media: header row + the feed's own internal scroller. The list root is

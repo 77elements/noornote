@@ -97,7 +97,7 @@ export class EmojiPackRenderer {
         btn.textContent = _('Edit');
         btn.addEventListener('click', e => {
           e.stopPropagation();
-          Router.getInstance().navigate('/addons/custom-emojis');
+          Router.getInstance().navigate('/custom-emojis');
         });
         actions.appendChild(btn);
       } else if (actions) {

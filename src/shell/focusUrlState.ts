@@ -31,9 +31,10 @@ const SHARED_DETAIL_ROUTES: Record<string, string[]> = {
 };
 
 /**
- * Addon objects' list routes under /addons/:slug — the same URLs the
- * classic UI uses (v1 Router registrations), so every widget click /
- * deep link that targets an addon view lands on the owning FV object.
+ * Addon objects' list routes. The SHORT one-segment URLs are canonical
+ * (v2 pushes them); the classic /addons/:slug forms stay as aliases so
+ * every widget click / deep link / old bookmark targeting an addon view
+ * still lands on the owning FV object.
  */
 const ADDON_LIST_ROUTES: Record<string, string> = {
   'custom-emojis': 'custom-emojis',
@@ -109,13 +110,27 @@ export function parseFocusUrl(
         }
         return null;
       case 'addons': {
-        // Addon objects' list states (/addons/<slug> — classic URLs).
+        // Addon objects' list states (/addons/<slug> — classic aliases
+        // of the canonical short routes).
         const defId = ADDON_LIST_ROUTES[tail];
         return defId ? { defId, kind: 'list' } : null;
       }
       case 'follow-pack':
         // '/follow-pack/:naddr' is a follow pack detail (FollowPacks).
         return { defId: 'follow-packs', kind: 'detail', param: tail };
+      case 'nostr-majlis':
+        // '/nostr-majlis/:tab' deep-links a majlis tab (canonical short
+        // form of /addons/nostr-majlis/:tab).
+        return { defId: 'majlis', kind: 'detail', param: tail };
+      case 'feedback-board':
+        // '/feedback-board/:naddr' opens a ticket (canonical short form).
+        return { defId: 'feedback-board', kind: 'detail', param: tail };
+      case 'calendar':
+        // '/calendar/booking' deep-links the booking tab.
+        if (tail === 'booking') {
+          return { defId: 'calendar', kind: 'detail', param: tail };
+        }
+        return null;
       default:
         return null;
     }
@@ -132,9 +147,14 @@ export function parseFocusUrl(
       return { defId: 'live-streams', kind: 'detail', param };
     }
     // '/addons/nostr-majlis/:tab' deep-links a majlis tab (dhikr
-    // notification, "Show tafsir" quran widget link).
+    // notification, "Show tafsir" quran widget link — classic alias of
+    // the canonical /nostr-majlis/:tab).
     if (head === 'addons' && tail === 'nostr-majlis') {
       return { defId: 'majlis', kind: 'detail', param };
+    }
+    // '/addons/calendar/booking' deep-links the booking tab.
+    if (head === 'addons' && tail === 'calendar' && param === 'booking') {
+      return { defId: 'calendar', kind: 'detail', param };
     }
     // '/addons/feedback-board/:naddr' opens a ticket (deep link).
     if (head === 'addons' && tail === 'feedback-board') {
@@ -157,9 +177,13 @@ export function parseFocusUrl(
     return null;
   }
 
-  // One-segment routes: the objects' list states.
+  // One-segment routes: the objects' list states. Addon objects use
+  // their short canonical slugs (the /addons/<slug> aliases above).
   if (segments.length === 1) {
-    switch (segments[0]) {
+    const [slug] = segments as [string];
+    const addonDefId = ADDON_LIST_ROUTES[slug];
+    if (addonDefId) return { defId: addonDefId, kind: 'list' };
+    switch (slug) {
       case 'timeline':
         return { defId: 'social', kind: 'list' };
       case 'articles':
@@ -178,12 +202,13 @@ export function parseFocusUrl(
         return { defId: 'media', kind: 'list' };
       case 'muted':
         return { defId: 'muted', kind: 'list' };
-      case 'live-streams':
-        return { defId: 'live-streams', kind: 'list' };
       case 'marketplace':
         return { defId: 'marketplace', kind: 'list' };
       case 'profile':
         return { defId: 'profile', kind: 'list' };
+      case 'search':
+        // The Search object (v2): its own circle in the SV.
+        return { defId: 'search', kind: 'list' };
       case 'my-listings':
         // '/my-listings' is the marketplace dashboard (detail of the
         // marketplace object — the surface swaps the manager view in).

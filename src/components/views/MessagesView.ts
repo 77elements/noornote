@@ -173,7 +173,7 @@ export class MessagesView extends View {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <div class="messages-view__header progress-bar-container">
           <h1>${_('Messages')}</h1>
           <div class="messages-view__actions">

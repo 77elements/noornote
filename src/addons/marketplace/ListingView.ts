@@ -47,7 +47,7 @@ export class ListingView extends View {
 
   private async render(): Promise<void> {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="listing-view__loading">
           <div class="listing-view__loading-spinner"></div>
           <p>${_('Loading listing...')}</p>

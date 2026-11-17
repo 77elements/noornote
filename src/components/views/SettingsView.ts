@@ -67,7 +67,7 @@ export class SettingsView extends View {
     const showExportLogs = true;
 
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <h1 class="settings-title">${_('Settings')}</h1>
         <nav class="section">
           ${menuHtml}

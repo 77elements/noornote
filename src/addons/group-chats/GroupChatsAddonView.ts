@@ -16,7 +16,7 @@ export class GroupChatsAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-group-chats';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Group Chats')}</h1>
         <p class="form__note">
           Heads-up notifications when your group chat communities come alive.

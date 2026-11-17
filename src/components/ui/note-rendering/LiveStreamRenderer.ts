@@ -61,7 +61,7 @@ export class LiveStreamRenderer {
     card.innerHTML = `
       <div class="live-stream-card__content">
         <p class="live-stream-card__hint">
-          ${_('Activate the <a class="live-stream-card__hint-link" href="/addons/live-streams">Live Streams</a> addon to see this live stream.')}
+          ${_('Activate the <a class="live-stream-card__hint-link" href="/live-streams">Live Streams</a> addon to see this live stream.')}
         </p>
       </div>
     `;
@@ -70,7 +70,7 @@ export class LiveStreamRenderer {
       link.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        Router.getInstance().navigate('/addons/live-streams');
+        Router.getInstance().navigate('/live-streams');
       });
     }
     host.appendChild(card);

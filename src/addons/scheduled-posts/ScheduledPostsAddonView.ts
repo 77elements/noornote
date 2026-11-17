@@ -63,7 +63,7 @@ export class ScheduledPostsAddonView extends View {
     }
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Scheduled Posts')}</h1>
         ${
           this.v2OnDemand

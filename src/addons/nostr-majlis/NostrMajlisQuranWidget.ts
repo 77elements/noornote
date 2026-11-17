@@ -134,7 +134,7 @@ export class NostrMajlisQuranWidget {
     this.el.innerHTML = `
       ${a.english ? `<p class="nm-quran__translation nm-quran__translation--clamp">${escapeHtml(truncateText(a.english, WIDGET_TRANSLATION_MAX))}</p>` : ''}
       <div class="l-row--split">
-        <div>${a.tafsir ? `<a class="nm-quran__hint" href="/addons/nostr-majlis/daily-ayah">${_('Show tafsir')}</a>` : ''}</div>
+        <div>${a.tafsir ? `<a class="nm-quran__hint" href="/nostr-majlis/daily-ayah">${_('Show tafsir')}</a>` : ''}</div>
         <div><span class="nm-quran__ref-line">${escapeHtml(ref)}</span></div>
       </div>
     `;

@@ -62,7 +62,7 @@ export class BtcPriceAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('BTC Price')}</h1>
         <section class="section">
           <div class="setting">
