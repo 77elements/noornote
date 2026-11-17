@@ -87,7 +87,6 @@ export const StorageKeys = {
   // 1 = direct follows only; 2 = friends-of-friends; 3 = friends-of-friends-of-friends.
   ARTICLE_FEED_FOAF_DEGREE_MAIN: 'noornote_article_feed_foaf_degree_main_map',
   ARTICLE_FEED_FOAF_DEGREE_SCC: 'noornote_article_feed_foaf_degree_scc_map',
-  CONTENT_VISIBILITY_AUTO: 'noornote_content_visibility_auto_map', // boolean: enable CSS content-visibility:auto on note cards (memory optimization)
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
   // Navigation mode (per-account): false (default) = circular nav wheel in the
   // sidebar, true = the classic linear menu list. See helpers/navModeSetting.ts.
@@ -101,13 +100,21 @@ export const StorageKeys = {
   // are dropped (focusStage.loadOrder). Set by drag & drop on the circles'
   // move handles; drop on another circle SWAPS the two positions.
   FOCUS_UI_ORDER: 'noornote_focus_ui_object_order_map',
-  // Focus UI (per-account): which side stack holds ALL primary circles while
-  // a domain is focused — 'left' | 'right', null (default) = alternating
-  // distribution. Set by dragging a stack's move icon toward the opposite
-  // stack (focusStage.startStackDrag); frees the other column for later
-  // secondary widgets. Focus-layout state only — the SV home grid is
-  // unaffected.
-  FOCUS_UI_STACK: 'noornote_focus_ui_stack_side_map',
+  // Focus UI (per-account): circle arrangement in the FOCUSED layout (FV)
+  // only — { left: string[], right: string[] } domain-id lists, explicit
+  // per-column positions. null (default) = alternating distribution
+  // derived from FOCUS_UI_ORDER. Set by drag & drop in the FV side stacks
+  // (single circles between/above circles, whole-column moves via the
+  // stack handle; reset = null). Independent of FOCUS_UI_ORDER — the SV
+  // grid order is NOT affected. Future secondary objects (widgets) join
+  // the same lists; stale/unknown ids are filtered on load.
+  FOCUS_UI_COLUMN_LAYOUT: 'noornote_focus_ui_column_layout_map',
+  // Focus UI (per-account): widget placement in the FOCUSED layout —
+  // { [widgetId]: { side: 'left' | 'right', index: number } }, index into
+  // the side stack's item flow (0 = above all circles). Default when a
+  // widget is activated: right stack, top. Set by drag & drop on the
+  // widgets' move handles; unlisted widgets render at the default spot.
+  FOCUS_UI_WIDGET_LAYOUT: 'noornote_focus_ui_widget_layout_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',
@@ -250,7 +257,6 @@ export const StorageKeys = {
   CUSTOM_EMOJIS_ENABLED: 'noornote_custom_emojis_enabled_map',
   BOOKMARKS_ADDON_ENABLED: 'noornote_bookmarks_addon_enabled_map',
   TRIBES_ADDON_ENABLED: 'noornote_tribes_addon_enabled_map',
-  EXTENDED_FOLLOWS_ADDON_ENABLED: 'noornote_extended_follows_addon_enabled_map',
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   BTC_PRICE_ENABLED: 'noornote_btc_price_enabled_map',
   BTC_PRICE_SIDEBAR_WIDGET: 'noornote_btc_price_sidebar_widget_map',
@@ -290,6 +296,13 @@ export const StorageKeys = {
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',
+  // Note taking reminder mirror — the LATEST reminder timestamp (unix sec)
+  // across all non-deleted, non-trashed notes (0 = none). Written by
+  // NoteTakingService on every mutation and by the reminder scan. The
+  // always-on check `max > now` self-expires as time passes, so the flag
+  // needs no scheduler: a past reminder stops keeping the runtime alive
+  // by itself (v2 on-demand always-on reason, see isNoteTakingAutoLoaded).
+  NOTE_TAKING_MAX_REMINDER_AT: 'noornote_note_taking_max_reminder_at_map',
   NOSTR_MAJLIS_ENABLED: 'noornote_nostr_majlis_enabled_map',
   NOSTR_MAJLIS_SETTINGS: 'noornote_nostr_majlis_settings_map',
   // Persistent Diyanet prayer-time cache — Record<ilceId, DiyanetDayTimes[]>.

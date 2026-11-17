@@ -101,7 +101,7 @@ export class ListsOverviewView extends View {
 
   private renderContent(): void {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="lists-overview__head l-spread">
           <h2>${_('Lists')}</h2>
         </div>

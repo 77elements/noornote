@@ -2,17 +2,48 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
-.post-note-modal {
+.post-note-modal,
+.post-note-composer {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 
   // When poll is active, reduce textarea height
-  &:has(#poll-creator-container:not(:empty)) {
+  &:has(#poll-creator-container:not(:empty)),
+  &:has(#new-note-poll-container:not(:empty)) {
     .textarea {
       min-height: 100px;
       max-height: 120px;
     }
+  }
+}
+
+// Flat note composer view (v2 /timeline/new-note) — root container around
+// the shared composer classes.
+.new-note-view {
+  max-width: 650px;
+
+  // Auto-grow textarea: JS sizes it to its content (rAF-batched) up to the
+  // bottom of the scroll surface; past that it clamps and scrolls internally.
+  .textarea {
+    min-height: 200px;
+    height: auto;
+    resize: none;
+  }
+
+  &__title {
+    @extend %h1;
+
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0 0 $gap 0;
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    flex-wrap: wrap;
   }
 }
 

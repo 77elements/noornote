@@ -52,6 +52,48 @@ export class Router {
   private readonly RESTORE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6h
   private readonly MAX_HISTORY = 50;
 
+  /**
+   * Map a regex-match object onto the route's named params (shared by the
+   * main handler and the legacy unauthenticated handler).
+   */
+  private mapRouteParams(
+    matches: Record<string, string>,
+    paramNames: string[]
+  ): Record<string, string> {
+    const params: Record<string, string> = {};
+    Object.keys(matches).forEach((key, index) => {
+      const paramName = paramNames[index];
+      const matchValue = matches[key];
+      if (paramName && matchValue) {
+        params[paramName] = matchValue;
+      }
+    });
+    return params;
+  }
+
+  /**
+   * Custom-stack push bookkeeping (shared by navigate() and pushUrl()):
+   * truncate forward entries, then push with the consecutive-duplicate
+   * guard — an app reload re-pushes the restored path, and without the
+   * guard Back would need one press per reload for the same step.
+   */
+  private pushAppHistoryEntry(path: string): void {
+    // Remove all forward history when navigating to new page
+    this.history = this.history.slice(0, this.historyIndex + 1);
+
+    if (this.history[this.historyIndex] !== path) {
+      // Add new path to history
+      this.history.push(path);
+
+      // Limit history size
+      if (this.history.length > this.MAX_HISTORY) {
+        this.history.shift();
+      } else {
+        this.historyIndex++;
+      }
+    }
+  }
+
   private constructor() {
     this.authStateManager = AuthStateManager.getInstance();
 
@@ -120,16 +162,7 @@ export class Router {
     const route: Route = {
       pattern: regex,
       handler: (matches: Record<string, string>) => {
-        // Map captured groups to param names
-        const params: Record<string, string> = {};
-        Object.keys(matches).forEach((key, index) => {
-          const paramName = paramNames[index];
-          const matchValue = matches[key];
-          if (paramName && matchValue) {
-            params[paramName] = matchValue;
-          }
-        });
-        handler(params);
+        handler(this.mapRouteParams(matches, paramNames));
       },
     };
 
@@ -142,16 +175,7 @@ export class Router {
     }
     if (legacyUnauthHandler) {
       route.unauthenticatedHandler = (matches: Record<string, string>) => {
-        // Map captured groups to param names
-        const params: Record<string, string> = {};
-        Object.keys(matches).forEach((key, index) => {
-          const paramName = paramNames[index];
-          const matchValue = matches[key];
-          if (paramName && matchValue) {
-            params[paramName] = matchValue;
-          }
-        });
-        legacyUnauthHandler(params);
+        legacyUnauthHandler(this.mapRouteParams(matches, paramNames));
       };
     }
 
@@ -196,25 +220,7 @@ export class Router {
       path !== this.currentPath &&
       !opts?.skipHistory
     ) {
-      // Remove all forward history when navigating to new page
-      this.history = this.history.slice(0, this.historyIndex + 1);
-
-      // Consecutive-duplicate guard: an app reload re-pushes the restored
-      // path — without this, Back would need one press per reload for the
-      // same step. If the top entry already is the path, just stay on it.
-      if (this.history[this.historyIndex] !== path) {
-        // Add new path to history
-        this.history.push(path);
-
-        // Limit history size
-        if (this.history.length > this.MAX_HISTORY) {
-          this.history.shift();
-        } else {
-          this.historyIndex++;
-        }
-      }
-
-      // Persist history to sessionStorage
+      this.pushAppHistoryEntry(path);
       this.saveHistory();
     }
 
@@ -245,6 +251,35 @@ export class Router {
 
     // Handle the route
     this.handleRoute(path);
+  }
+
+  /**
+   * Record a new history step WITHOUT re-rendering the view (no handleRoute).
+   * The v2 focus shell drives its surfaces from the focus navigation seam —
+   * the URL must follow along as a REAL history step (pushState + custom
+   * stack push), so the Global Back button (Router.back()) and browser
+   * back/forward can walk v2 navigation. Unlike navigate(), no route is
+   * resolved and no view transition runs; the shell syncs its own state.
+   */
+  public pushUrl(path: string): void {
+    if (path === this.currentPath) return;
+
+    // Update navigation history: truncate forward entries, push (same
+    // bookkeeping as navigate(), incl. the consecutive-duplicate guard).
+    if (!this.isNavigatingHistory) {
+      this.pushAppHistoryEntry(path);
+      this.saveHistory();
+    }
+
+    // Preserve the secondary-pane state (?scc=) just like navigate() does.
+    const scc = new URLSearchParams(window.location.search).get('scc');
+    const targetUrl = scc ? `${path}?scc=${encodeURIComponent(scc)}` : path;
+    window.history.pushState({}, '', targetUrl);
+
+    this.currentPath = path;
+    sessionStorage.setItem(this.SESSION_STORAGE_KEY, path);
+    this.persistRoute(path);
+    this.notifyHistoryChanged();
   }
 
   /**

@@ -440,6 +440,10 @@ export interface AppEvents {
   'profile:updated': ProfileUpdatedPayload;
   'profileMounts:changed': ProfileMountsChangedPayload;
   'pin:updated': { pubkey: string };
+  /** Private petname notes (NIP-78) changed locally: the feature toggle
+   *  flipped or a note was set/cleared (local mutation or relay sync).
+   *  Listeners re-evaluate the note icon / avatar ring visibility. */
+  'petname-notes:changed': void;
 
   // ── Relay ──────────────────────────────────
   'relay:connected': RelayConnectedPayload;
@@ -549,14 +553,15 @@ export interface AppEvents {
   'calendar:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
-  'extended-follows:toggle': AddonTogglePayload;
   'follow-packs:addon-toggle': AddonTogglePayload;
   'follow-packs:toggle': AddonTogglePayload;
   'follower-notification:addon-toggle': AddonTogglePayload;
   'feedback-board:addon-toggle': AddonTogglePayload;
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
   'live-streams:addon-toggle': AddonTogglePayload;
+  'live-streams:widget-toggle': { enabled: boolean };
   'live-streams:background-player': { pinned: boolean };
+  'btc-price:widget-toggle': { enabled: boolean };
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;

@@ -1,15 +1,20 @@
 import { View } from '../../components/views/View';
 import { BadgeService, type OwnBadgeDefinition } from './BadgeService';
 import { isBadgesEnabled, setBadgesEnabled } from './index';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { uploadImageToUrlField } from '../../helpers/mediaUpload';
 import { _ } from '../../i18n';
 
 export class BadgesView extends View {
   private container: HTMLElement;
   private badgeService: BadgeService | null = null;
+  /** v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -17,6 +22,9 @@ export class BadgesView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-badges';
     this.render();
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('badges');
+    }
   }
 
   public getElement(): HTMLElement {
@@ -25,13 +33,19 @@ export class BadgesView extends View {
 
   public destroy(): void {
     this.container.innerHTML = '';
+    // v2 on-demand release: unload after the object is left — unless the
+    // addon is user-enabled (its always-on reason; the toggle lives in
+    // this view).
+    if (this.v2OnDemand && !isBadgesEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('badges');
+    }
   }
 
   private render(): void {
     const enabled = isBadgesEnabled();
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Badges')}</h1>
         <section class="section" data-role="toggle-section"></section>
         ${
@@ -112,45 +126,14 @@ export class BadgesView extends View {
         ToastService.show(_('Please select an image file'), 'error');
         return;
       }
-      const status = this.container.querySelector(
-        '[data-role="upload-status"]'
-      ) as HTMLElement | null;
-      if (status) {
-        status.textContent = _('Uploading…');
-        status.classList.add('pulsate');
-      }
-      try {
-        const { ModuleLoader } = await import('../../core/ModuleLoader');
-        type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-        const mediaApi =
-          await ModuleLoader.getInstance().ensure<MediaApi>('media');
-        if (!mediaApi) {
-          ToastService.show(_('Media module not available'), 'error');
-          return;
-        }
-        const result = await mediaApi.uploadFile(file);
-        if (result.success && result.url) {
-          const urlInput = this.container.querySelector(
-            '[data-field="imageUrl"]'
-          ) as HTMLInputElement | null;
-          if (urlInput) urlInput.value = result.url;
-          ToastService.show(_('Image uploaded'), 'success');
-        } else {
-          ToastService.show(result.error || _('Upload failed'), 'error');
-        }
-      } catch (err) {
-        ToastService.show(
-          (err as Error).message || _('Upload failed'),
-          'error'
-        );
-      } finally {
-        if (status) {
-          status.textContent = '';
-          status.classList.remove('pulsate');
-        }
-      }
+      await uploadImageToUrlField({
+        scope: this.container,
+        file,
+        urlInputSelector: '[data-field="imageUrl"]',
+        statusSelector: '[data-role="upload-status"]',
+        successMessage: _('Image uploaded'),
+      });
     });
-
     const btn = this.container.querySelector('[data-action="create-badge"]');
     if (!btn) return;
 

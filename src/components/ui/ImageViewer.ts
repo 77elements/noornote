@@ -17,6 +17,7 @@ import { OverlayStack, type OverlayHandle } from '../../services/OverlayStack';
 import { PlatformService } from '../../services/PlatformService';
 import { addSwipeSupport } from '../../helpers/addSwipeSupport';
 import { _ } from '../../i18n';
+import { openNoteComposer } from '../../helpers/composerHandoff';
 
 export interface ImageViewerOptions {
   images: string[]; // Array of image URLs
@@ -162,7 +163,6 @@ export class ImageViewer {
 
     try {
       const { encodeNpub } = await import('../../services/NostrToolsAdapter');
-      const { PostNoteModal } = await import('../post/PostNoteModal');
 
       // Get current image URL
       const currentImageUrl = this.images[this.currentIndex];
@@ -182,8 +182,8 @@ export class ImageViewer {
       }
       content += `${currentImageUrl}\nImage via ${mentionTag} ${sourceUrl}`;
 
-      // Open PostNoteModal with pre-filled content
-      PostNoteModal.getInstance().show(content);
+      // Open the note composer with the shared image pre-filled
+      openNoteComposer(content);
 
       // Close ImageViewer after opening editor
       this.close();

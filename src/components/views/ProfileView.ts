@@ -30,6 +30,8 @@ import {
   setHighlightHiddenFor,
 } from '../../helpers/highlightSetting';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { linkifyUrls } from '../../helpers/linkifyUrls';
@@ -170,6 +172,8 @@ export class ProfileView extends View {
   private tooltipDisposers: Array<() => void> = [];
   /** Disposer for the petname-note tooltip (re-attached on each render()). */
   private petnoteTooltipDispose: (() => void) | null = null;
+  /** Disposer for the public petname tooltip (re-attached on each render). */
+  private petTooltipDispose: (() => void) | null = null;
 
   constructor(npub: string) {
     super(); // Call View base class constructor
@@ -937,6 +941,13 @@ export class ProfileView extends View {
       const isAuthenticated = AuthGuard.requireAuth('edit profile');
       if (!isAuthenticated) return;
 
+      // Focus UI (v2): the flat profile editor view (/profile/edit) —
+      // same seam as the note composer. Classic: the modal.
+      if (isFocusUiEnabled()) {
+        delegateToFocusUi('profile-edit');
+        return;
+      }
+
       // Open profile edit modal
       const profileEditModal = ProfileEditModal.getInstance();
       void profileEditModal.show();
@@ -1453,13 +1464,35 @@ export class ProfileView extends View {
           if (!isFollowing(this.pubkey).public) {
             petnameEl.textContent = '';
             petnameEl.style.display = 'none';
+            this.petTooltipDispose?.();
+            this.petTooltipDispose = null;
             return;
           }
           petnameEl.style.display = '';
           const petname = getFollowPetname(this.pubkey);
           petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+          // nn-tooltip instead of a native title: descriptive, consistent
+          // with the private-note icon. Re-attach per render (state changed).
+          this.petTooltipDispose?.();
+          this.petTooltipDispose = Tooltip.attach(
+            petnameEl,
+            petname
+              ? _(
+                  'Public petname — stored in your contact list (NIP-02), visible to everyone. Click to edit.'
+                )
+              : _(
+                  'Public petname — click to set one. Stored in your contact list (NIP-02), visible to everyone.'
+                )
+          );
         };
         render();
+
+        // The follow list can land AFTER this PV's first render (post-login
+        // sync from files/relays replaces the storage). Re-render on follow
+        // changes so the (+)/petname appears as soon as the data is there —
+        // not only after navigating to another profile.
+        const subId = this.eventBus.on('follow:updated', () => render());
+        this.eventBusSubscriptions.push(subId);
 
         petnameEl.addEventListener('click', async e => {
           e.preventDefault();
@@ -1495,13 +1528,16 @@ export class ProfileView extends View {
 
     void import('../../services/PetnameService').then(({ PetnameService }) => {
       const service = PetnameService.getInstance();
-      if (!service.isPrivateNotesEnabled()) {
-        noteEl.style.display = 'none';
-        return;
-      }
-      noteEl.style.display = '';
 
       const render = (): void => {
+        if (!service.isPrivateNotesEnabled()) {
+          noteEl.style.display = 'none';
+          this.petnoteTooltipDispose?.();
+          this.petnoteTooltipDispose = null;
+          return;
+        }
+        noteEl.style.display = '';
+
         const note = service.getPetname(this.pubkey);
         const filled = !!note;
         noteEl.classList.toggle('profile-petname-note--filled', filled);
@@ -1517,6 +1553,12 @@ export class ProfileView extends View {
           '<svg width="18" height="18"><use href="#icon-note"/></svg>';
       };
       render();
+
+      // Live gate: the "Private petnames" toggle (gear/privacy settings) or a
+      // note mutation (local or relay sync) flips the state — the icon
+      // appears/disappears without a PV re-render.
+      const subId = this.eventBus.on('petname-notes:changed', () => render());
+      this.eventBusSubscriptions.push(subId);
 
       noteEl.addEventListener('click', async e => {
         e.preventDefault();
@@ -2046,20 +2088,17 @@ export class ProfileView extends View {
   }
 
   /**
-   * Wire the profile content tabs: switch the visible section on click and load
-   * each section's content the first time its tab is opened. Notes is the
-   * default and loads via the timeline; the others load on demand.
+   * Wire the profile content tabs: switch the visible section on click and
+   * load each section's content on demand — the FIRST time its tab is opened
+   * (load principle: opening a PV must not fan out seven section fetches for
+   * tabs the visitor never opens; relay traffic only for what is looked at).
+   * Notes is the default and loads via the timeline. Every tab button is
+   * visible up front; an empty section shows the empty hint after its single
+   * load (the carousels self-gate empty results to display:none).
    */
   private setupProfileTabs(): void {
     const tabRow = this.container.querySelector('.profile-tabs');
     if (!tabRow) return;
-
-    // Every non-notes tab starts hidden; it appears once its section loads with
-    // at least one item. Notes is always present and is the default.
-    tabRow.querySelectorAll('.tab').forEach(btn => {
-      const t = (btn as HTMLElement).dataset.tab;
-      if (t && t !== 'notes') (btn as HTMLElement).hidden = true;
-    });
 
     const activate = (tab: string): void => {
       tabRow.querySelectorAll('.tab').forEach(btn => {
@@ -2074,15 +2113,7 @@ export class ProfileView extends View {
       });
     };
 
-    tabRow.querySelectorAll('.tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = (btn as HTMLElement).dataset.tab;
-        if (tab) activate(tab);
-      });
-    });
-
-    // Load each content section into its (hidden) mount up front, then reveal
-    // its tab if it ended up with at least one item.
+    // Each non-notes section loads exactly once, on its first tab open.
     const sections: Array<{ tab: string; loader: () => Promise<void> }> = [
       { tab: 'articles', loader: () => this.loadArticlesCarousel() },
       { tab: 'videos', loader: () => this.loadVideosCarousel() },
@@ -2092,33 +2123,48 @@ export class ProfileView extends View {
       { tab: 'calendar', loader: () => this.loadCalendarSection() },
       { tab: 'badges', loader: () => this.loadBadgesCarousel() },
     ];
-    sections.forEach(({ tab, loader }) => {
-      void loader()
-        .then(() => this.revealTabIfHasItems(tab))
-        .catch(() => {});
-    });
-  }
+    const loadState = new Map<string, 'loading' | 'loaded'>();
 
-  /**
-   * Reveal a content tab if its section rendered at least one item. Articles /
-   * videos / listings self-gate by setting display:none on an empty carousel;
-   * badges / zapstore render nothing into the mount when empty — so a section
-   * "has items" iff it holds a child that isn't display:none.
-   */
-  private revealTabIfHasItems(tab: string): void {
-    const section = this.container.querySelector(
-      `.profile-section[data-section="${tab}"]`
-    );
-    const hasItems =
-      !!section &&
-      [...section.children].some(
-        c => (c as HTMLElement).style.display !== 'none'
-      );
-    if (!hasItems) return;
-    const tabBtn = this.container.querySelector(
-      `.profile-tabs .tab[data-tab="${tab}"]`
-    ) as HTMLElement | null;
-    if (tabBtn) tabBtn.hidden = false;
+    const loadSection = (tab: string, loader: () => Promise<void>): void => {
+      if (loadState.has(tab)) return;
+      loadState.set(tab, 'loading');
+      void loader()
+        .then(() => {
+          loadState.set(tab, 'loaded');
+          // Empty result: nothing (or a display:none self-gated carousel)
+          // ended up in the mount — show the empty hint so the activated
+          // tab does not sit on a blank area.
+          const section = this.container.querySelector(
+            `.profile-section[data-section="${tab}"]`
+          );
+          const hasItems =
+            !!section &&
+            [...section.children].some(
+              c => (c as HTMLElement).style.display !== 'none'
+            );
+          if (section && !hasItems) {
+            const hint = document.createElement('p');
+            hint.className = 'setting__desc';
+            hint.textContent = _(
+              'Nothing published here yet, or not available on your relays.'
+            );
+            section.appendChild(hint);
+          }
+        })
+        .catch(() => {
+          loadState.delete(tab); // transient failure — retry on next click
+        });
+    };
+
+    tabRow.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.tab;
+        if (!tab) return;
+        activate(tab);
+        const entry = sections.find(s => s.tab === tab);
+        if (entry) loadSection(tab, entry.loader);
+      });
+    });
   }
 
   /**
@@ -2627,6 +2673,8 @@ export class ProfileView extends View {
     this.tooltipDisposers = [];
     this.petnoteTooltipDispose?.();
     this.petnoteTooltipDispose = null;
+    this.petTooltipDispose?.();
+    this.petTooltipDispose = null;
 
     // Cleanup profile subscription
     this.profileUnsubscribe?.();

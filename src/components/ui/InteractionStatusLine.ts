@@ -5,6 +5,7 @@
  */
 
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
@@ -60,11 +61,7 @@ export class InteractionStatusLine {
   private element: HTMLElement;
   private config: ISLConfig;
   private stats: ISLStats;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private initialFetchPromise?: Promise<void>;
   private bookmarkSubId?: string;
   private _zapsApi?: ZapsModuleApi | null;
@@ -87,7 +84,7 @@ export class InteractionStatusLine {
       this.stats = config.stats;
     } else {
       const cachedStats =
-        this.reactionsApi?.getCachedStats(config.noteId) ?? null;
+        this.reactionsApi.get()?.getCachedStats(config.noteId) ?? null;
       if (cachedStats) {
         // Convert InteractionStats to ISLStats
         this.stats = {

@@ -21,6 +21,15 @@ if (__capturedSccParam) {
   window.__noornote_scc_param = __capturedSccParam;
 }
 
+// Capture ?q= search deep link immediately (the Search object consumes it
+// on its first attach; Router boot rewrites the URL without the query).
+const __capturedSearchParam = new URLSearchParams(window.location.search).get(
+  'q'
+);
+if (__capturedSearchParam) {
+  window.__noornote_search_param = __capturedSearchParam;
+}
+
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
 const __capturedRelayParam = new URLSearchParams(window.location.search).get(
   'r'
@@ -28,6 +37,14 @@ const __capturedRelayParam = new URLSearchParams(window.location.search).get(
 if (__capturedRelayParam) {
   window.history.replaceState({}, '', window.location.pathname);
   window.__noornote_relay_param = __capturedRelayParam;
+}
+
+// Dev-only: RAM/relay load monitor (`__v2load()` dump / `__loadmon` toggle
+// in the console; persisted switch + ?loadmon=1|0 boot param).
+if (import.meta.env.DEV) {
+  void import('./services/DevLoadMonitor').then(m =>
+    m.installDevLoadMonitorIfEnabled()
+  );
 }
 
 // Suppress NDK v3 serialization errors for malformed events from other clients
@@ -49,11 +66,10 @@ import { SystemLogger } from './services/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
-// MutualChangeService: only load if Extended Follows addon is enabled
-import { isExtendedFollowsEnabled } from './addons/extended-follows/index';
-if (isExtendedFollowsEnabled()) {
-  void import('./services/MutualChangeService');
-}
+// MutualChangeService: storage lifecycle for the manual "Check for Changes"
+// (mutuals diff) — always on since the Extended Follows addon was merged
+// into the follow list.
+void import('./services/MutualChangeService');
 import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 
 // Track failed image loads (URL → log message for removal)

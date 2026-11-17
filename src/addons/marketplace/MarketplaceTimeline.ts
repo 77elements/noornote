@@ -18,6 +18,7 @@ import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { _ } from '../../i18n';
 
@@ -88,10 +89,14 @@ export class MarketplaceTimeline {
       '.marketplace-view__dashboard-btn'
     ) as HTMLElement;
 
-    // Prevent default link behavior, use router
+    // Prevent default link behavior, use the navigation: the Focus UI (v2)
+    // opens the listing composer as the marketplace surface's flat detail
+    // (/marketplace/post); classic routes to the full-page editor.
     addBtn?.addEventListener('click', e => {
       e.preventDefault();
-      this.router.navigate('/write-listing');
+      if (!delegateToFocusUi('write-listing')) {
+        this.router.navigate('/write-listing');
+      }
     });
 
     dashboardBtn?.addEventListener('click', e => {

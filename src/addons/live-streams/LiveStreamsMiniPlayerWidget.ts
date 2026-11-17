@@ -12,6 +12,7 @@
 
 import { backgroundPlayer } from './backgroundPlayer';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { _ } from '../../i18n';
 
@@ -19,6 +20,12 @@ export class LiveStreamsMiniPlayerWidget {
   private el: HTMLElement | null = null;
   private subId: string | null = null;
   private destroyed = false;
+  /**
+   * Focus UI (v2) host: when set, the widget renders into the stage's
+   * side-stack slot instead of the classic sidebar slot (the shell is
+   * hidden while the Focus UI is active). null = classic slot.
+   */
+  private focusHost: HTMLElement | null = null;
 
   constructor() {
     this.subId = TypedEventBus.getInstance().on(
@@ -28,11 +35,30 @@ export class LiveStreamsMiniPlayerWidget {
     this.render();
   }
 
-  private render(): void {
-    if (this.destroyed) return;
-    const container = document.querySelector(
+  /**
+   * Focus UI (v2): render into the stage's side-stack slot while it
+   * exists (null on stack teardown — the widget returns to the classic
+   * slot). The next render re-parents the DOM.
+   */
+  public setFocusHost(host: HTMLElement | null): void {
+    this.focusHost = host;
+    const classic = document.querySelector(
       '[data-sidebar-widget="live-streams-mini-player"]'
     );
+    if (this.el && this.el.parentElement !== (host ?? classic)) {
+      this.el.remove();
+      this.el = null;
+    }
+    this.render();
+  }
+
+  private render(): void {
+    if (this.destroyed) return;
+    const container =
+      this.focusHost ??
+      document.querySelector(
+        '[data-sidebar-widget="live-streams-mini-player"]'
+      );
     if (!container) return;
 
     const { pinned, playing } = backgroundPlayer.getState();
@@ -50,7 +76,7 @@ export class LiveStreamsMiniPlayerWidget {
     }
 
     this.el.innerHTML = `
-      <a class="live-streams-mini-player__title" href="/addons/live-streams/stream/${escapeHtmlAttr(pinned.naddr)}">${escapeHtml(pinned.title || _('Untitled Stream'))}</a>
+      <a class="live-streams-mini-player__title" href="/live-streams/stream/${escapeHtmlAttr(pinned.naddr)}">${escapeHtml(pinned.title || _('Untitled Stream'))}</a>
       <button type="button" class="btn btn--passive btn--mini live-streams-mini-player__btn" data-action="toggle-play" aria-label="${playing ? _('Pause') : _('Play')}">
         <svg width="14" height="14"><use href="#${playing ? 'icon-pause' : 'icon-play'}"/></svg>
       </button>
@@ -64,7 +90,15 @@ export class LiveStreamsMiniPlayerWidget {
     const target = (e.target as HTMLElement | null)?.closest<HTMLElement>(
       '[data-action]'
     );
-    if (!target) return; // title link → global anchor handling navigates
+    if (!target) {
+      // Title link → stream detail. v2 renders it in the focused column;
+      // classic falls through to the global anchor handling.
+      const { pinned } = backgroundPlayer.getState();
+      if (pinned && delegateToFocusUi('live-stream-detail', pinned.naddr)) {
+        e.preventDefault();
+      }
+      return; // title link → global anchor handling navigates
+    }
     e.preventDefault();
     if (target.dataset.action === 'toggle-play') backgroundPlayer.toggle();
     else if (target.dataset.action === 'stop') backgroundPlayer.stop();

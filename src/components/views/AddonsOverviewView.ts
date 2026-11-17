@@ -63,7 +63,7 @@ export class AddonsOverviewView extends View {
     const addons = getOrderedAddons();
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <div class="addons-overview__head l-spread">
           <h2>${_('Addons')}</h2>
           <div>

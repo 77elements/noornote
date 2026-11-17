@@ -1,7 +1,9 @@
 /**
- * VideoService - Video Event Publishing Service
+ * VideoService - Media Event Publishing Service
  * Handles creation and publishing of Kind 21 (landscape) and Kind 22 (portrait) video events
+ * plus Kind 20 picture events (NIP-68)
  *
+ * NIP-68: https://github.com/nostr-protocol/nips/blob/master/68.md
  * NIP-71: https://github.com/nostr-protocol/nips/blob/master/71.md
  * NIP-92: https://github.com/nostr-protocol/nips/blob/master/92.md (imeta tags)
  */
@@ -33,6 +35,22 @@ export interface VideoOptions {
   relays: string[];
   /** Override auto-detected kind (21=landscape, 22=portrait) */
   kindOverride?: 21 | 22;
+}
+
+/** Options for a NIP-68 picture event (kind 20). */
+export interface PictureOptions {
+  /** Uploaded image URL */
+  imageUrl: string;
+  /** Image MIME type (e.g. image/jpeg) */
+  mimeType: string;
+  /** Image dimensions for imeta */
+  dimensions?: { width: number; height: number };
+  /** Description text (becomes event content) */
+  content: string;
+  /** Topic tags (t-tags) */
+  topics?: string[];
+  /** Target relays to publish to */
+  relays: string[];
 }
 
 export class VideoService {
@@ -173,6 +191,101 @@ export class VideoService {
         'VideoService.publishVideo',
         true,
         'Failed to publish video. Please try again.'
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Publish a picture event (Kind 20, NIP-68)
+   * @returns nevent on success, null on failure
+   */
+  public async publishPicture(options: PictureOptions): Promise<string | null> {
+    const { imageUrl, mimeType, dimensions, content, topics, relays } = options;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish picture: User not authenticated'
+      );
+      return null;
+    }
+
+    if (!imageUrl?.trim()) {
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish picture: No image URL'
+      );
+      ToastService.show(_('Please upload an image first'), 'error');
+      return null;
+    }
+
+    if (!relays?.length) {
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish picture: No relays specified'
+      );
+      ToastService.show(_('Please select at least one relay'), 'error');
+      return null;
+    }
+
+    try {
+      // Build imeta tag (NIP-92, image variant — PictureNoteProcessor
+      // reads url/m/dim back when rendering kind 20).
+      const imetaParts: string[] = [
+        `url ${imageUrl.trim()}`,
+        `m ${mimeType.trim()}`,
+      ];
+      if (dimensions) {
+        imetaParts.push(`dim ${dimensions.width}x${dimensions.height}`);
+      }
+
+      const tags: string[][] = [['imeta', ...imetaParts]];
+
+      if (topics) {
+        for (const topic of topics) {
+          const trimmed = topic.trim();
+          if (trimmed) {
+            tags.push(['t', trimmed.toLowerCase()]);
+          }
+        }
+      }
+
+      const unsignedEvent = {
+        kind: 20,
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+        content: content.trim(),
+        pubkey: currentUser.pubkey,
+      };
+
+      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      if (!signedEvent) {
+        this.systemLogger.error('VideoService', 'Failed to sign picture event');
+        return null;
+      }
+
+      await this.transport.publish(relays, signedEvent);
+
+      this.systemLogger.info(
+        'VideoService',
+        `Picture published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
+      );
+
+      ToastService.show(_('Picture published successfully!'), 'success');
+
+      return encodeNevent(
+        signedEvent.id!,
+        relays.slice(0, 2),
+        currentUser.pubkey
+      );
+    } catch (error) {
+      ErrorService.handle(
+        error,
+        'VideoService.publishPicture',
+        true,
+        'Failed to publish picture. Please try again.'
       );
       return null;
     }

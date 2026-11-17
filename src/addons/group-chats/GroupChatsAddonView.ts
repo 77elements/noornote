@@ -1,10 +1,20 @@
 import { View } from '../../components/views/View';
 import { GroupChatsSettings } from './GroupChatsSettings';
+import { AddonLoader } from '../AddonLoader';
+import { isArmadaEnabled, isGroupChatsEnabled } from './index';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { _ } from '../../i18n';
 
 export class GroupChatsAddonView extends View {
   private container: HTMLElement;
   private settings: GroupChatsSettings | null = null;
+  /**
+   * v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand):
+   * loads on enter, releases on leave — unless Nostrord or Armada is
+   * user-enabled (the switches are real preferences: ON means the
+   * community polling must keep running while the object is closed).
+   */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -15,8 +25,13 @@ export class GroupChatsAddonView extends View {
     // support was added alongside NIP-29 in v1.3.4.
     this.container.className =
       'view-content view-content--addon view-content--addon-group-chats';
+    // v2 on-demand: the object loads the addon regardless of the stored
+    // preference — the settings render either way. Released in destroy().
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('group-chats');
+    }
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Group Chats')}</h1>
         <p class="form__note">
           Heads-up notifications when your group chat communities come alive.
@@ -39,5 +54,10 @@ export class GroupChatsAddonView extends View {
     this.settings?.unmount();
     this.settings = null;
     this.container.innerHTML = '';
+    // v2 on-demand release: unload after the object is left — unless
+    // Nostrord or Armada is user-enabled (their always-on reason).
+    if (this.v2OnDemand && !isGroupChatsEnabled() && !isArmadaEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('group-chats');
+    }
   }
 }

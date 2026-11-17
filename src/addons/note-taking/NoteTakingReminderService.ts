@@ -119,6 +119,9 @@ export class NoteTakingReminderService {
     } catch {
       return;
     }
+    // Keep the always-on mirror fresh (covers boot + sync-driven changes —
+    // mutations already refresh it at write time).
+    this.service.updateReminderMirror(notes);
     for (const note of notes) {
       if (
         note.reminderAt > 0 &&
@@ -165,7 +168,7 @@ export class NoteTakingReminderService {
           label: tp('action', 'Open'),
           onClick: () => {
             this.service.setHighlight(id);
-            Router.getInstance().navigate('/addons/note-taking');
+            Router.getInstance().navigate('/note-taking');
           },
         },
       }

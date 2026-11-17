@@ -112,6 +112,17 @@ export function setNostrMajlisEnabled(enabled: boolean): void {
   );
 }
 
+/**
+ * The addon's always-on reasons (its two widgets): the prayer-times
+ * countdown or the daily ayah widget is activated. Otherwise the addon
+ * is pure on-demand in the Focus UI — loaded when the object is entered,
+ * released when it is left (bootLoad gate + release guards).
+ */
+export function isNostrMajlisAutoLoaded(): boolean {
+  const settings = getNostrMajlisSettings();
+  return settings.sidebarWidget || settings.quranDaily;
+}
+
 export function getNostrMajlisSettings(): NostrMajlisSettings {
   const stored = PerAccountLocalStorage.getInstance().get<
     Partial<NostrMajlisSettings>

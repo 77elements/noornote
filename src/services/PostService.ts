@@ -795,10 +795,19 @@ export class PostService {
     tags: string[][]
   ): Promise<string[][]> {
     try {
-      const { isCustomEmojisEnabled } = await import(
-        '../addons/custom-emojis/index'
-      );
-      if (!isCustomEmojisEnabled()) return tags;
+      const [{ isCustomEmojisEnabled }, { AddonLoader }] = await Promise.all([
+        import('../addons/custom-emojis/index'),
+        import('../addons/AddonLoader'),
+      ]);
+      // Enabled via stored preference (v1) OR via the v2 on-demand
+      // composer session (runtime loaded while the composer was open —
+      // the note may then contain custom shortcodes that need tagging).
+      if (
+        !isCustomEmojisEnabled() &&
+        !AddonLoader.getInstance().isLoaded('custom-emojis')
+      ) {
+        return tags;
+      }
 
       const [{ EmojiService }, { attachEmojiTags }] = await Promise.all([
         import('../addons/custom-emojis/EmojiService'),

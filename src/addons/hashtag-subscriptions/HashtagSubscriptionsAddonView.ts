@@ -12,7 +12,7 @@ export class HashtagSubscriptionsAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-hashtag-subscriptions';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Hashtag Subscriptions')}</h1>
         <section class="section" id="hashtag-subscriptions-settings-content"></section>
         <div data-addon-content="hashtag-subscriptions"></div>

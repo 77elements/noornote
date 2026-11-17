@@ -9,9 +9,8 @@
 @use '../molecules/messages' as *;
 
 // View child elements
-.article-timeline-view__header {
-  margin-bottom: calc($gap * 1.5);
-}
+// (The old __header wrapper is the shared .focus-view-header row now —
+// see _focus-shell.scss.)
 
 .article-timeline-view__title {
   @extend %h1;

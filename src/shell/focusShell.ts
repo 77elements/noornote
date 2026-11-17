@@ -25,10 +25,11 @@ import { Switch } from '../components/ui/Switch';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { LayoutService } from '../services/LayoutService';
+import { ViewMountingService } from '../services/ViewMountingService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
 import { FocusStage } from './focusStage';
-import { FOCUS_DOMAINS } from './focusDomains';
+
 import { _ } from '../i18n';
 
 const SHELL_ID = 'focus-shell';
@@ -87,25 +88,25 @@ class EdgeDrawer {
     this.root.className = `focus-drawer focus-drawer--${this.edge}`;
     const label = this.edge === 'top' ? _('Top panel') : _('Bottom panel');
     this.root.innerHTML = `
-      <div class="focus-drawer__panel" role="region" aria-label="${label}"></div>
-      <button type="button" class="focus-drawer__tab"
+      <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${label}"></div>
+      <button type="button" class="focus-drawer__tab" data-drawer-tab
         aria-label="${label}" aria-expanded="false"></button>
     `;
     if (decoratePanel) {
       const panel = this.root.querySelector(
-        '.focus-drawer__panel'
+        '[data-drawer-panel]'
       ) as HTMLElement;
       decoratePanel(panel);
     }
     this.tab = this.root.querySelector(
-      '.focus-drawer__tab'
+      '[data-drawer-tab]'
     ) as HTMLButtonElement;
     this.tab.addEventListener('pointerdown', this.onPointerDown);
     this.tab.addEventListener('pointermove', this.onPointerMove);
     this.tab.addEventListener('pointerup', this.onPointerUp);
     this.tab.addEventListener('pointercancel', this.onPointerCancel);
     this.panelEl = this.root.querySelector(
-      '.focus-drawer__panel'
+      '[data-drawer-panel]'
     ) as HTMLElement;
     parent.appendChild(this.root);
     // Sync the drag math with the stylesheet (constructor value is only a
@@ -206,6 +207,10 @@ class EdgeDrawer {
 /** Mount the Focus Shell with edge drawers; ED-t hosts the TEMP switch. */
 export function mountFocusShell(): void {
   if (document.getElementById(SHELL_ID)) return;
+  // Focus UI switch mid-session: stop + remove the (about-to-be-hidden)
+  // classic view — it would otherwise keep its orchestrator polling and
+  // live subscriptions running under v2 (v1-silencing rule).
+  ViewMountingService.getInstance().unmountCurrentView();
   const shell = document.createElement('div');
   shell.id = SHELL_ID;
   shell.className = 'focus-shell';
@@ -307,16 +312,15 @@ export function mountFocusShell(): void {
   document.getElementById('app')?.appendChild(shell);
 
   // The home grid IS '/'. A switch from a classic route (e.g. /settings/ui)
-  // rewrites the URL in place — no view mounting, no history entry. But a
-  // boot/reload ON a domain route (e.g. /timeline) restores that domain's
-  // focused surface instead, so the address survives reloads.
+  // rewrites the URL in place — no view mounting, no history entry. A
+  // boot/reload ON a shell-owned URL restores the mapped state: object
+  // routes (e.g. /timeline) AND detail deep-links (/note/:nevent,
+  // /profile/:npub, /profile/edit) — the address survives reloads.
+  // Unmapped boot paths (classic-only routes) fall back to the grid.
   const bootPath = window.location.pathname;
-  const bootDomain = FOCUS_DOMAINS.find(d => d.route === bootPath);
-  if (bootDomain) {
-    stage.restoreDomain(bootDomain);
-  } else {
-    Router.getInstance().replaceUrl('/');
-  }
+  void stage.syncFromUrl(bootPath).then(restored => {
+    if (!restored) Router.getInstance().replaceUrl('/');
+  });
 
   // Focus navigation seam: while the shell lives, note/article clicks etc.
   // render inside the focused column — the stage routes view types across

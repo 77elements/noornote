@@ -198,7 +198,7 @@ export class ProfileBookingView extends View {
 
     if (this.notFound || !this.config) {
       this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
           <h1>${_('Book a meeting')}</h1>
           <p class="form__note">
             ${_('%s does not offer a booking page right now.', escapeHtml(ownerName))}

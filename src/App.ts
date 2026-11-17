@@ -34,6 +34,7 @@ import { ModuleLoader } from './core/ModuleLoader';
 import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
+import { isFocusUiActive } from './helpers/focusUiSetting';
 import { _ } from './i18n';
 
 /** Maps viewName to the AppState key that stores the route parameter */
@@ -412,6 +413,17 @@ export class App {
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/whats-new', 'whats-new', 'whats-new', 'wnv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
+    // /articles/post: the Focus UI (v2) shows this URL while the article
+    // composer is open in the Articles domain. Classic HAS the article
+    // editor (at /write-article) — map the alias to it so a reload/direct
+    // link lands in the same composer.
+    this.registerRoute(
+      '/articles/post',
+      'write-article',
+      'write-article',
+      'aev',
+      true
+    );
 
     // Parameterized routes (public)
     this.registerRoute(
@@ -422,6 +434,17 @@ export class App {
       false,
       params => params.noteId ?? ''
     );
+    // Profile object routes (v2 focus UI). BOTH must register BEFORE
+    // '/profile/:npub' — the param pattern `[^/]+` would otherwise
+    // swallow 'edit' (and the param-less /profile) as an npub.
+    this.registerRoute(
+      '/profile/edit',
+      'profile-edit',
+      'profile-edit',
+      'pv',
+      true
+    );
+    this.registerRoute('/profile', 'profile', 'profile', 'pv', true);
     this.registerRoute(
       '/profile/:npub',
       'profile',
@@ -490,6 +513,67 @@ export class App {
     // Social Media domain holds the focus — a reload or direct link must
     // land on the timeline in the classic interface too.
     this.registerRoute('/timeline', 'timeline', 'timeline', 'tv', true);
+    // Explicit /media alias: the Focus UI (v2) shows this URL while the
+    // Media domain holds the focus. Classic has no standalone media route —
+    // the media feed is an SCC tab — so a reload/direct link lands on the
+    // timeline, the classic home surface.
+    this.registerRoute('/media', 'timeline', 'timeline', 'tv', true);
+    // /muted: the Focus UI (v2) shows this URL while the Muted domain
+    // holds the focus. Classic has no standalone muted route — the muted
+    // list is an SCC tab — so a reload/direct link lands on the classic
+    // mute-list view.
+    this.registerRoute('/muted', 'mute-list', 'mute-list', 'ml', true);
+    // /media/post: the Focus UI (v2) shows this URL while the video
+    // composer is open in the Media domain. Classic HAS the video editor
+    // (at /write-video) — map the alias to it so a reload/direct link
+    // lands in the same composer.
+    this.registerRoute(
+      '/media/post',
+      'write-video',
+      'write-video',
+      'vev',
+      true
+    );
+    // /marketplace/post: the Focus UI (v2) shows this URL while the
+    // listing composer is open in the Marketplace domain. Classic HAS the
+    // listing editor (at /write-listing) — map the alias to it so a
+    // reload/direct link lands in the same composer.
+    this.registerRoute(
+      '/marketplace/post',
+      'write-listing',
+      'write-listing',
+      'lev',
+      true
+    );
+    // /marketplace/edit/:naddr: the Focus UI (v2) shows this URL while the
+    // listing composer is in edit mode in the Marketplace domain. Classic
+    // maps it to the full-page editor (same as /write-listing/:naddr).
+    this.registerRoute(
+      '/marketplace/edit/:naddr',
+      'edit-listing',
+      'edit-listing',
+      'elv',
+      true,
+      params => params.naddr
+    );
+    // Explicit /follow-list alias: the Focus UI (v2) shows this URL while the
+    // Follows domain holds the focus — a reload or direct link must not fall
+    // through to the nip19 catch-all; classic lands on the lists overview
+    // (?scc=list-follows opens the follows list directly).
+    this.registerRoute(
+      '/follow-list',
+      'lists-overview',
+      'lists-overview',
+      'lov',
+      true
+    );
+    this.registerRoute(
+      '/timeline/new-note',
+      'new-note',
+      'new-note',
+      'nnv',
+      true
+    );
     this.registerRoute(
       '/notifications',
       'notifications',
@@ -605,13 +689,6 @@ export class App {
       true
     );
     this.registerRoute(
-      '/addons/extended-follows',
-      'addon-extended-follows',
-      'addon-extended-follows',
-      'adv',
-      true
-    );
-    this.registerRoute(
       '/addons/wallet-balance',
       'addon-wallet-balance',
       'addon-wallet-balance',
@@ -710,6 +787,23 @@ export class App {
       'adv',
       true
     );
+    // Short aliases (v2 Focus UI URLs): /live-streams must be a REAL route,
+    // else the nip19 catch-all (/:entity) hijacks it and navigates home.
+    this.registerRoute(
+      '/live-streams',
+      'addon-live-streams',
+      'addon-live-streams',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/live-streams/stream/:naddr',
+      'live-stream-detail',
+      'live-stream-detail',
+      'lsd',
+      true,
+      params => params.naddr
+    );
     this.registerRoute(
       '/addons/live-streams/stream/:naddr',
       'live-stream-detail',
@@ -774,6 +868,160 @@ export class App {
       'addon-analytics',
       'addon-analytics',
       'adv',
+      true
+    );
+    // Short aliases (v2 Focus UI URLs): every addon object that is a FV
+    // object also answers on its short canonical path — else the nip19
+    // catch-all (/:entity) hijacks these one-segment paths and navigates
+    // home. The /addons/<slug> forms above stay as classic aliases.
+    this.registerRoute(
+      '/wallet-balance',
+      'addon-wallet-balance',
+      'addon-wallet-balance',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/calendar',
+      'addon-calendar',
+      'addon-calendar',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/calendar/booking',
+      'addon-calendar',
+      'addon-calendar',
+      'adv',
+      true,
+      () => 'booking'
+    );
+    this.registerRoute(
+      '/custom-emojis',
+      'addon-custom-emojis',
+      'addon-custom-emojis',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/wordfilter',
+      'addon-wordfilter',
+      'addon-wordfilter',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/follow-packs',
+      'addon-follow-packs',
+      'addon-follow-packs',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/follower-notification',
+      'addon-follower-notification',
+      'addon-follower-notification',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/feedback-board/:naddr',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/feedback-board',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/scheduled-posts',
+      'addon-scheduled-posts',
+      'addon-scheduled-posts',
+      'adv',
+      true
+    );
+    this.registerRoute('/badges', 'addon-badges', 'addon-badges', 'adv', true);
+    this.registerRoute(
+      '/note-taking',
+      'addon-note-taking',
+      'addon-note-taking',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/bulk-delete',
+      'addon-bulk-delete',
+      'addon-bulk-delete',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/nostr-majlis',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true
+    );
+    // Tab-addressable variant so a dhikr notification can deep-link straight to the Community Dhikr tab.
+    this.registerRoute(
+      '/nostr-majlis/:tab',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true,
+      params => params.tab
+    );
+    this.registerRoute(
+      '/group-chats',
+      'addon-group-chats',
+      'addon-group-chats',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/analytics',
+      'addon-analytics',
+      'addon-analytics',
+      'adv',
+      true
+    );
+    // /search → the Search object (v2, own circle in the SV; the stage
+    // re-derives its state from the URL). Classic has no search page (the
+    // Spotlight lives in the shell chrome) — classic navigates home so the
+    // nip19 catch-all cannot hijack the path. The APPLIED gate decides
+    // (isFocusUiActive), not the preference re-read: boot strips query
+    // params, so a ?focusui=0 deep link would answer from the stored flag.
+    this.router.register(
+      '/search',
+      () => {
+        if (!isFocusUiActive()) this.router.navigate('/');
+      },
+      'search',
+      true
+    );
+    // /recipes → the Recipes object (v2, own circle; the scc recipes tab
+    // as its surface). Classic has no recipes page (the feed lives in the
+    // secondary column's default-content dropdown) — classic navigates
+    // home so the nip19 catch-all cannot hijack the path.
+    this.router.register(
+      '/recipes',
+      () => {
+        if (!isFocusUiActive()) this.router.navigate('/');
+      },
+      'recipes',
       true
     );
     // /addons (no slug) → overview page with all addon tiles

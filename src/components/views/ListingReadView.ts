@@ -45,7 +45,7 @@ export class ListingReadView extends View {
 
   private async render(): Promise<void> {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="listing-read__loading">
           <p class="pulsate">Loading listing…</p>
         </div>

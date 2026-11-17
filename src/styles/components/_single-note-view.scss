@@ -74,15 +74,15 @@
   }
 }
 
-// Drop paint containment for the SNV root card only: the global
-// `html.content-visibility-auto .note-card` rule adds `contain: paint`, which
-// clips everything into the card box. For long (collapsed) root notes the
-// zaps/likes lists and ISL flow below the card box — paint containment makes
-// them invisible and swallows their clicks. Specificity (0,3,1) beats the
-// global rule's (0,2,1). Must stay TOP-LEVEL (outside .snv-wrapper) — nested,
-// Sass would prepend `.snv-wrapper ` and the selector never matches.
+// Drop paint containment for the SNV root card only: the global `.note-card`
+// rule adds `contain: paint`, which clips everything into the card box. For
+// long (collapsed) root notes the zaps/likes lists and ISL flow below the
+// card box — paint containment makes them invisible and swallows their
+// clicks. Specificity (0,2,0) beats the global rule's (0,1,0). Must stay
+// TOP-LEVEL (outside .snv-wrapper) — nested, Sass would prepend
+// `.snv-wrapper ` and the selector never matches.
 @supports (contain: layout) {
-  html.content-visibility-auto .snv-wrapper > .note-card {
+  .snv-wrapper > .note-card {
     contain: layout style;
   }
 }
@@ -166,8 +166,11 @@
   margin-top: $gap * 2;
 }
 
+.snv-replies__empty {
+  padding: $gap;
+}
+
 .snv-replies__loading,
-.snv-replies__empty,
 .snv-replies__error {
   padding: $gap * 2;
   text-align: center;

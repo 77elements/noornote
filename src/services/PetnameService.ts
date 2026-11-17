@@ -9,6 +9,7 @@
 import { Nip78EncryptedListService } from './Nip78EncryptedListService';
 import { StorageKeys } from './PerAccountLocalStorage';
 import { diagLog } from './DiagnosticLogger';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 export class PetnameService extends Nip78EncryptedListService {
   private static instance: PetnameService | null = null;
@@ -59,6 +60,7 @@ export class PetnameService extends Nip78EncryptedListService {
 
   public setPrivateNotesEnabled(enabled: boolean): void {
     this.pals.set(StorageKeys.PRIVATE_PETNAMES_ENABLED, enabled);
+    TypedEventBus.getInstance().emit('petname-notes:changed');
   }
 
   public getPetname(pubkey: string): string | null {
@@ -81,6 +83,7 @@ export class PetnameService extends Nip78EncryptedListService {
       delete map[pubkey];
     }
     this.pals.set(StorageKeys.PETNAMES, map);
+    TypedEventBus.getInstance().emit('petname-notes:changed');
     await this.publishToRelays(map);
   }
 
@@ -98,6 +101,7 @@ export class PetnameService extends Nip78EncryptedListService {
     this.pals.set(StorageKeys.PETNAMES, map as Record<string, string>);
     this.cachedMap = map as Record<string, string>;
     this.cachedOwnerPubkey = user.pubkey;
+    TypedEventBus.getInstance().emit('petname-notes:changed');
     diagLog('system', 'PetnameService synced from relays', {
       count: Object.keys(map).length,
     });

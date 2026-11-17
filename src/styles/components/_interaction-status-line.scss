@@ -253,9 +253,9 @@
 
   // Drop the `paint` containment (and content-visibility) while a menu is open
   // so the dropdown can overflow the card box instead of being clipped to it.
-  // The memory-optimization mode (html.content-visibility-auto) applies
-  // `contain: layout style paint`, which otherwise cuts the menu off at the
-  // card's bottom edge. Keep layout/style containment for scroll performance.
+  // The always-on .note-card rule applies `contain: layout style paint`,
+  // which otherwise cuts the menu off at the card's bottom edge. Keep
+  // layout/style containment for scroll performance.
   contain: layout style;
   content-visibility: visible;
 }

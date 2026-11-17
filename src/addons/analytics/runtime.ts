@@ -23,9 +23,11 @@ import type { AddonContext, AddonRuntime } from '../AddonLoader';
 
 const runtime: AddonRuntime = {
   async init(_ctx: AddonContext): Promise<void> {
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
     /* no-op — see file header */
   },
   async destroy(): Promise<void> {
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
     /* no-op — see file header */
   },
 };

@@ -38,6 +38,17 @@ export function setFilterWords(words: string[]): void {
 }
 
 /**
+ * The addon's always-on reason: with at least one word configured the
+ * filter must keep suppressing posts in every feed, so the runtime STAYS
+ * loaded after an on-demand path closes (login bootLoad gate + the FV
+ * object's release guard). Without words the addon is pure on-demand:
+ * ON while the object is open, OFF after leaving it.
+ */
+export function isWordFilterAutoLoaded(): boolean {
+  return getFilterWords().length > 0;
+}
+
+/**
  * Filter events whose content matches any blocked word (case-insensitive substring).
  * For Kind 6 (reposts), parses embedded JSON to check original note content.
  * Skips filtering when addon is disabled or word list is empty.

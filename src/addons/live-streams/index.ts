@@ -53,3 +53,32 @@ export function setLiveStreamsSidebarWidget(enabled: boolean): void {
     enabled
   );
 }
+
+/**
+ * A background stream is pinned (the play widget's reason to stay loaded).
+ * Safe outside a session — reads the per-account key with a fallback.
+ */
+export function hasLiveStreamsBackgroundPin(): boolean {
+  try {
+    return (
+      PerAccountLocalStorage.getInstance().get<string | null>(
+        StorageKeys.LIVE_STREAMS_PINNED,
+        null
+      ) !== null
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The addon's always-on reasons: while the sidebar widget is shown or a
+ * background stream is pinned, the runtime must STAY loaded after an
+ * on-demand path closes. Otherwise the caller may unload
+ * (deactivateOnDemand). The master switch alone is NOT a reason — the
+ * TV renders embedded players via dynamic import of the player module,
+ * which does not need the runtime.
+ */
+export function isLiveStreamsAutoLoaded(): boolean {
+  return isLiveStreamsSidebarWidget() || hasLiveStreamsBackgroundPin();
+}

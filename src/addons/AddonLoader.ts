@@ -75,10 +75,25 @@ interface AddonLoaderEntry {
   id: string;
   isEnabled: () => boolean;
   load: RuntimeLoader;
+  /**
+   * Login auto-load gate (default: load whenever enabled). An addon may
+   * narrow this to "only when its UI surfaces are actually in use" —
+   * on-demand paths (ensureLoaded) are unaffected.
+   */
+  bootLoad?: () => boolean;
   /** Current runtime instance, or null when not loaded. */
   instance: AddonRuntime | null;
   /** Pubkey the current instance was initialized for (for account-switch detection). */
   loadedForPubkey: string | null;
+  /** An unload op is queued but not yet executed (dedupes on-demand unload logs). */
+  unloadPending: boolean;
+  /**
+   * A destroy op is queued but not yet executed. Checked at execution
+   * time: ensureLoaded cancels a queued destroy by clearing this flag —
+   * the op then no-ops instead of tearing the runtime out under a
+   * freshly re-created surface (tab recreate race).
+   */
+  destroyQueued: boolean;
   /** Serialization chain: every lifecycle op for this addon appends here. */
   opChain: Promise<void>;
 }
@@ -110,6 +125,8 @@ export class AddonLoader {
     id: string;
     isEnabled: () => boolean;
     load: RuntimeLoader;
+    /** Narrow the login auto-load (default: always when enabled). */
+    bootLoad?: () => boolean;
   }): void {
     if (this.entries.has(entry.id)) {
       diagLog('addons', 'addons_register_duplicate', { id: entry.id });
@@ -119,8 +136,11 @@ export class AddonLoader {
       id: entry.id,
       isEnabled: entry.isEnabled,
       load: entry.load,
+      ...(entry.bootLoad && { bootLoad: entry.bootLoad }),
       instance: null,
       loadedForPubkey: null,
+      unloadPending: false,
+      destroyQueued: false,
       opChain: Promise.resolve(),
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
@@ -177,6 +197,15 @@ export class AddonLoader {
       void this.handleLogout();
     });
 
+    // Focus UI switch: re-evaluate every bootLoad gate under the new
+    // interface — v1→v2 unloads login addons that classic auto-loads but
+    // v2 keeps on-demand (analytics, bulk-delete, …); v2→v1 loads what
+    // classic expects. Same idempotent path as login.
+    this.eventBus.on('settings:focus-ui-changed', () => {
+      if (!this.currentPubkey) return;
+      void this.handleLogin(this.currentPubkey, this.currentNpub);
+    });
+
     diagLog('addons', 'addons_boot_scan', {
       registered: Array.from(this.entries.keys()),
       enabled: Array.from(this.entries.values())
@@ -212,6 +241,25 @@ export class AddonLoader {
     return !!(entry && entry.instance);
   }
 
+  /** Dev diagnostics (DevLoadMonitor): read-only load state of all addons. */
+  public listLoadState(): Array<{
+    id: string;
+    loaded: boolean;
+    enabled: boolean;
+  }> {
+    return Array.from(this.entries.values()).map(entry => ({
+      id: entry.id,
+      loaded: !!entry.instance,
+      enabled: (() => {
+        try {
+          return entry.isEnabled();
+        } catch {
+          return false;
+        }
+      })(),
+    }));
+  }
+
   /** Access the live runtime instance, typed. Returns null if not loaded. */
   public getRuntime<T extends AddonRuntime = AddonRuntime>(
     id: string
@@ -244,13 +292,17 @@ export class AddonLoader {
       });
     }
     // For every enabled addon, ensure it is loaded for the current pubkey.
+    // bootLoad narrows the auto-load (e.g. live-streams: only with its
+    // widget on or a pinned background stream — otherwise pure on-demand).
     // For every loaded addon that was initialized for a different pubkey,
     // destroy and re-init.
     for (const entry of this.entries.values()) {
-      const enabled = this.safeIsEnabled(entry);
+      const enabled =
+        this.safeIsEnabled(entry) && (entry.bootLoad ? entry.bootLoad() : true);
 
       if (!enabled) {
         if (entry.instance) {
+          entry.destroyQueued = true;
           this.enqueue(entry, () => this.runDestroy(entry));
         }
         continue;
@@ -258,6 +310,7 @@ export class AddonLoader {
       if (entry.instance && entry.loadedForPubkey !== pubkey) {
         // Account switch: tear down, then bring up for the new pubkey.
         this.enqueue(entry, async () => {
+          entry.destroyQueued = true;
           await this.runDestroy(entry);
           await this.runInit(entry);
         });
@@ -272,6 +325,7 @@ export class AddonLoader {
     this.currentNpub = null;
     for (const entry of this.entries.values()) {
       if (entry.instance) {
+        entry.destroyQueued = true;
         this.enqueue(entry, () => this.runDestroy(entry));
       }
     }
@@ -295,7 +349,56 @@ export class AddonLoader {
     const entry = this.entries.get(id);
     if (!entry) return;
     if (!entry.instance) return;
+    entry.destroyQueued = true;
     this.enqueue(entry, () => this.runDestroy(entry));
+  }
+
+  /**
+   * On-demand activation (v2): load the addon regardless of the stored
+   * user preference, for exactly as long as its functionality is being
+   * used. Call sites pair this with deactivate() once the work is done
+   * (e.g. the composer unloads Scheduled Posts after the schedule
+   * instruction was accepted). Idempotent; serialized through the addon's
+   * op chain. The returned promise settles when the load op completed.
+   */
+  public ensureLoaded(id: string): Promise<void> {
+    const entry = this.entries.get(id);
+    if (!entry) return Promise.resolve();
+    // Recreate race: a destroy op is queued but not yet executed (the
+    // previous view's teardown). Cancel it instead of no-oping —
+    // otherwise the queued destroy tears the runtime out under the
+    // freshly created view and nothing re-loads it.
+    if (entry.instance && entry.destroyQueued) {
+      entry.destroyQueued = false;
+      entry.unloadPending = false;
+      return entry.opChain;
+    }
+    if (entry.instance) return Promise.resolve();
+    diagLog('addons', 'addons_on_demand_load', {
+      id,
+      pubkey: this.currentPubkey,
+    });
+    entry.unloadPending = false;
+    this.enqueue(entry, () => this.runInit(entry));
+    return entry.opChain;
+  }
+
+  /**
+   * On-demand counterpart of ensureLoaded(): unload an addon that was
+   * activated on demand. No-op when not loaded or unknown id. Call sites
+   * should skip this when the addon is permanently user-enabled — a later
+   * login refresh would just load it again.
+   */
+  public deactivateOnDemand(id: string): Promise<void> {
+    const entry = this.entries.get(id);
+    if (!entry || !entry.instance || entry.unloadPending) {
+      return Promise.resolve();
+    }
+    diagLog('addons', 'addons_on_demand_unload', { id });
+    entry.unloadPending = true;
+    entry.destroyQueued = true;
+    this.enqueue(entry, () => this.runDestroy(entry));
+    return entry.opChain;
   }
 
   /** Append an op to the addon's serialized chain. Errors are caught and logged. */
@@ -356,6 +459,7 @@ export class AddonLoader {
     }
     entry.instance = runtime;
     entry.loadedForPubkey = this.currentPubkey;
+    entry.unloadPending = false;
     const initDur = Math.round(performance.now() - initStart);
     diagLog('addons', 'addons_init_ok', {
       id: entry.id,
@@ -365,12 +469,17 @@ export class AddonLoader {
   }
 
   private async runDestroy(entry: AddonLoaderEntry): Promise<void> {
+    // Superseded: a queued ensureLoaded canceled this destroy (recreate
+    // race) — the runtime must stay up for its new user.
+    if (!entry.destroyQueued) return;
+    entry.destroyQueued = false;
     if (!entry.instance) return; // idempotent
     const start = performance.now();
     diagLog('addons', 'addons_destroy_start', { id: entry.id });
     const runtime = entry.instance;
     entry.instance = null;
     entry.loadedForPubkey = null;
+    entry.unloadPending = false;
     try {
       await runtime.destroy();
     } catch (err) {

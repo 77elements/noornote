@@ -598,9 +598,18 @@ export class DMStore {
   }
 
   /**
-   * Mark conversation as read (reset unread count and set lastReadAt)
+   * Load-or-fetch one conversation record and mutate it in a readwrite
+   * transaction (shared skeleton of markAsRead / softDeleteConversation /
+   * setDisappearing / setLastPromptedPeerDuration). `createIfMissing`
+   * starts from a blank conversation record (disappearing/prompt settings
+   * may exist before the first message). The record is written back unless
+   * nothing exists and `createIfMissing` is false.
    */
-  public async markAsRead(partnerPubkey: string): Promise<void> {
+  private async mutateConversation(
+    partnerPubkey: string,
+    mutate: (conversation: DMConversation) => void,
+    createIfMissing = false
+  ): Promise<void> {
     await this.init();
 
     await this.db!.withStore(
@@ -611,14 +620,21 @@ export class DMStore {
           const request = store.get(partnerPubkey);
 
           request.onsuccess = () => {
-            const conversation = request.result as DMConversation | undefined;
+            const existing = request.result as DMConversation | undefined;
+            const conversation =
+              existing ??
+              (createIfMissing
+                ? {
+                    pubkey: partnerPubkey,
+                    lastMessageAt: 0,
+                    lastMessagePreview: '',
+                    unreadCount: 0,
+                    lastReadAt: 0,
+                  }
+                : undefined);
             if (conversation) {
-              conversation.unreadCount = 0;
-              conversation.lastReadAt = Math.floor(Date.now() / 1000);
+              mutate(conversation);
               void store.put(conversation);
-              // Mirror the new anchor so it survives an IndexedDB eviction.
-              this.readAnchorMirror.set(partnerPubkey, conversation.lastReadAt);
-              this.saveReadAnchorMirror();
             }
             resolve();
           };
@@ -627,6 +643,19 @@ export class DMStore {
             reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
+  }
+
+  /**
+   * Mark conversation as read (reset unread count and set lastReadAt)
+   */
+  public async markAsRead(partnerPubkey: string): Promise<void> {
+    await this.mutateConversation(partnerPubkey, conversation => {
+      conversation.unreadCount = 0;
+      conversation.lastReadAt = Math.floor(Date.now() / 1000);
+      // Mirror the new anchor so it survives an IndexedDB eviction.
+      this.readAnchorMirror.set(partnerPubkey, conversation.lastReadAt);
+      this.saveReadAnchorMirror();
+    });
   }
 
   /**
@@ -805,30 +834,11 @@ export class DMStore {
    * Messages stay in the store (dedup) but are filtered on read.
    */
   public async softDeleteConversation(partnerPubkey: string): Promise<void> {
-    await this.init();
-
-    await this.db!.withStore(
-      CONVERSATIONS_STORE,
-      'readwrite',
-      store =>
-        new Promise<void>((resolve, reject) => {
-          const request = store.get(partnerPubkey);
-
-          request.onsuccess = () => {
-            const conversation = request.result as DMConversation | undefined;
-            if (conversation) {
-              conversation.deleted = true;
-              conversation.deletedAt = Math.floor(Date.now() / 1000);
-              conversation.unreadCount = 0;
-              void store.put(conversation);
-            }
-            resolve();
-          };
-
-          request.onerror = () =>
-            reject(request.error ?? new Error('IndexedDB request failed'));
-        })
-    );
+    await this.mutateConversation(partnerPubkey, conversation => {
+      conversation.deleted = true;
+      conversation.deletedAt = Math.floor(Date.now() / 1000);
+      conversation.unreadCount = 0;
+    });
   }
 
   /**
@@ -1156,44 +1166,25 @@ export class DMStore {
     partnerPubkey: string,
     seconds: number | undefined
   ): Promise<void> {
-    await this.init();
-
-    await this.db!.withStore(
-      CONVERSATIONS_STORE,
-      'readwrite',
-      store =>
-        new Promise<void>((resolve, reject) => {
-          const req = store.get(partnerPubkey);
-
-          req.onsuccess = () => {
-            const conv = (req.result as DMConversation | undefined) || {
-              pubkey: partnerPubkey,
-              lastMessageAt: 0,
-              lastMessagePreview: '',
-              unreadCount: 0,
-              lastReadAt: 0,
-            };
-            conv.disappearingSeconds = seconds;
-            // Keep lastPromptedPeerDuration in sync when accepting a new duration
-            // so the same duration doesn't re-prompt. When `seconds` is undefined
-            // (reset to undecided) or 0 (off), leave lastPromptedPeerDuration
-            // untouched — the next incoming tagged message will re-prompt.
-            if (typeof seconds === 'number' && seconds > 0) {
-              conv.lastPromptedPeerDuration = seconds;
-            }
-            void store.put(conv);
-            this.disappearingMirror.set(partnerPubkey, seconds);
-            this.saveDisappearingMirror();
-            diagLog('dms', 'disappearing_set', {
-              partner: partnerPubkey.slice(0, 8),
-              seconds,
-            });
-            resolve();
-          };
-
-          req.onerror = () =>
-            reject(req.error ?? new Error('IndexedDB request failed'));
-        })
+    await this.mutateConversation(
+      partnerPubkey,
+      conv => {
+        conv.disappearingSeconds = seconds;
+        // Keep lastPromptedPeerDuration in sync when accepting a new duration
+        // so the same duration doesn't re-prompt. When `seconds` is undefined
+        // (reset to undecided) or 0 (off), leave lastPromptedPeerDuration
+        // untouched — the next incoming tagged message will re-prompt.
+        if (typeof seconds === 'number' && seconds > 0) {
+          conv.lastPromptedPeerDuration = seconds;
+        }
+        this.disappearingMirror.set(partnerPubkey, seconds);
+        this.saveDisappearingMirror();
+        diagLog('dms', 'disappearing_set', {
+          partner: partnerPubkey.slice(0, 8),
+          seconds,
+        });
+      },
+      true
     );
   }
 
@@ -1221,31 +1212,12 @@ export class DMStore {
     partnerPubkey: string,
     seconds: number
   ): Promise<void> {
-    await this.init();
-
-    await this.db!.withStore(
-      CONVERSATIONS_STORE,
-      'readwrite',
-      store =>
-        new Promise<void>((resolve, reject) => {
-          const req = store.get(partnerPubkey);
-
-          req.onsuccess = () => {
-            const conv = (req.result as DMConversation | undefined) || {
-              pubkey: partnerPubkey,
-              lastMessageAt: 0,
-              lastMessagePreview: '',
-              unreadCount: 0,
-              lastReadAt: 0,
-            };
-            conv.lastPromptedPeerDuration = seconds;
-            void store.put(conv);
-            resolve();
-          };
-
-          req.onerror = () =>
-            reject(req.error ?? new Error('IndexedDB request failed'));
-        })
+    await this.mutateConversation(
+      partnerPubkey,
+      conv => {
+        conv.lastPromptedPeerDuration = seconds;
+      },
+      true
     );
   }
 

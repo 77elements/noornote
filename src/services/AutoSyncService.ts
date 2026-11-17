@@ -92,6 +92,9 @@ export class AutoSyncService {
   // Flag to prevent sync loops
   private isSyncing: Set<ListType> = new Set();
 
+  // Focus UI (v2) pause — see pauseForFocusUi/resumeFromFocusUi.
+  private focusUiPaused = false;
+
   private constructor() {
     this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
@@ -123,6 +126,30 @@ export class AutoSyncService {
       AutoSyncService.instance = new AutoSyncService();
     }
     return AutoSyncService.instance;
+  }
+
+  /**
+   * Focus UI (v2) pause: the v1 list auto-sync (startup fetch, 5-minute
+   * poller, event-driven relay pushes) is v1 machinery — a v2 user
+   * carries only the diode trio (notifications/DMs/bookmarks), not the
+   * background follows/mutes/tribes traffic. Idempotent; the switch
+   * bridge (PostLoginService.syncBackgroundFetchGate) resumes it on
+   * v2→v1. Explicit "Sync to Relays"/"Save to File" actions in the list
+   * objects still work (user-triggered, not background).
+   */
+  public pauseForFocusUi(): void {
+    this.focusUiPaused = true;
+    this.clearAllTimers();
+    this.stopPeriodicSync();
+    this.cancelStartupSync();
+  }
+
+  /** Leave the Focus UI (v2): re-arm the easy-mode sync (idempotent). */
+  public resumeFromFocusUi(): void {
+    this.focusUiPaused = false;
+    if (this.authService.getCurrentUser() && isEasyMode()) {
+      this.scheduleStartupSync();
+    }
   }
 
   /**
@@ -223,6 +250,7 @@ export class AutoSyncService {
    * Schedule startup sync (10 seconds after login)
    */
   private scheduleStartupSync(): void {
+    if (this.focusUiPaused) return;
     if (this.authService.isBunkerAuth()) return;
     this.cancelStartupSync();
     this.systemLogger.info(
@@ -272,6 +300,7 @@ export class AutoSyncService {
    * Handle back online
    */
   private handleBackOnline(): void {
+    if (this.focusUiPaused) return;
     if (isEasyMode() && this.authService.getCurrentUser()) {
       this.startPeriodicSync();
       this.systemLogger.info(
@@ -287,6 +316,7 @@ export class AutoSyncService {
    * Only acts if Easy Mode is enabled
    */
   private async handleListChange(listType: ListType): Promise<void> {
+    if (this.focusUiPaused) return;
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
     // Skip sync for disabled addons (data stays in localStorage, just no sync)
@@ -438,6 +468,7 @@ export class AutoSyncService {
    * Start periodic sync from relays (every 5 minutes)
    */
   private startPeriodicSync(): void {
+    if (this.focusUiPaused) return;
     if (!isEasyMode()) return;
     if (this.periodicSyncInterval) return; // Already running
 
@@ -467,6 +498,7 @@ export class AutoSyncService {
    * Runs with a 10-second delay (like startup sync) to avoid hammering relays.
    */
   public scheduleSyncForList(listType: ListType): void {
+    if (this.focusUiPaused) return;
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
 

@@ -62,7 +62,7 @@ export class BtcPriceAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('BTC Price')}</h1>
         <section class="section">
           <div class="setting">
@@ -142,6 +142,10 @@ export class BtcPriceAddonView extends View {
         AddonLoader.getInstance()
           .getRuntime<BtcPriceRuntime>('btc-price')
           ?.widget?.refresh();
+        // The Focus UI stage places/removes the widget slot live.
+        TypedEventBus.getInstance().emit('btc-price:widget-toggle', {
+          enabled: checked,
+        });
       },
     });
     mount.innerHTML = this.widgetSwitch.render();

@@ -6,6 +6,7 @@
 import { View } from '../../components/views/View';
 import { Router } from '../../services/Router';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { NostrTransport } from '../../services/transport/NostrTransport';
@@ -14,8 +15,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
-import { parseListingMetadata, formatPrice } from './marketplace-helpers';
-import { encodeNaddr } from '../../services/NostrToolsAdapter';
+import { getListingCardBasics } from './marketplace-helpers';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getTag } from '../../helpers/tagUtils';
@@ -42,7 +42,7 @@ export class MyListingsView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="marketplace-timeline">
           <div class="marketplace-timeline__sticky-header">
             <header class="marketplace-view__header">
@@ -70,7 +70,11 @@ export class MyListingsView extends View {
     this.container
       .querySelector('[data-action="add-product"]')
       ?.addEventListener('click', () => {
-        this.router.navigate('/write-listing');
+        // Focus seam first (v2 composer /marketplace/post); classic
+        // /write-listing as the fallback.
+        if (!delegateToFocusUi('write-listing')) {
+          this.router.navigate('/write-listing');
+        }
       });
   }
 
@@ -146,20 +150,8 @@ export class MyListingsView extends View {
   }
 
   private createListingRow(event: NostrEvent): HTMLElement {
-    const meta = parseListingMetadata(event);
-    const naddr = encodeNaddr({
-      kind: 30402,
-      pubkey: event.pubkey,
-      identifier: meta.identifier,
-      relays: [],
-    });
-
-    const priceDisplay = formatPrice(
-      meta.price,
-      meta.priceCurrency,
-      meta.priceFrequency
-    );
-    const firstImage = meta.images[0] || '';
+    const { meta, naddr, priceDisplay, firstImage } =
+      getListingCardBasics(event);
 
     const row = document.createElement('div');
     row.className = 'post-item my-listings__row';
@@ -210,10 +202,14 @@ export class MyListingsView extends View {
         );
       });
 
-    // Edit
+    // Edit: the Focus UI (v2) opens the listing composer as the marketplace
+    // surface's edit detail (/marketplace/edit/:naddr); classic routes to
+    // the full-page editor.
     row.querySelector('[data-action="edit"]')?.addEventListener('click', e => {
       e.stopPropagation();
-      this.router.navigate(`/write-listing/${naddr}`);
+      if (!delegateToFocusUi('edit-listing', naddr)) {
+        this.router.navigate(`/write-listing/${naddr}`);
+      }
     });
 
     // Delete

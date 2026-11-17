@@ -55,7 +55,6 @@ import {
 import { UserService } from '../services/UserService';
 import { FollowerCountService } from '../services/FollowerCountService';
 import type { FollowsExtendedFeatures } from './follows-extended';
-import { isExtendedFollowsEnabled } from '../addons/extended-follows/index';
 import { Router } from '../services/Router';
 import { hexToNpub } from '../helpers/nip19';
 import { extractDisplayName } from '../helpers/extractDisplayName';
@@ -65,6 +64,28 @@ import { ArticleNotificationService } from '../services/ArticleNotificationServi
 
 const logger = SystemLogger.getInstance();
 const eventBus = TypedEventBus.getInstance();
+
+/**
+ * IntersectionObserver root for infinite scroll: the element that CLIPS the
+ * sentinel — the nearest ancestor with overflow-y auto/scroll. The default
+ * viewport root is wrong whenever the list scrolls inside an inner overflow
+ * container (rootMargin prefetch never crosses the clip boundary, so the
+ * observer only fires at the very last item or never).
+ *
+ * Unlike findScrollableAncestor (scroll-memory use case) this must NOT
+ * require scrollHeight > clientHeight: focus surfaces render detached, so
+ * every clientHeight is 0 at observe time — the clip ancestor is still the
+ * right root once the surface is attached.
+ */
+function findClipRoot(el: HTMLElement): Element {
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll') return node;
+    node = node.parentElement;
+  }
+  return document.scrollingElement ?? document.documentElement;
+}
 
 // ============================================================
 // TYPES
@@ -1487,10 +1508,11 @@ export class FollowListManager {
   }
 
   /**
-   * Initialize extended features (mutuals, zaps, change detection) if addon enabled
+   * Initialize extended features (mutuals, zaps, change detection).
+   * Always on — the former Extended Follows addon was merged into the
+   * follow list (v1 + v2 render the same list now).
    */
   private async initExtended(): Promise<void> {
-    if (!isExtendedFollowsEnabled()) return;
     const { FollowsExtendedFeatures } = await import('./follows-extended');
     this.extended = new FollowsExtendedFeatures();
     this.setupExtendedEventListeners();
@@ -1517,21 +1539,6 @@ export class FollowListManager {
     });
     this.eventBus.on('list-sync-mode:changed', () =>
       this.refreshListIfActive()
-    );
-
-    // Extended Follows addon toggle: load/unload extended features and refresh
-    this.eventBus.on(
-      'extended-follows:toggle',
-      async (data: { enabled: boolean }) => {
-        if (data.enabled && !this.extended) {
-          this.extendedReady = this.initExtended();
-          await this.extendedReady;
-        } else if (!data.enabled && this.extended) {
-          this.extended = null;
-          this.extendedReady = null;
-        }
-        this.refreshListIfActive();
-      }
     );
   }
 
@@ -1596,7 +1603,12 @@ export class FollowListManager {
    * Handle load more (infinite scroll trigger) (inlined from BaseListManager)
    */
   private async handleLoadMore(): Promise<void> {
-    const list = this.containerElement.querySelector('.follows-list');
+    // containerElement IS the .follows-list element (observe(list)) —
+    // querySelector only searches descendants, so a blind query would return
+    // null and silently kill every load-more trigger.
+    const list = this.containerElement.classList.contains('follows-list')
+      ? this.containerElement
+      : this.containerElement.querySelector('.follows-list');
     if (!list || this.isLoading || !this.hasMore) return;
     await this.loadBatch(list as HTMLElement);
   }
@@ -2197,7 +2209,16 @@ export class FollowListManager {
         this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
           loadingMessage: _('Loading more follows...'),
         });
-        this.infiniteScroll.observe(list as HTMLElement);
+        // The list scrolls inside an inner overflow container (e.g. the
+        // focus surface's .tab-content), not the page: with the default
+        // viewport root the container clips the sentinel, so the observer
+        // never fires. The root is resolved LAZILY — at detached surface
+        // render time the contextual overflow rule doesn't match yet, so
+        // the eager resolution would fall back to the viewport and the
+        // observer would never fire after attachment.
+        this.infiniteScroll.observe(list as HTMLElement, () =>
+          findClipRoot(list as HTMLElement)
+        );
       }
 
       // Start loading zap stats asynchronously (don't await)
@@ -3028,7 +3049,8 @@ export class ExternalFollowListManager {
       this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
         loadingMessage: _('Loading more...'),
       });
-      this.infiniteScroll.observe(list);
+      // Inner clip container as root, resolved lazily (same as above).
+      this.infiniteScroll.observe(list, () => findClipRoot(list));
     }
   }
 
@@ -3060,7 +3082,12 @@ export class ExternalFollowListManager {
    * Handle infinite scroll load more
    */
   private async handleLoadMore(): Promise<void> {
-    const list = this.containerElement?.querySelector('.follows-list');
+    // containerElement IS the .follows-list element (observe(list)) —
+    // querySelector only searches descendants, so a blind query would return
+    // null and silently kill every load-more trigger.
+    const list = this.containerElement?.classList.contains('follows-list')
+      ? this.containerElement
+      : this.containerElement?.querySelector('.follows-list');
     if (!list || this.isLoading || !this.hasMore) return;
     await this.loadBatch(list as HTMLElement);
   }

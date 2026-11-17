@@ -45,6 +45,8 @@ export class MediaRuntime implements ModuleRuntime<MediaModuleApi> {
       cancelUpload: () => svc?.cancelUpload(),
       publishVideo: options =>
         vs?.publishVideo(options) ?? Promise.resolve(null),
+      publishPicture: options =>
+        vs?.publishPicture(options) ?? Promise.resolve(null),
     };
   }
 }

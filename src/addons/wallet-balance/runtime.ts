@@ -6,6 +6,11 @@
  * point that pulls the heavy module into its own chunk — core code no
  * longer imports WalletBalanceDisplay directly.
  *
+ * Mount: classic appends the display into `.wallet-balance-container`;
+ * the Focus UI has no classic sidebar — there the display mounts detached
+ * and the focus stage re-parents it into a side-stack slot via
+ * widget.setFocusHost() (structural FocusWidgetLike contract).
+ *
  * Destroy contract — must fully unwind:
  *   - WalletBalanceDisplay.destroy() removes the 3 window listeners
  *     (nwc-connection-restored, zap-sent, fiat-currency-changed), clears
@@ -19,26 +24,22 @@
 import { WalletBalanceDisplay } from '../../components/ui/WalletBalanceDisplay';
 import type { AddonContext, AddonRuntime } from '../AddonLoader';
 
-let display: WalletBalanceDisplay | null = null;
+const runtime: AddonRuntime & { widget: WalletBalanceDisplay | null } = {
+  widget: null,
 
-const runtime: AddonRuntime = {
   async init(_ctx: AddonContext): Promise<void> {
-    if (display) return; // idempotent
+    if (this.widget) return; // idempotent
+    this.widget = new WalletBalanceDisplay();
+    // Classic sidebar slot — missing in the Focus UI, where the display
+    // mounts detached until the focus stage provides a side-stack host.
     const container = document.querySelector('.wallet-balance-container');
-    if (!container) {
-      // Throw so AddonLoader does NOT mark us as loaded — allows retry on
-      // next user:login or toggle. A silent return would leave entry.instance
-      // set, permanently preventing initialization.
-      throw new Error('wallet-balance: .wallet-balance-container not in DOM');
-    }
-    display = new WalletBalanceDisplay();
-    container.appendChild(display.getElement());
+    if (container) container.appendChild(this.widget.getElement());
   },
 
   async destroy(): Promise<void> {
-    if (!display) return;
-    display.destroy();
-    display = null;
+    if (!this.widget) return;
+    this.widget.destroy();
+    this.widget = null;
   },
 };
 

@@ -643,3 +643,9 @@
   gap: calc($gap / 4);
   flex-shrink: 0;
 }
+
+// Focus UI (v2): the focus-view-header's Post Listing button owns listing
+// composition — the in-feed Add Product link is classic-only.
+html.ui--focus .marketplace-view__add-btn {
+  display: none;
+}

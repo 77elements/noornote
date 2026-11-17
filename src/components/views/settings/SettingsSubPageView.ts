@@ -22,7 +22,7 @@ export class SettingsSubPageView extends View {
       <div class="l-spread">
         <h1 class="settings-title">${title}</h1>
       </div>
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
       </div>
     `;

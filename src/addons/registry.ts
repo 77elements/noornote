@@ -53,14 +53,6 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
       'Subscribe to shared follow lists and follow curated groups in one go.',
   },
   {
-    id: 'extended-follows',
-    name: 'Extended Follows',
-    route: '/addons/extended-follows',
-    viewId: 'addon-extended-follows',
-    description:
-      'Track follows, unfollows and profile changes beyond the plain follow list.',
-  },
-  {
     id: 'wallet-balance',
     name: 'Wallet Balance',
     route: '/addons/wallet-balance',

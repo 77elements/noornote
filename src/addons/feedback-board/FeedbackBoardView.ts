@@ -8,6 +8,8 @@
  */
 
 import { View } from '../../components/views/View';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { NnDropdown } from '../../components/ui/NnDropdown';
@@ -15,6 +17,7 @@ import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { canonicalShareUrl } from '../../helpers/canonicalShareUrl';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -96,15 +99,20 @@ export class FeedbackBoardAddonView extends View {
   private openCardMenu: HTMLElement | null = null;
   private cardMenuOutsideHandler: (() => void) | null = null;
   private typeDropdown: NnDropdown | null = null;
+  /** v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
     this.service = FeedbackBoardService.getInstance();
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('feedback-board');
+    }
     this.container = document.createElement('div');
     this.container.className =
       'view-content view-content--addon view-content--addon-feedback-board';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Feedback Board')}</h1>
         <section class="section" id="feedback-board-settings-content"></section>
         <div data-addon-content="feedback-board"></div>
@@ -137,7 +145,17 @@ export class FeedbackBoardAddonView extends View {
   public destroy(): void {
     this.settings?.unmount();
     this.settings = null;
+    if (this.cardMenuOutsideHandler) {
+      document.removeEventListener('click', this.cardMenuOutsideHandler);
+      this.cardMenuOutsideHandler = null;
+    }
     this.container.innerHTML = '';
+    // v2 on-demand release: unload after the object is left — unless the
+    // addon is user-enabled (its always-on reason; the toggle lives in
+    // this view).
+    if (this.v2OnDemand && !isFeedbackBoardEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('feedback-board');
+    }
   }
 
   private usernameFor(pubkey: string): string {
@@ -317,7 +335,7 @@ export class FeedbackBoardAddonView extends View {
             relays: this.cardRelayHints(),
           });
           void ClipboardActionsService.getInstance().copyText(
-            `${window.location.origin}/addons/feedback-board/${naddr}`,
+            canonicalShareUrl(`/addons/feedback-board/${naddr}`),
             _('Permalink')
           );
           break;

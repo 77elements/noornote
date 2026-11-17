@@ -23,6 +23,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { NnDropdown } from '../../components/ui/NnDropdown';
 import { Switch } from '../../components/ui/Switch';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { canonicalShareUrl } from '../../helpers/canonicalShareUrl';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { BookingService, type OwnerSlot } from './BookingService';
 import { _ } from '../../i18n';
@@ -255,7 +256,7 @@ export class BookingManager {
     const npub = encodeNpub(
       AuthService.getInstance().getCurrentUser()?.pubkey ?? ''
     );
-    const bookingUrl = `${window.location.origin}/profile/${npub}/book`;
+    const bookingUrl = canonicalShareUrl(`/profile/${npub}/book`);
 
     const dayRows = c.week
       .map(

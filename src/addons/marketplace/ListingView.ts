@@ -27,6 +27,7 @@ import { ToastService } from '../../services/ToastService';
 import { getTag } from '../../helpers/tagUtils';
 import { RelayConfig } from '../../services/RelayConfig';
 import { _ } from '../../i18n';
+import { openNoteComposer } from '../../helpers/composerHandoff';
 
 const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" width="22" height="22"><use href="#icon-bookmark-24"/></svg>`;
 const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" width="22" height="22"><use href="#icon-bookmark-24-filled"/></svg>`;
@@ -46,7 +47,7 @@ export class ListingView extends View {
 
   private async render(): Promise<void> {
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="listing-view__loading">
           <div class="listing-view__loading-spinner"></div>
           <p>${_('Loading listing...')}</p>
@@ -265,10 +266,7 @@ export class ListingView extends View {
             identifier: dTag,
             relays: writeRelays.slice(0, 2),
           });
-          const { PostNoteModal } = await import(
-            '../../components/post/PostNoteModal'
-          );
-          PostNoteModal.getInstance().show(`nostr:${naddr}`);
+          openNoteComposer(`nostr:${naddr}`);
         }
       });
     });

@@ -439,6 +439,11 @@ export class NotificationsView extends View {
     this.notificationItems = [];
     list.innerHTML = '';
 
+    // Re-create the infinite-scroll sentinel: the innerHTML wipe above also
+    // destroyed the sentinel + loading indicator, which silently killed
+    // load-more after every reset (tab switch, mute refresh, repaint).
+    this.setupInfiniteScroll();
+
     // Reset pagination
     this.currentOffset = 0;
     this.hasMoreNotifications = true;

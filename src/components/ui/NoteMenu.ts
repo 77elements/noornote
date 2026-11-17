@@ -11,6 +11,7 @@ import {
   encodeNevent,
 } from '../../services/NostrToolsAdapter';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { canonicalShareUrl } from '../../helpers/canonicalShareUrl';
 import { _ } from '../../i18n';
 import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
@@ -500,6 +501,8 @@ export class NoteMenu {
    * Share link in a modal with copy-to-clipboard.
    * Articles (kind 30023) link via /article/<naddr> so the URL opens the
    * ArticleView deep link; everything else via /note/<nevent>.
+   * Both always target the canonical production origin (noornote.app) —
+   * window.location.origin would produce file:/// or localhost links.
    */
   private shareNote(): void {
     const rawEvent = this.options.rawEvent;
@@ -512,14 +515,14 @@ export class NoteMenu {
         identifier: getTag(rawEvent.tags, 'd'),
         relays: this.resolveRelayHints(),
       });
-      shareUrl = `${window.location.origin}/article/${naddr}`;
+      shareUrl = canonicalShareUrl(`/article/${naddr}`);
     } else {
       const nevent = encodeNevent(
         this.options.eventId,
         this.resolveRelayHints(),
         this.options.authorPubkey || undefined
       );
-      shareUrl = `${window.location.origin}/note/${nevent}`;
+      shareUrl = canonicalShareUrl(`/note/${nevent}`);
     }
 
     const modalService = ModalService.getInstance();

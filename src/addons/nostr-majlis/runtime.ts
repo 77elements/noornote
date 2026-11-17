@@ -19,13 +19,17 @@ import { DiyanetService } from './DiyanetService';
 import { NostrMajlisReminderService } from './NostrMajlisReminderService';
 import { NostrMajlisNativeReminders } from './NostrMajlisNativeReminders';
 import { NostrMajlisSidebarWidget } from './NostrMajlisSidebarWidget';
+import { NostrMajlisQuranWidget } from './NostrMajlisQuranWidget';
 import { DhikrService } from './DhikrService';
+import { getNostrMajlisSettings } from './index';
 
 export class NostrMajlisRuntime implements AddonRuntime {
   private initialized = false;
   private native: NostrMajlisNativeReminders | null = null;
   /** Public so the settings view can refresh it live via AddonLoader.getRuntime(). */
   public widget: NostrMajlisSidebarWidget | null = null;
+  /** v2 stage widget: the daily ayah as its own side-stack slot. */
+  public quranWidget: NostrMajlisQuranWidget | null = null;
   /** Public so the Community Dhikr tab can read/subscribe via AddonLoader.getRuntime(). */
   public dhikr: DhikrService | null = null;
 
@@ -44,12 +48,35 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.widget = new NostrMajlisSidebarWidget();
     this.widget.mount();
 
-    this.dhikr = new DhikrService();
-    void this.dhikr.start();
+    this.quranWidget = new NostrMajlisQuranWidget();
+    this.quranWidget.mount();
+
+    // Community Dhikr holds 3 live relay subscriptions on external
+    // relays — not a login reason. Start them only while a majlis widget
+    // is active (the widgets render dhikr state); the Community Dhikr
+    // tab starts them on demand (ensureDhikr).
+    const settings = getNostrMajlisSettings();
+    if (settings.sidebarWidget || settings.quranDaily) {
+      this.dhikr = new DhikrService();
+      void this.dhikr.start();
+    }
 
     diagLog('addons', 'nostr-majlis: runtime init', {
       npub: ctx.npub?.slice(0, 12),
     });
+  }
+
+  /**
+   * Community Dhikr tab (and future consumers): start the dhikr relay
+   * subscriptions on demand. Idempotent; resolves with the running
+   * service (or null while the runtime is being torn down).
+   */
+  public async ensureDhikr(): Promise<DhikrService | null> {
+    if (!this.dhikr) {
+      this.dhikr = new DhikrService();
+      await this.dhikr.start();
+    }
+    return this.dhikr;
   }
 
   async destroy(): Promise<void> {
@@ -57,6 +84,8 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.initialized = false;
     this.widget?.destroy();
     this.widget = null;
+    this.quranWidget?.destroy();
+    this.quranWidget = null;
     if (this.native) {
       await this.native.destroy();
       this.native = null;

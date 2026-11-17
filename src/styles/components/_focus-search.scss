@@ -1,0 +1,54 @@
+/**
+ * Focus Search object (v2) — the Search circle's surface.
+ *
+ * The search input bar plus the reused GlobalSearchView (tab-content)
+ * below it. User rows reuse the Spotlight's user-suggestion styles
+ * (_search-spotlight.scss), so this file only styles the object's own
+ * shell: the bar and the spacing of the injected view.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.focus-search-object {
+  &__bar {
+    margin-bottom: $gap;
+  }
+
+  &__input {
+    width: 100%;
+    padding: calc($gap / 1.5) $gap;
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
+    background: var(--color-1);
+    color: var(--color-5);
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-4);
+    }
+  }
+
+  &__users {
+    margin-bottom: $gap;
+
+    // Standalone user-section look (the Spotlight nests it on a panel;
+    // here it sits directly on the object background).
+    .search-spotlight__user-header {
+      @extend %small;
+      color: var(--color-3);
+      padding: calc($gap / 2) calc($gap / 2) calc($gap / 4);
+    }
+  }
+
+  &__results {
+    // The injected GlobalSearchView container (tab-content) stretches
+    // with its content — no fixed height, the object column scrolls.
+    .tab-content {
+      display: block;
+      height: auto;
+      overflow: visible;
+    }
+  }
+}

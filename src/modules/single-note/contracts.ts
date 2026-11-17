@@ -23,6 +23,10 @@ export type { PollOptionInput };
 export interface SingleNoteModuleApi {
   /** Cache-only lookup (NoteService LRU). Returns a note already loaded by a feed without any relay fetch. */
   getCachedNote(noteId: string): NostrEvent | null;
+  /** Persistent-store-only lookup (NDK Dexie/IndexedDB): resolves a note seen
+   *  in ANY previous session without touching relay sockets — the SNV
+   *  deep-link Stage 0. Returns null on store miss. */
+  fetchEventFromStore(noteId: string): Promise<NostrEvent | null>;
   /** Push a fully-loaded event into the note cache so a subsequent SNV open resolves it without a relay fetch. */
   cacheNote(event: NostrEvent): void;
   fetchReplies(noteId: string, authorPubkey?: string): Promise<NostrEvent[]>;

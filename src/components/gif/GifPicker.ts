@@ -18,6 +18,7 @@ import {
 } from '../../services/GifSearchService';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { gifFormatToMime, type GifMeta } from '../../helpers/gifImeta';
+import { positionPickerNearTrigger } from '../../helpers/pickerPositioning';
 import { _ } from '../../i18n';
 
 export interface GifPickerOptions {
@@ -167,29 +168,10 @@ export class GifPicker {
   }
 
   private positionPicker(trigger: HTMLElement): void {
-    const rect = trigger.getBoundingClientRect();
-    const pickerHeight = 480;
-    const pickerWidth = 360;
-    const margin = 10;
-
-    const spaceAbove = rect.top;
-    const spaceBelow = window.innerHeight - rect.bottom;
-
-    if (spaceAbove >= pickerHeight || spaceAbove > spaceBelow) {
-      this.container.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      this.container.style.top = 'auto';
-    } else {
-      this.container.style.top = `${rect.bottom + 10}px`;
-      this.container.style.bottom = 'auto';
-    }
-
-    if (rect.left + pickerWidth > window.innerWidth - margin) {
-      this.container.style.right = `${window.innerWidth - rect.right}px`;
-      this.container.style.left = 'auto';
-    } else {
-      this.container.style.left = `${rect.left}px`;
-      this.container.style.right = 'auto';
-    }
+    positionPickerNearTrigger(this.container, trigger, {
+      pickerHeight: 480,
+      pickerWidth: 360,
+    });
   }
 
   public destroy(): void {

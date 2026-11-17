@@ -18,6 +18,7 @@ import {
 } from './EmojiService';
 import { UserSearchInput } from '../../components/user-search/UserSearchInput';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { uploadImageToUrlField } from '../../helpers/mediaUpload';
 import { _, tn } from '../../i18n';
 
 export class CustomEmojisSettings extends SettingsSection {
@@ -26,59 +27,75 @@ export class CustomEmojisSettings extends SettingsSection {
   private updatedSubId: string | null = null;
   private currentContentZone: HTMLElement | null = null;
   private userSearchInput: UserSearchInput | null = null;
+  /**
+   * v2 on-demand mode (ED-b composer panel): no enable toggle — the
+   * stored preference is meaningless there; the management UI renders
+   * regardless and the addon lifecycle is owned by the composer session.
+   */
+  private readonly onDemand: boolean;
 
-  constructor() {
+  constructor(onDemand = false) {
     super('custom-emojis-settings');
+    this.onDemand = onDemand;
     this.eventBus = TypedEventBus.getInstance();
   }
 
   public mount(parentContainer: HTMLElement): void {
     const contentContainer = this.getContentContainer(parentContainer);
-    if (!contentContainer) return;
 
     const enabled = isCustomEmojisEnabled();
 
-    this.enableSwitch = new Switch({
-      label: '',
-      checked: enabled,
-      onChange: async checked => {
-        setCustomEmojisEnabled(checked);
-        // Emit the uniform AddonLoader event + legacy event so existing
-        // listeners (CustomEmojisView etc.) keep working.
-        this.eventBus.emit('custom-emojis:addon-toggle', { enabled: checked });
-        ToastService.show(
-          checked
-            ? _('%s enabled', _('Custom Emojis'))
-            : _('%s disabled', _('Custom Emojis')),
-          'success'
-        );
-        if (checked && this.currentContentZone) {
-          await this.renderContentZone(this.currentContentZone);
-        }
-      },
-    });
+    if (!this.onDemand) {
+      // No settings section in the parent → nothing to mount the toggle
+      // into (on-demand mode skips the toggle entirely instead).
+      if (!contentContainer) return;
+      this.enableSwitch = new Switch({
+        label: '',
+        checked: enabled,
+        onChange: async checked => {
+          setCustomEmojisEnabled(checked);
+          // Emit the uniform AddonLoader event + legacy event so existing
+          // listeners (CustomEmojisView etc.) keep working.
+          this.eventBus.emit('custom-emojis:addon-toggle', {
+            enabled: checked,
+          });
+          ToastService.show(
+            checked
+              ? _('%s enabled', _('Custom Emojis'))
+              : _('%s disabled', _('Custom Emojis')),
+            'success'
+          );
+          if (checked && this.currentContentZone) {
+            await this.renderContentZone(this.currentContentZone);
+          }
+        },
+      });
 
-    contentContainer.innerHTML = `
-      <div class="setting">
-        <span class="setting__label">${_('Enable Custom Emojis')}</span>
-        <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">${_('Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.')}</p>
-      </div>
-    `;
-    this.enableSwitch.setupEventListeners(contentContainer);
+      contentContainer.innerHTML = `
+        <div class="setting">
+          <span class="setting__label">${_('Enable Custom Emojis')}</span>
+          <div class="setting__control">${this.enableSwitch.render()}</div>
+          <p class="setting__desc">${_('Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.')}</p>
+        </div>
+      `;
+      this.enableSwitch.setupEventListeners(contentContainer);
+    }
 
     // Mount management UI into the addon content zone (visible only when enabled)
     const contentZone = parentContainer.querySelector(
       '[data-addon-content="custom-emojis"]'
     ) as HTMLElement | null;
     this.currentContentZone = contentZone;
-    if (contentZone && enabled) {
+    if (contentZone && (enabled || this.onDemand)) {
       void this.renderContentZone(contentZone);
     }
 
     // Live updates whenever the pack changes
     this.updatedSubId = this.eventBus.on('emojis:updated', () => {
-      if (this.currentContentZone && isCustomEmojisEnabled()) {
+      if (
+        this.currentContentZone &&
+        (this.onDemand || isCustomEmojisEnabled())
+      ) {
         this.renderEmojiList(this.currentContentZone);
       }
     });
@@ -254,9 +271,6 @@ export class CustomEmojisSettings extends SettingsSection {
     const urlInput = zone.querySelector(
       '[data-url-input]'
     ) as HTMLInputElement | null;
-    const status = zone.querySelector(
-      '[data-upload-status]'
-    ) as HTMLElement | null;
     if (!urlInput) return;
 
     if (!file.type.startsWith('image/')) {
@@ -264,38 +278,13 @@ export class CustomEmojisSettings extends SettingsSection {
       return;
     }
 
-    if (status) {
-      status.textContent = _('Uploading…');
-      status.classList.add('pulsate');
-    }
-
-    try {
-      const { ModuleLoader } = await import('../../core/ModuleLoader');
-      type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-      const mediaApi =
-        await ModuleLoader.getInstance().ensure<MediaApi>('media');
-      if (!mediaApi) {
-        ToastService.show(_('Media module not available'), 'error');
-        return;
-      }
-      const result = await mediaApi.uploadFile(file);
-      if (result.success && result.url) {
-        urlInput.value = result.url;
-        ToastService.show(
-          'Uploaded — give it a shortcode and click Add',
-          'success'
-        );
-      } else {
-        ToastService.show(result.error || _('Upload failed'), 'error');
-      }
-    } catch (err) {
-      ToastService.show((err as Error).message || _('Upload failed'), 'error');
-    } finally {
-      if (status) {
-        status.textContent = '';
-        status.classList.remove('pulsate');
-      }
-    }
+    await uploadImageToUrlField({
+      scope: zone,
+      file,
+      urlInputSelector: '[data-url-input]',
+      statusSelector: '[data-upload-status]',
+      successMessage: 'Uploaded — give it a shortcode and click Add',
+    });
   }
 
   private async handleRemove(shortcode: string): Promise<void> {

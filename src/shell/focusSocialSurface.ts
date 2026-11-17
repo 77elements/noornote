@@ -14,7 +14,6 @@ import { FocusListDetailSurface } from './focusListDetailSurface';
 
 export const socialSurface = async (): Promise<FocusDomainSurface> => {
   const surface = new FocusListDetailSurface({
-    className: 'focus-surface--social',
     navViewType: 'single-note',
     listRoute: '/timeline',
     detailRoute: nevent => `/note/${nevent}`,
@@ -27,6 +26,32 @@ export const socialSurface = async (): Promise<FocusDomainSurface> => {
         '../components/views/SingleNoteView'
       );
       return new SingleNoteView(nevent);
+    },
+    // The flat note composer (Write Note button → /timeline/new-note):
+    // a param-less second detail in the same column; post/cancel return
+    // to the timeline via the surface's back action.
+    secondary: {
+      navViewType: 'new-note',
+      route: '/timeline/new-note',
+      createDetail: async () => {
+        const { NewNoteView } = await import('../components/views/NewNoteView');
+        return new NewNoteView({ onClose: () => surface.back() });
+      },
+      // While the composer is open the gear's ED-b carries the composed
+      // panel — custom emojis manager above the scheduled posts list
+      // (both on-demand addons; dynamic import so the shell never
+      // statically references addon code).
+      settings: async () => {
+        const [emojis, posts] = await Promise.all([
+          import('../addons/custom-emojis/customEmojisPanel'),
+          import('../addons/scheduled-posts/scheduledPostsSettings'),
+        ]);
+        const { composePanels } = await import('./focusSettings');
+        return composePanels([
+          emojis.createCustomEmojisSettings(),
+          posts.createScheduledPostsSettings(),
+        ]);
+      },
     },
     // The timeline manages its own internal scroll — no column-scroll
     // preservation needed around the swap.

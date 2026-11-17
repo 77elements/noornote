@@ -22,6 +22,8 @@ export class InfiniteScroll {
   private containerElement: HTMLElement | null = null;
   private onLoadMore: () => void;
   private debounceTimer: number | null = null;
+  private pendingFrame: number | null = null;
+  private pendingRoot: Element | null | (() => Element | null) = null;
   private config: Required<InfiniteScrollConfig>;
 
   constructor(onLoadMore: () => void, config: InfiniteScrollConfig = {}) {
@@ -43,8 +45,20 @@ export class InfiniteScroll {
    *   default viewport root the inner container clips the sentinel, so rootMargin
    *   prefetch has no effect and load only fires at the very last item. Passing
    *   the scroll container makes rootMargin trigger the configured distance early.
+   *   A function is resolved LAZILY when the observation actually starts — the
+   *   right root may depend on layout that only exists once the container is
+   *   attached (contextual overflow rules don't match on detached subtrees).
+   *
+   * When the container is detached (focus surfaces render before the stage
+   * appends them), the sentinel + loading indicator are created immediately
+   * (renderers insert items before the sentinel), but the IntersectionObserver
+   * only starts once the container enters the document — an observer created
+   * against a detached root never re-evaluates after attachment.
    */
-  observe(containerElement: HTMLElement, root: Element | null = null): void {
+  observe(
+    containerElement: HTMLElement,
+    root: Element | null | (() => Element | null) = null
+  ): void {
     this.containerElement = containerElement;
 
     if (this.observer) {
@@ -69,6 +83,37 @@ export class InfiniteScroll {
       this.containerElement.appendChild(this.loadingIndicator);
     }
 
+    if (this.containerElement.isConnected) {
+      this.startObservation(root);
+    } else {
+      // Detached: poll until the stage/view attaches the container, then
+      // resolve the root against the live layout and start observing.
+      this.pendingRoot = root;
+      const poll = (): void => {
+        if (!this.containerElement || !this.sentinelElement) return;
+        if (this.containerElement.isConnected) {
+          this.pendingFrame = null;
+          this.startObservation(this.pendingRoot);
+          this.pendingRoot = null;
+          return;
+        }
+        this.pendingFrame = requestAnimationFrame(poll);
+      };
+      this.pendingFrame = requestAnimationFrame(poll);
+    }
+  }
+
+  /**
+   * Create the IntersectionObserver against the (possibly lazily resolved)
+   * root and start watching the sentinel. Called once the container is
+   * connected — never while detached.
+   */
+  private startObservation(
+    root: Element | null | (() => Element | null)
+  ): void {
+    if (!this.sentinelElement) return;
+    const resolvedRoot = typeof root === 'function' ? root() : root;
+
     this.observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
@@ -78,7 +123,7 @@ export class InfiniteScroll {
         });
       },
       {
-        root,
+        root: resolvedRoot,
         rootMargin: this.config.rootMargin,
         threshold: this.config.threshold,
       }
@@ -91,6 +136,11 @@ export class InfiniteScroll {
    * Stop observing
    */
   disconnect(): void {
+    if (this.pendingFrame !== null) {
+      cancelAnimationFrame(this.pendingFrame);
+      this.pendingFrame = null;
+    }
+    this.pendingRoot = null;
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;

@@ -1,9 +1,10 @@
 /**
  * VideoEditorView Component
- * Full-page editor for creating and publishing video events (NIP-71)
+ * Full-page editor for creating and publishing media events:
+ * videos (NIP-71, kind 21/22) and images (NIP-68, kind 20)
  *
  * Features:
- * - Video upload with drag & drop + click-to-upload
+ * - Video or image upload with drag & drop + click-to-upload
  * - Auto-detect landscape (Kind 21) / portrait (Kind 22) from dimensions
  * - Thumbnail upload
  * - Title, description, tags
@@ -12,10 +13,18 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
+
+/** Optional exit seam: Focus UI (v2) closes the composer column instead of a classic router navigation. */
+export interface VideoEditorViewOptions {
+  /** Called on publish success (instead of router.navigate('/')). */
+  onClose?: () => void;
+}
 import {
   type VideoOptions,
+  type PictureOptions,
   type MediaModuleApi,
 } from '../../modules/media/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -36,23 +45,23 @@ import { ToastService } from '../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 type DetectedKind = 21 | 22;
+/** What the user uploaded — videos publish kind 21/22, images kind 20. */
+type MediaType = 'video' | 'image';
 
 export class VideoEditorView extends View {
   private container: HTMLElement;
   private router: Router;
+  private readonly onClose: (() => void) | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private _mediaApi?: MediaModuleApi | null;
-  private get mediaApi(): MediaModuleApi | null {
-    return (this._mediaApi ??=
-      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
-  }
+  private mediaApi = new LazyModuleApi<MediaModuleApi>('media');
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
   private toolbar: PostEditorToolbar | null = null;
 
   // State
+  private mediaType: MediaType = 'video';
   private videoUrl: string = '';
   private videoMimeType: string = '';
   private videoDimensions: { width: number; height: number } | null = null;
@@ -69,8 +78,9 @@ export class VideoEditorView extends View {
   private isVideoUploading: boolean = false;
   private isThumbnailUploading: boolean = false;
 
-  constructor() {
+  constructor(options?: VideoEditorViewOptions) {
     super();
+    this.onClose = options?.onClose ?? null;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--video-editor';
     this.router = Router.getInstance();
@@ -109,14 +119,10 @@ export class VideoEditorView extends View {
     });
 
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="video-editor">
           <header class="video-editor__header">
-            <button class="video-editor__back" data-action="back">
-              <svg width="24" height="24"><use href="#icon-back"/></svg>
-              Back
-            </button>
-            <h1 class="video-editor__title">${_('Post Video')}</h1>
+            <h1 class="video-editor__title">${_('Post Media')}</h1>
           </header>
 
           <div class="video-editor__toolbar">
@@ -129,7 +135,7 @@ export class VideoEditorView extends View {
 
           <footer class="video-editor__footer">
             ${this.toolbar.render()}
-            <div class="video-editor__actions">
+            <div class="video-editor__actions l-row--right">
               <button class="btn" data-action="publish" disabled>${_('Publish')}</button>
             </div>
           </footer>
@@ -145,7 +151,7 @@ export class VideoEditorView extends View {
     return `
       <div class="video-editor__form">
         <div class="form__row">
-          <label>${_('Video')}</label>
+          <label>${_('Video or image')}</label>
           ${this.renderUploadZone()}
         </div>
 
@@ -155,7 +161,7 @@ export class VideoEditorView extends View {
             type="text"
             id="video-title"
             class="input"
-            placeholder="${_('Video title (optional)')}"
+            placeholder="${_('Title (optional)')}"
             value="${escapeHtml(this.title)}"
             data-field="title"
           />
@@ -166,7 +172,7 @@ export class VideoEditorView extends View {
           <textarea
             id="video-description"
             class="textarea video-editor-description"
-            placeholder="${_('Describe your video...')}"
+            placeholder="${_('Describe your media...')}"
             data-field="content"
           >${escapeHtml(this.content)}</textarea>
         </div>
@@ -217,6 +223,23 @@ export class VideoEditorView extends View {
 
   private renderUploadZone(): string {
     if (this.videoUrl) {
+      if (this.mediaType === 'image') {
+        return `
+          <div class="video-editor__preview">
+            <img
+              class="video-editor__video"
+              src="${escapeHtmlAttr(this.videoUrl)}"
+              alt="${_('Uploaded image preview')}"
+            />
+            <div class="video-editor__video-info">
+              ${this.videoDimensions ? `<span class="video-editor__dimensions">${this.videoDimensions.width}x${this.videoDimensions.height}</span>` : ''}
+              <button type="button" class="video-editor__remove-video" data-action="remove-video" title="${_('Remove media')}">
+                <svg width="16" height="16"><use href="#icon-close"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }
       return `
         <div class="video-editor__preview">
           <video
@@ -233,7 +256,7 @@ export class VideoEditorView extends View {
             <button type="button" class="video-editor__toggle-kind" data-action="toggle-kind" title="${_('Switch orientation')}">
               <svg width="16" height="16"><use href="#icon-switch-arrows"/></svg>
             </button>
-            <button type="button" class="video-editor__remove-video" data-action="remove-video" title="${_('Remove video')}">
+            <button type="button" class="video-editor__remove-video" data-action="remove-video" title="${_('Remove media')}">
               <svg width="16" height="16"><use href="#icon-close"/></svg>
             </button>
           </div>
@@ -245,7 +268,7 @@ export class VideoEditorView extends View {
       return `
         <div class="video-editor__upload-zone video-editor__upload-zone--uploading">
           <svg class="spin" width="32" height="32"><use href="#icon-spin-loader"/></svg>
-          <span>${_('Uploading video...')}</span>
+          <span>${_('Uploading media...')}</span>
         </div>
       `;
     }
@@ -253,17 +276,13 @@ export class VideoEditorView extends View {
     return `
       <div class="video-editor__upload-zone" data-action="upload-video">
         <svg width="32" height="32"><use href="#icon-video"/></svg>
-        <span>${_('Click or drag & drop to upload video')}</span>
-        <input type="file" accept="video/*" class="video-editor__video-file" data-video-file style="display: none;" />
+        <span>${_('Click or drag & drop to upload video or image')}</span>
+        <input type="file" accept="video/*,image/*" class="video-editor__video-file" data-video-file style="display: none;" />
       </div>
     `;
   }
 
   private setupEventListeners(): void {
-    // Back button
-    const backBtn = this.container.querySelector('[data-action="back"]');
-    backBtn?.addEventListener('click', () => this.router.navigate('/'));
-
     // Field inputs
     this.setupFieldListeners();
 
@@ -338,7 +357,7 @@ export class VideoEditorView extends View {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
-        await this.handleVideoUpload(file);
+        await this.handleMediaUpload(file);
         target.value = '';
       }
     });
@@ -355,48 +374,78 @@ export class VideoEditorView extends View {
       e.preventDefault();
       zone.classList.remove('video-editor__upload-zone--dragover');
       const file = (e as DragEvent).dataTransfer?.files[0];
-      if (file && file.type.startsWith('video/')) {
-        await this.handleVideoUpload(file);
+      if (file && this.isSupportedMediaFile(file)) {
+        await this.handleMediaUpload(file);
       }
     });
   }
 
-  private async handleVideoUpload(file: File): Promise<void> {
-    if (!file.type.startsWith('video/') || this.isVideoUploading) return;
+  private isSupportedMediaFile(file: File): boolean {
+    return file.type.startsWith('video/') || file.type.startsWith('image/');
+  }
+
+  private async handleMediaUpload(file: File): Promise<void> {
+    if (!this.isSupportedMediaFile(file) || this.isVideoUploading) return;
 
     this.isVideoUploading = true;
+    this.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
     this.videoMimeType = file.type;
     this.refreshUploadZone();
 
     try {
       // Detect dimensions from file before upload
-      const dimensions = await this.detectVideoDimensions(file);
+      const dimensions =
+        this.mediaType === 'image'
+          ? await this.detectImageDimensions(file)
+          : await this.detectVideoDimensions(file);
       if (dimensions) {
         this.videoDimensions = dimensions;
-        this.detectedKind = dimensions.width >= dimensions.height ? 21 : 22;
-        this.kindOverride = false;
+        if (this.mediaType === 'video') {
+          this.detectedKind = dimensions.width >= dimensions.height ? 21 : 22;
+          this.kindOverride = false;
+        }
       }
 
-      if (!this.mediaApi) {
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) {
         ToastService.show(_('Media module not available'), 'error');
         return;
       }
 
-      const result = await this.mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.videoUrl = result.url;
-        this.systemLogger.info('VideoEditorView', 'Video uploaded');
+        this.systemLogger.info('VideoEditorView', 'Media uploaded');
       } else {
-        ToastService.show(result.error || _('Video upload failed'), 'error');
+        ToastService.show(result.error || _('Media upload failed'), 'error');
       }
     } catch (error) {
-      this.systemLogger.error('VideoEditorView', 'Video upload failed:', error);
+      this.systemLogger.error('VideoEditorView', 'Media upload failed:', error);
     } finally {
       this.isVideoUploading = false;
       this.refreshUploadZone();
       this.updateButtonStates();
     }
+  }
+
+  private detectImageDimensions(
+    file: File
+  ): Promise<{ width: number; height: number } | null> {
+    return new Promise(resolve => {
+      const img = new Image();
+
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = () => {
+        resolve(null);
+        URL.revokeObjectURL(img.src);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
   }
 
   private detectVideoDimensions(
@@ -484,9 +533,10 @@ export class VideoEditorView extends View {
     }
 
     try {
-      if (!this.mediaApi) return;
+      const mediaApi = this.mediaApi.get();
+      if (!mediaApi) return;
 
-      const result = await this.mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.thumbnailUrl = result.url;
@@ -524,6 +574,7 @@ export class VideoEditorView extends View {
   }
 
   private handleRemoveVideo(): void {
+    this.mediaType = 'video';
     this.videoUrl = '';
     this.videoMimeType = '';
     this.videoDimensions = null;
@@ -555,7 +606,7 @@ export class VideoEditorView extends View {
   }
 
   private async handlePublish(): Promise<void> {
-    if (!AuthGuard.requireAuth('publish a video')) return;
+    if (!AuthGuard.requireAuth('publish media')) return;
     if (this.isPublishing || !this.videoUrl) return;
 
     this.isPublishing = true;
@@ -575,26 +626,17 @@ export class VideoEditorView extends View {
         .map(t => t.trim())
         .filter(Boolean);
 
-      const videoData: VideoOptions = {
-        videoUrl: this.videoUrl,
-        mimeType: this.videoMimeType || 'video/mp4',
-        content: this.content,
-        relays: Array.from(this.selectedRelays),
-      };
-
-      if (this.videoDimensions) videoData.dimensions = this.videoDimensions;
-      if (this.thumbnailUrl) videoData.thumbnailUrl = this.thumbnailUrl;
-      if (this.title) videoData.title = this.title;
-      if (topics.length > 0) videoData.topics = topics;
-      if (this.kindOverride) videoData.kindOverride = this.detectedKind;
-
-      const nevent = (await this.mediaApi?.publishVideo(videoData)) ?? null;
+      const nevent =
+        this.mediaType === 'image'
+          ? await this.publishPicture(topics)
+          : await this.publishVideo(topics);
 
       if (nevent) {
         ModuleLoader.getInstance()
           .getApi<ProfileModuleApi>('profile')
           ?.invalidateCarouselCacheForCurrentUser();
-        this.router.navigate('/');
+        if (this.onClose) this.onClose();
+        else this.router.navigate('/');
       }
     } finally {
       this.isPublishing = false;
@@ -603,6 +645,39 @@ export class VideoEditorView extends View {
       }
       this.updateButtonStates();
     }
+  }
+
+  /** Publish the uploaded video (kind 21/22). */
+  private async publishVideo(topics: string[]): Promise<string | null> {
+    const videoData: VideoOptions = {
+      videoUrl: this.videoUrl,
+      mimeType: this.videoMimeType || 'video/mp4',
+      content: this.content,
+      relays: Array.from(this.selectedRelays),
+    };
+
+    if (this.videoDimensions) videoData.dimensions = this.videoDimensions;
+    if (this.thumbnailUrl) videoData.thumbnailUrl = this.thumbnailUrl;
+    if (this.title) videoData.title = this.title;
+    if (topics.length > 0) videoData.topics = topics;
+    if (this.kindOverride) videoData.kindOverride = this.detectedKind;
+
+    return (await this.mediaApi.get()?.publishVideo(videoData)) ?? null;
+  }
+
+  /** Publish the uploaded image (kind 20, NIP-68). */
+  private async publishPicture(topics: string[]): Promise<string | null> {
+    const pictureData: PictureOptions = {
+      imageUrl: this.videoUrl,
+      mimeType: this.videoMimeType || 'image/jpeg',
+      content: this.content,
+      relays: Array.from(this.selectedRelays),
+    };
+
+    if (this.videoDimensions) pictureData.dimensions = this.videoDimensions;
+    if (topics.length > 0) pictureData.topics = topics;
+
+    return (await this.mediaApi.get()?.publishPicture(pictureData)) ?? null;
   }
 
   public getElement(): HTMLElement {

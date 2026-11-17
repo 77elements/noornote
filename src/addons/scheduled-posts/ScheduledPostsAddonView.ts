@@ -1,34 +1,37 @@
 /**
  * ScheduledPostsAddonView
  *
- * View for the Scheduled Posts addon page (`/addons/scheduled-posts`):
- * shows the enable toggle on top, followed by a list of pending scheduled
- * posts below — but only while the addon is enabled.
+ * View for the Scheduled Posts addon page (`/addons/scheduled-posts`).
+ * Classic (v1): shows the enable toggle on top, followed by a list of
+ * pending scheduled posts below — but only while the addon is enabled.
+ * Focus UI (v2): on-demand addon — the toggle is hidden, the list is
+ * always shown, and the addon code loads while the view is open and
+ * unloads again when the user leaves it (see AddonLoader.ensureLoaded).
  */
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
-import { ModalService } from '../../services/ModalService';
-import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../../services/SystemLogger';
-import { escapeHtml } from '../../helpers/escapeHtml';
 import { isScheduledPostsEnabled, setScheduledPostsEnabled } from './index';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
+import { ScheduledPostsList } from './ScheduledPostsList';
 import { _ } from '../../i18n';
-import {
-  ScheduledPostService,
-  type ScheduledPost,
-} from './ScheduledPostService';
 
 export class ScheduledPostsAddonView extends View {
   private container: HTMLElement;
   private contentEl: HTMLElement | null = null;
   private enableSwitch: Switch | null = null;
   private toggleSubId: string | null = null;
-  private changedSubId: string | null = null;
-  private posts: ScheduledPost[] = [];
-  private loading: boolean = false;
+  private postsList: ScheduledPostsList | null = null;
+  /**
+   * v2 on-demand addon lifecycle: in the Focus UI the stored preference no
+   * longer gates this view — the addon loads while the view is open and
+   * unloads again when the user leaves it (X button). The enable switch
+   * is hidden there; the preference stays untouched.
+   */
+  private readonly v2OnDemand = isFocusUiEnabled();
 
   constructor() {
     super();
@@ -38,48 +41,62 @@ export class ScheduledPostsAddonView extends View {
 
     const enabled = isScheduledPostsEnabled();
 
-    this.enableSwitch = new Switch({
-      label: '',
-      checked: enabled,
-      onChange: checked => {
-        setScheduledPostsEnabled(checked);
-        TypedEventBus.getInstance().emit('scheduled-posts:addon-toggle', {
-          enabled: checked,
-        });
-        ToastService.show(
-          checked
-            ? _('%s enabled', _('Scheduled Posts'))
-            : _('%s disabled', _('Scheduled Posts')),
-          'success'
-        );
-        if (checked) this.mountList();
-        else this.unmountList();
-      },
-    });
+    if (!this.v2OnDemand) {
+      this.enableSwitch = new Switch({
+        label: '',
+        checked: enabled,
+        onChange: checked => {
+          setScheduledPostsEnabled(checked);
+          TypedEventBus.getInstance().emit('scheduled-posts:addon-toggle', {
+            enabled: checked,
+          });
+          ToastService.show(
+            checked
+              ? _('%s enabled', _('Scheduled Posts'))
+              : _('%s disabled', _('Scheduled Posts')),
+            'success'
+          );
+          if (checked) this.mountList();
+          else this.unmountList();
+        },
+      });
+    }
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Scheduled Posts')}</h1>
+        ${
+          this.v2OnDemand
+            ? ''
+            : `
         <section class="section">
           <div class="setting">
             <span class="setting__label">${_('Enable Scheduled Posts')}</span>
             <div class="setting__control"></div>
             <p class="setting__desc">${_('Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device.')}</p>
           </div>
-        </section>
+        </section>`
+        }
         <div data-addon-content="scheduled-posts"></div>
       </div>
     `;
 
     const controlEl = this.container.querySelector('.setting__control');
-    if (controlEl) controlEl.innerHTML = this.enableSwitch.render();
-    this.enableSwitch.setupEventListeners(this.container);
+    if (controlEl && this.enableSwitch) {
+      controlEl.innerHTML = this.enableSwitch.render();
+      this.enableSwitch.setupEventListeners(this.container);
+    }
 
     this.contentEl = this.container.querySelector(
       '[data-addon-content="scheduled-posts"]'
     );
 
-    if (enabled) {
+    if (this.v2OnDemand) {
+      // On-demand: load the addon code while the view is open, regardless
+      // of the stored preference; released again in destroy().
+      void AddonLoader.getInstance().ensureLoaded('scheduled-posts');
+      this.mountList();
+    } else if (enabled) {
       this.mountList();
     }
 
@@ -91,15 +108,8 @@ export class ScheduledPostsAddonView extends View {
       }
     );
 
-    // Refresh the list whenever a post is scheduled or cancelled elsewhere.
-    this.changedSubId = TypedEventBus.getInstance().on(
-      'scheduled-posts:changed',
-      () => {
-        if (isScheduledPostsEnabled()) {
-          void this.loadAndRenderList();
-        }
-      }
-    );
+    // The list component owns the 'scheduled-posts:changed' refresh while
+    // it is mounted — no view-level subscription needed.
   }
 
   public getElement(): HTMLElement {
@@ -111,161 +121,31 @@ export class ScheduledPostsAddonView extends View {
       TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
-    if (this.changedSubId) {
-      TypedEventBus.getInstance().off(this.changedSubId);
-      this.changedSubId = null;
-    }
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
     this.unmountList();
     this.contentEl = null;
     this.container.innerHTML = '';
+    // v2 on-demand: leaving the addon view releases the addon again
+    // (unless the user permanently enabled it via the stored preference).
+    if (this.v2OnDemand && !isScheduledPostsEnabled()) {
+      void AddonLoader.getInstance().deactivateOnDemand('scheduled-posts');
+    }
   }
 
   private mountList(): void {
     if (!this.contentEl) return;
-    this.contentEl.innerHTML = `
-      <h2>${_('Your scheduled posts')}</h2>
-      <div class="ui-list" data-list></div>
-    `;
-    void this.loadAndRenderList();
+    this.contentEl.innerHTML = `<h2>${_('Your scheduled posts')}</h2>`;
+    const listEl = document.createElement('div');
+    listEl.className = 'ui-list';
+    this.contentEl.appendChild(listEl);
+    this.postsList = new ScheduledPostsList();
+    this.postsList.mount(listEl);
   }
 
   private unmountList(): void {
+    this.postsList?.destroy();
+    this.postsList = null;
     if (this.contentEl) this.contentEl.innerHTML = '';
-    this.posts = [];
-    this.loading = false;
-  }
-
-  private async loadAndRenderList(): Promise<void> {
-    const user = AuthService.getInstance().getCurrentUser();
-    if (!user) {
-      this.posts = [];
-      this.renderList();
-      return;
-    }
-    this.loading = true;
-    this.renderList();
-    try {
-      this.posts = await ScheduledPostService.getInstance().getScheduled(
-        user.pubkey
-      );
-      this.posts.sort((a, b) => a.publishAt - b.publishAt);
-    } catch (err) {
-      SystemLogger.getInstance().warn(
-        'ScheduledPostsAddonView',
-        `Failed to load list: ${String(err)}`
-      );
-      this.posts = [];
-      ToastService.show(_('Failed to load scheduled posts'), 'error');
-    } finally {
-      this.loading = false;
-      this.renderList();
-    }
-  }
-
-  private renderList(): void {
-    const list = this.container.querySelector(
-      '[data-list]'
-    ) as HTMLElement | null;
-    if (!list) return;
-
-    if (this.loading) {
-      list.innerHTML = `<div class="scheduled-post__empty pulsate">${_('Loading scheduled posts...')}</div>`;
-      return;
-    }
-
-    if (this.posts.length === 0) {
-      list.innerHTML = `<div class="scheduled-post__empty">${_('No scheduled posts yet.')}</div>`;
-      return;
-    }
-
-    list.innerHTML = this.posts.map(p => this.renderRow(p)).join('');
-    this.attachRowListeners();
-  }
-
-  private renderRow(p: ScheduledPost): string {
-    const when = new Date(p.publishAt * 1000).toLocaleString();
-    const kindLabel =
-      p.kind === 30023 ? _('Article') : p.kind === 1068 ? _('Poll') : _('Note');
-    const preview = p.content.length >= 100 ? `${p.content}…` : p.content;
-    return `
-      <div class="ui-list__item scheduled-post" data-id="${escapeHtml(p.id)}">
-        <div class="scheduled-post__meta">
-          <span class="scheduled-post__when">${escapeHtml(when)}</span>
-          <span class="scheduled-post__kind">${kindLabel}</span>
-        </div>
-        <div class="scheduled-post__preview">${escapeHtml(preview || _('(empty)'))}</div>
-        <div class="scheduled-post__actions">
-          <button class="btn btn--passive btn--medium" data-action="cancel">${_('Cancel')}</button>
-        </div>
-      </div>
-    `;
-  }
-
-  private attachRowListeners(): void {
-    const list = this.container.querySelector('[data-list]');
-    if (!list) return;
-    list.querySelectorAll('[data-action="cancel"]').forEach(btn => {
-      btn.addEventListener('click', async e => {
-        const row = (e.currentTarget as HTMLElement).closest(
-          '[data-id]'
-        ) as HTMLElement;
-        const id = row?.dataset.id;
-        if (!id) return;
-        await this.handleCancel(id);
-      });
-    });
-  }
-
-  private async handleCancel(id: string): Promise<void> {
-    const confirmed = await ModalService.getInstance().confirm({
-      title: _('Cancel Scheduled Post'),
-      message: _(
-        'This will permanently remove the scheduled post. The event will not be published.'
-      ),
-      confirmText: _('Cancel Post'),
-      cancelText: _('Keep'),
-      confirmDestructive: true,
-    });
-    if (!confirmed) return;
-
-    const auth = AuthService.getInstance();
-    const user = auth.getCurrentUser();
-    if (!user) {
-      ToastService.show(_('Not authenticated'), 'error');
-      return;
-    }
-
-    try {
-      const challenge = await auth.signEvent({
-        kind: 22242,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['challenge', id]],
-        content: '',
-        pubkey: user.pubkey,
-      });
-      if (!challenge) {
-        ToastService.show(_('Failed to sign cancel challenge'), 'error');
-        return;
-      }
-      await ScheduledPostService.getInstance().cancel(
-        user.pubkey,
-        id,
-        challenge
-      );
-      const { diagLog } = await import('../../services/DiagnosticLogger');
-      diagLog('system', 'scheduled_post_cancelled', { id });
-      this.posts = this.posts.filter(p => p.id !== id);
-      this.renderList();
-      TypedEventBus.getInstance().emit('scheduled-posts:changed');
-      ToastService.show(_('Scheduled post cancelled'), 'success');
-    } catch (err) {
-      SystemLogger.getInstance().warn(
-        'ScheduledPostsAddonView',
-        `Cancel failed: ${String(err)}`
-      );
-      ToastService.show(_('Cancel failed: %s', String(err)), 'error');
-    }
   }
 }

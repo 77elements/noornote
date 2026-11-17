@@ -15,9 +15,16 @@ import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
 import { isBtcPriceEnabled } from './btc-price/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
-import { isLiveStreamsEnabled } from './live-streams/index';
+import {
+  isLiveStreamsEnabled,
+  isLiveStreamsSidebarWidget,
+  hasLiveStreamsBackgroundPin,
+} from './live-streams/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
-import { isContentWordFilterEnabled } from './content-word-filter/index';
+import {
+  isContentWordFilterEnabled,
+  isWordFilterAutoLoaded,
+} from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
@@ -25,12 +32,19 @@ import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isFeedbackBoardEnabled } from './feedback-board/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isBadgesEnabled } from './badges/index';
-import { isNoteTakingEnabled } from './note-taking/index';
+import {
+  isNoteTakingEnabled,
+  isNoteTakingAutoLoaded,
+} from './note-taking/index';
 import { isBulkDeleteEnabled } from './bulk-delete/index';
-import { isNostrMajlisEnabled } from './nostr-majlis/index';
-import { isGroupChatsEnabled } from './group-chats/index';
+import {
+  isNostrMajlisEnabled,
+  isNostrMajlisAutoLoaded,
+} from './nostr-majlis/index';
+import { isGroupChatsEnabled, isArmadaEnabled } from './group-chats/index';
 import { isAnalyticsEnabled } from './analytics/index';
 import { isCalendarEnabled } from './calendar/index';
+import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -56,6 +70,15 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'live-streams',
     isEnabled: isLiveStreamsEnabled,
+    // v2 (Focus UI): the runtime loads at login only while an always-on
+    // reason is active (sidebar widget shown, background stream pinned —
+    // isLiveStreamsAutoLoaded). The TV renders embedded players via
+    // dynamic import, which does not need the runtime.
+    // v1: the master switch alone governs (classic sidebar behavior).
+    bootLoad: () =>
+      !isFocusUiEnabled()
+        ? isLiveStreamsEnabled()
+        : isLiveStreamsSidebarWidget() || hasLiveStreamsBackgroundPin(),
     load: () => import('./live-streams/runtime').then(m => m.default),
   });
 
@@ -68,12 +91,20 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'follower-notification',
     isEnabled: isFollowerNotificationEnabled,
+    // Always-on whenever user-enabled — ON means the follower scan keeps
+    // running while the object is closed (the switch is the preference).
+    // v1 (no Focus UI): always governed by the switch alone.
+    bootLoad: () => !isFocusUiEnabled() || isFollowerNotificationEnabled(),
     load: () => import('./follower-notification/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'feedback-board',
     isEnabled: isFeedbackBoardEnabled,
+    // v2: pure on-demand — the runtime has no background timers, it acts
+    // only while the board view is mounted (its own header says so).
+    // v1: login-managed as before.
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./feedback-board/runtime').then(m => m.default),
   });
 
@@ -81,6 +112,10 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'wordfilter',
     isEnabled: isContentWordFilterEnabled,
+    // Boot-load only with at least one word configured — that is the
+    // addon's always-on reason (the filter must keep suppressing feed
+    // posts). Without words it is pure on-demand (the FV object).
+    bootLoad: () => isWordFilterAutoLoaded(),
     load: () => import('./content-word-filter/runtime').then(m => m.default),
   });
 
@@ -111,36 +146,59 @@ export function registerCoreAddons(): void {
   loader.register({
     id: 'badges',
     isEnabled: isBadgesEnabled,
+    // v2: pure on-demand — the runtime has no background jobs, and the
+    // core consumers (profile badges, notification items) import
+    // BadgeService directly. v1: login-managed as before.
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./badges/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'note-taking',
     isEnabled: isNoteTakingEnabled,
+    // Always-on while a note's reminder still lies in the future — the
+    // reminder scheduler must stay alive to fire it (isNoteTakingAutoLoaded;
+    // a past due time self-expires the reason). Otherwise pure on-demand.
+    bootLoad: () => isNoteTakingAutoLoaded(),
     load: () => import('./note-taking/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'bulk-delete',
     isEnabled: isBulkDeleteEnabled,
+    // Pure on-demand in the Focus UI: a tool has no always-on reason, and
+    // entering the object IS enabling (no switch in v2).
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./bulk-delete/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'nostr-majlis',
     isEnabled: isNostrMajlisEnabled,
+    // On-demand in the Focus UI: loaded only when the object is entered
+    // (or a widget is active — the always-on reasons, see
+    // isNostrMajlisAutoLoaded). The v2 object releases it on leave.
+    bootLoad: () => isNostrMajlisAutoLoaded(),
     load: () => import('./nostr-majlis/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'group-chats',
     isEnabled: isGroupChatsEnabled,
+    // Always-on whenever Nostrord or Armada is user-enabled — ON means the
+    // community polling keeps running while the object is closed.
+    bootLoad: () =>
+      !isFocusUiEnabled() || isGroupChatsEnabled() || isArmadaEnabled(),
     load: () => import('./group-chats/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'analytics',
     isEnabled: isAnalyticsEnabled,
+    // Pure on-demand in the Focus UI: analytics is visit-driven (relay
+    // sweeps only run while the user looks at the page — by design), and
+    // entering the object IS enabling (no switch in v2).
+    bootLoad: () => !isFocusUiEnabled(),
     load: () => import('./analytics/runtime').then(m => m.default),
   });
 

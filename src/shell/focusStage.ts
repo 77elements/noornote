@@ -27,6 +27,22 @@
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
 import { Router } from '../services/Router';
+import { NavigationDispatcher } from '../services/NavigationDispatcher';
+import { AddonLoader, type AddonRuntime } from '../addons/AddonLoader';
+import { TypedEventBus } from '../core/TypedEventBus';
+import {
+  isLiveStreamsSidebarWidget,
+  hasLiveStreamsBackgroundPin,
+  isLiveStreamsEnabled,
+} from '../addons/live-streams/index';
+import { getNostrMajlisSettings } from '../addons/nostr-majlis/index';
+import {
+  isBtcPriceEnabled,
+  isBtcPriceSidebarWidget,
+} from '../addons/btc-price/index';
+import { isWalletBalanceEnabled } from '../addons/wallet-balance/index';
+import { parseFocusUrl, type FocusUrlState } from './focusUrlState';
+import { isSelfNav, pushFocusUrl } from './focusHistorySync';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -55,10 +71,31 @@ const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
 
-/** A view type handed across objects: open this detail in the new column. */
+/**
+ * Widgets mounted into the FV side stacks (v2). Only ids listed here get
+ * a slot; the widget instance comes from the addon runtime (structural
+ * contract, see FocusWidgetLike).
+ */
+const WIDGET_IDS = [
+  'live-streams',
+  'live-streams-mini-player',
+  'nostr-majlis',
+  'nostr-majlis-quran',
+  'btc-price',
+  'wallet-balance',
+] as const;
+
+/** Structural widget contract for the FV side-stack slots (v2). */
+interface FocusWidgetLike {
+  setFocusHost(host: HTMLElement | null): void;
+}
+
+/** A view type handed across objects: open this detail in the new column.
+ *  param is optional — param-less view types (e.g. the composer) route to
+ *  the target surface's secondary detail. */
 interface FocusHandoff {
   viewType: string;
-  param: string;
+  param?: string;
 }
 
 /**
@@ -69,11 +106,11 @@ interface FocusHandoff {
  */
 const DIODES: Record<string, string> = {
   notifications:
-    '<span class="notifications-badge focus-object__diode"></span>',
+    '<span class="notifications-badge focus-object__diode" data-focus-diode="notifications"></span>',
   messages:
-    '<span class="badge badge--green dm-badge focus-object__diode" style="display: none"></span>',
+    '<span class="badge badge--green dm-badge focus-object__diode" data-focus-diode="dm" style="display: none"></span>',
   bookmarks:
-    '<span class="notifications-badge focus-object__diode" data-list-unread="bookmarks"></span>',
+    '<span class="notifications-badge focus-object__diode" data-focus-diode="bookmarks" data-list-unread="bookmarks"></span>',
 };
 
 export class FocusStage {
@@ -89,18 +126,45 @@ export class FocusStage {
    */
   private order: string[] = [];
   /**
-   * Which side stack holds ALL circles while focused ('left' | 'right'),
-   * null = alternating distribution. Persisted per account (FOCUS_UI_STACK).
+   * Circle arrangement in the focused layout (FV), explicit per-column
+   * positions. null = alternating distribution derived from the SV order.
+   * Independent of `order` (SV grid) — FV drags never touch the SV.
+   * Persisted per account (FOCUS_UI_COLUMN_LAYOUT); later secondary
+   * objects (widgets) join the same lists.
    */
-  private stackSide: 'left' | 'right' | null =
-    PerAccountLocalStorage.getInstance().get<'left' | 'right' | null>(
-      StorageKeys.FOCUS_UI_STACK,
-      null
-    );
+  private columnLayout: { left: string[]; right: string[] } | null =
+    this.loadColumnLayout();
+  /**
+   * Widget placement in the focused layout (FV): { [widgetId]: { side,
+   * index } }, index into the side stack's item flow (0 = above all
+   * circles). Unlisted widgets render at the default spot (right stack,
+   * top). Persisted per account (FOCUS_UI_WIDGET_LAYOUT); set by drag &
+   * drop on the widgets' move handles. Separate from columnLayout —
+   * domain ids collide with widget ids ('live-streams' is both).
+   */
+  private widgetLayout: Record<
+    string,
+    { side: 'left' | 'right'; index: number }
+  > = this.loadWidgetLayout();
+  /** Widget hosts currently mounted in the side stacks (see placeWidgets). */
+  private widgetHosts = new Map<
+    string,
+    { widget: FocusWidgetLike; host: HTMLElement }
+  >();
   /** Unread-diode drivers (v1 badge managers over the shell's diodes). */
   private badgeManagers: Array<{
     destroy(): void;
   }> = [];
+  /** live-streams:widget-toggle subscription (mount → destroy contract). */
+  private widgetToggleSubId: string | null = null;
+  /** live-streams:background-player subscription (mini player widget). */
+  private pinSubId: string | null = null;
+  /** nostr-majlis:settings-changed subscription (majlis widgets). */
+  private majlisSettingsSubId: string | null = null;
+  /** btc-price:widget-toggle subscription (btc price widget). */
+  private btcWidgetSubId: string | null = null;
+  /** wallet-balance:addon-toggle subscription (wallet display widget). */
+  private walletSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
@@ -112,13 +176,18 @@ export class FocusStage {
     string,
     { btn: HTMLElement; source: HTMLElement | null }
   >();
-  /** Object-level history (def ids; back walks it, close removes). */
-  private hist: string[] = [];
+  /** History sync: back/forward re-derive shell state from the URL. */
+  private readonly onRouterHistoryChanged = (): void => {
+    if (isSelfNav()) return;
+    void this.syncFromUrl(Router.getInstance().getCurrentPath());
+  };
   /** ED-b bottom drawer (object settings), injected by the shell. */
   private drawer: FocusSettingsDrawer | null = null;
   private settingsView: FocusSettingsView | null = null;
   private settingsDef: FocusDomainDef | null = null;
   private settingsHost: HTMLElement | null = null;
+  /** True while the panel came from the surface's secondary detail. */
+  private settingsFromSecondary = false;
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -147,6 +216,22 @@ export class FocusStage {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    window.addEventListener(
+      'router:history-changed',
+      this.onRouterHistoryChanged
+    );
+    if (import.meta.env.DEV) {
+      // Dev load monitor: report the cached surfaces + active object.
+      // (Shell → services import is allowed; prod builds drop this block.)
+      void import('../services/DevLoadMonitor').then(
+        ({ registerDevLoadSection }) =>
+          registerDevLoadSection('v2-stage', () => ({
+            active: this.activeId,
+            cachedSurfaces: Array.from(this.surfaces.keys()),
+            widgetHosts: Array.from(this.widgetHosts.keys()),
+          }))
+      );
+    }
   }
 
   /** Build the FS grid into the stage element. */
@@ -160,6 +245,43 @@ export class FocusStage {
     }
     this.root.appendChild(this.grid);
     window.addEventListener('resize', this.onResize);
+    // "Show Live Streams Widget" toggled in the addon object: place (or
+    // remove) the widget live while stacks exist — next focus would
+    // otherwise only pick the new setting up.
+    this.widgetToggleSubId = TypedEventBus.getInstance().on(
+      'live-streams:widget-toggle',
+      data => this.onWidgetToggle(!!data?.enabled)
+    );
+    // Background pin gained/lost: the mini player widget appears/disappears
+    // live (its only enable condition — independent of any setting).
+    this.pinSubId = TypedEventBus.getInstance().on(
+      'live-streams:background-player',
+      data => {
+        this.setWidgetAvailable('live-streams-mini-player', !!data?.pinned);
+      }
+    );
+    // A majlis widget switch flipped in the addon object: re-evaluate
+    // BOTH majlis widgets live (the flipped one appears/disappears, the
+    // other just re-renders — same re-evaluation, no per-widget branch).
+    this.majlisSettingsSubId = TypedEventBus.getInstance().on(
+      'nostr-majlis:settings-changed',
+      () => {
+        const settings = getNostrMajlisSettings();
+        this.setWidgetAvailable('nostr-majlis', settings.sidebarWidget);
+        this.setWidgetAvailable('nostr-majlis-quran', settings.quranDaily);
+      }
+    );
+    // The "Show BTC Sidebar Widget" switch flipped in the addon object.
+    this.btcWidgetSubId = TypedEventBus.getInstance().on(
+      'btc-price:widget-toggle',
+      data => this.setWidgetAvailable('btc-price', !!data?.enabled)
+    );
+    // The wallet addon toggled: the display appears/disappears live
+    // (its only enable condition — same as classic).
+    this.walletSubId = TypedEventBus.getInstance().on(
+      'wallet-balance:addon-toggle',
+      data => this.setWidgetAvailable('wallet-balance', !!data?.enabled)
+    );
     this.setupBadgeManagers();
   }
 
@@ -170,9 +292,11 @@ export class FocusStage {
    */
   private setupBadgeManagers(): void {
     const notif = this.grid.querySelector(
-      '.notifications-badge:not([data-list-unread])'
+      '[data-focus-diode="notifications"]:not([data-list-unread])'
     ) as HTMLElement | null;
-    const dm = this.grid.querySelector('.dm-badge') as HTMLElement | null;
+    const dm = this.grid.querySelector(
+      '[data-focus-diode="dm"]'
+    ) as HTMLElement | null;
     if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
     if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
     this.badgeManagers.push(new ListsCountManager(this.grid));
@@ -201,9 +325,118 @@ export class FocusStage {
       .filter((d): d is FocusDomainDef => !!d);
   }
 
+  /**
+   * The persisted FV column layout, validated against the registry: stale
+   * ids dropped, duplicates removed, an id listed in BOTH columns kept
+   * only in 'left'. Null when nothing (or a broken shape) is stored —
+   * callers derive the alternating default.
+   */
+  private loadColumnLayout(): { left: string[]; right: string[] } | null {
+    const ids = FOCUS_DOMAINS.map(d => d.id);
+    const stored = PerAccountLocalStorage.getInstance().get<{
+      left: string[];
+      right: string[];
+    } | null>(StorageKeys.FOCUS_UI_COLUMN_LAYOUT, null);
+    if (
+      !stored ||
+      !Array.isArray(stored.left) ||
+      !Array.isArray(stored.right)
+    ) {
+      return null;
+    }
+    const clean = (list: string[], skip: string[]): string[] => [
+      ...new Set(list.filter(id => ids.includes(id) && !skip.includes(id))),
+    ];
+    const left = clean(stored.left, []);
+    const right = clean(stored.right, left);
+    if (left.length === 0 && right.length === 0) return null;
+    return { left, right };
+  }
+
+  /**
+   * The persisted FV widget placement, sanitized against WIDGET_IDS:
+   * unknown ids dropped, malformed spots fall back to the default,
+   * indexes clamped to ≥ 0.
+   */
+  private loadWidgetLayout(): Record<
+    string,
+    { side: 'left' | 'right'; index: number }
+  > {
+    const stored = PerAccountLocalStorage.getInstance().get<Record<
+      string,
+      { side: 'left' | 'right'; index: number }
+    > | null>(StorageKeys.FOCUS_UI_WIDGET_LAYOUT, null);
+    if (!stored) return {};
+    const clean: Record<string, { side: 'left' | 'right'; index: number }> = {};
+    for (const id of WIDGET_IDS) {
+      const spot = stored[id];
+      if (!spot || (spot.side !== 'left' && spot.side !== 'right')) continue;
+      clean[id] = {
+        side: spot.side,
+        index:
+          typeof spot.index === 'number' && Number.isFinite(spot.index)
+            ? Math.max(0, Math.floor(spot.index))
+            : 0,
+      };
+    }
+    return clean;
+  }
+
+  private persistWidgetLayout(): void {
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_WIDGET_LAYOUT,
+      this.widgetLayout
+    );
+  }
+
+  /**
+   * The arrangement to render RIGHT NOW: the persisted column layout or,
+   * when none is stored, alternating 50/50 — with registry additions since
+   * the layout was saved interleaved by their SV position (even index →
+   * left), so every circle always has a home and the default derivation
+   * stays stable. Always returns fresh arrays (callers mutate the result).
+   */
+  private effectiveLayout(): { left: string[]; right: string[] } {
+    const base = this.columnLayout ?? {
+      left: [] as string[],
+      right: [] as string[],
+    };
+    const left = [...base.left];
+    const right = [...base.right];
+    this.orderedDefs().forEach((def, i) => {
+      if (left.includes(def.id) || right.includes(def.id)) return;
+      (i % 2 === 0 ? left : right).push(def.id);
+    });
+    return { left, right };
+  }
+
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    if (this.widgetToggleSubId) {
+      TypedEventBus.getInstance().off(this.widgetToggleSubId);
+      this.widgetToggleSubId = null;
+    }
+    if (this.pinSubId) {
+      TypedEventBus.getInstance().off(this.pinSubId);
+      this.pinSubId = null;
+    }
+    if (this.majlisSettingsSubId) {
+      TypedEventBus.getInstance().off(this.majlisSettingsSubId);
+      this.majlisSettingsSubId = null;
+    }
+    if (this.btcWidgetSubId) {
+      TypedEventBus.getInstance().off(this.btcWidgetSubId);
+      this.btcWidgetSubId = null;
+    }
+    if (this.walletSubId) {
+      TypedEventBus.getInstance().off(this.walletSubId);
+      this.walletSubId = null;
+    }
+    window.removeEventListener(
+      'router:history-changed',
+      this.onRouterHistoryChanged
+    );
     this.onSettingsClosed();
     this.drawer?.setOnClosed(null);
     this.drawer = null;
@@ -213,7 +446,6 @@ export class FocusStage {
     this.surfaces.clear();
     this.objects.clear();
     this.scrollTopState.clear();
-    this.hist = [];
     for (const mgr of this.badgeManagers) mgr.destroy();
     this.badgeManagers = [];
     for (const dispose of this.tooltipDisposers) dispose();
@@ -222,11 +454,30 @@ export class FocusStage {
   }
 
   /**
-   * Re-open a domain's surface from its route (boot/reload restore): the
-   * URL is already correct, the surface opens with the standard morph.
+   * History sync: re-derive the shell state from a URL — the Global Back
+   * button, browser back/forward and hardware back all move the Router's
+   * custom stack; this turns the resulting path back into shell state
+   * (which object is focused, which state its surface shows). Boot
+   * deep-links (reload on /note/:nevent) come through here too.
+   * Returns false when the URL is not shell-owned (classic routes) —
+   * the caller leaves those alone.
    */
-  restoreDomain(def: FocusDomainDef): void {
-    void this.switchTo(def);
+  async syncFromUrl(path: string): Promise<boolean> {
+    if (this.morphing) return true; // a morph is running — do not fight it
+    if (path === HOME_ROUTE) {
+      if (this.activeId) this.close();
+      return true;
+    }
+    const state = parseFocusUrl(path, this.activeId);
+    if (!state) return false;
+    const def = FOCUS_DOMAINS.find(d => d.id === state.defId);
+    if (!def?.createSurface) return false;
+    if (this.activeId === def.id) {
+      await this.surfaces.get(def.id)?.view?.restoreState?.(state);
+      return true;
+    }
+    await this.switchTo(def, undefined, state);
+    return true;
   }
 
   /**
@@ -243,18 +494,31 @@ export class FocusStage {
   /**
    * The gear action: open the ED-b bottom drawer with this object's
    * settings panel. Toggle — clicking again closes via the drawer.
+   * While the active surface shows its secondary detail (e.g. the
+   * composer), the surface can swap in its own panel
+   * (getSettingsForCurrentState) — Timeline settings only in /timeline.
    */
-  private toggleSettings(def: FocusDomainDef, btn: HTMLElement): void {
-    if (!def.createSettings || !this.drawer) return;
+  private async toggleSettings(
+    def: FocusDomainDef,
+    btn: HTMLElement
+  ): Promise<void> {
+    if (!this.drawer) return;
     if (this.settingsView) {
       this.drawer.close();
       return;
     }
+    const surface = this.surfaces.get(def.id);
+    let settings: FocusSettingsView | null = null;
+    if (surface?.view?.getSettingsForCurrentState) {
+      settings = await surface.view.getSettingsForCurrentState();
+    }
+    if (!settings && !def.createSettings) return;
     const host = document.createElement('div');
     host.className = 'focus-settings';
     this.settingsHost = host;
     this.settingsDef = def;
-    this.settingsView = def.createSettings();
+    this.settingsView = settings ?? def.createSettings!();
+    this.settingsFromSecondary = !!settings;
     this.drawer.panel.appendChild(host);
     this.settingsView.mount(host);
     this.drawer.open();
@@ -266,13 +530,14 @@ export class FocusStage {
     if (this.settingsDef) {
       this.objects
         .get(this.settingsDef.id)
-        ?.querySelector('.focus-object__settings')
+        ?.querySelector("[data-focus-action='settings']")
         ?.classList.remove('is-active');
     }
     this.settingsView?.destroy();
     this.settingsView = null;
     this.settingsHost?.remove();
     this.settingsHost = null;
+    this.settingsFromSecondary = false;
     this.settingsDef = null;
   }
 
@@ -291,10 +556,10 @@ export class FocusStage {
       const surface = this.surfaces.get(this.activeId);
       if (surface?.view?.handleFocusNav?.(viewType, param)) return true;
     }
-    if (!param || this.morphing) return false;
+    if (this.morphing) return false;
     const def = FOCUS_DOMAINS.find(d => d.viewTypes?.includes(viewType));
     if (!def?.createSurface) return false;
-    void this.switchTo(def, { viewType, param });
+    void this.switchTo(def, param ? { viewType, param } : { viewType });
     return true;
   }
 
@@ -307,26 +572,28 @@ export class FocusStage {
         ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
         <span class="focus-object__label">${def.label}</span>
       </button>
-      <button type="button" class="focus-object__move" aria-label="${_('Reorder')}">
+      <button type="button" class="focus-object__move" data-focus-action="move" aria-label="${_('Reorder')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
       <div class="focus-object__actions">
-        <button type="button" class="focus-object__control"
+        <button type="button" class="focus-object__control" data-focus-action="close"
           aria-label="${_('Close')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
         </button>
-        <button type="button" class="focus-object__back" hidden
+        <button type="button" class="focus-object__back" data-focus-action="back"
+          hidden
           aria-label="${_('Back')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
         </button>
-        <button type="button" class="focus-object__scroll-top" hidden
+        <button type="button" class="focus-object__scroll-top" data-focus-action="scroll-top"
+          hidden
           aria-label="${_('Scroll to top')}">
           <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
         </button>
         ${
           def.createSettings
             ? `
-        <button type="button" class="focus-object__settings"
+        <button type="button" class="focus-object__settings" data-focus-action="settings"
           aria-label="${_('Settings')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-settings"/></svg>
         </button>`
@@ -334,18 +601,29 @@ export class FocusStage {
         }
       </div>
       ${DIODES[def.id] ?? ''}
-      <div class="focus-object__surface"></div>
+      <div class="focus-object__content focus-object__content--${def.id}" data-focus-slot></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def));
     // Move handle: pointer drag reorders the circles (drop on another
     // circle swaps the two positions, persisted per account). The handle
     // click itself must never open the object.
-    const moveBtn = el.querySelector('.focus-object__move') as HTMLElement;
+    const moveBtn = el.querySelector(
+      "[data-focus-action='move']"
+    ) as HTMLElement;
     moveBtn.addEventListener('click', e => e.stopPropagation());
     moveBtn.addEventListener('pointerdown', e => {
+      if (this.morphing) return;
+      if (this.activeId) {
+        // Focused (FV): only side-stack circles drag — the active one keeps
+        // its slot in the center column.
+        if (def.id !== this.activeId) this.startColumnDrag(e, def.id, el);
+        return;
+      }
       this.startOrderDrag(e, def.id, el);
     });
-    const control = el.querySelector('.focus-object__control') as HTMLElement;
+    const control = el.querySelector(
+      "[data-focus-action='close']"
+    ) as HTMLElement;
     control.addEventListener('click', e => {
       // The control only exists on the active object (hidden in grid state
       // via CSS) and always means "close"; never re-trigger "open".
@@ -358,17 +636,20 @@ export class FocusStage {
     // Action-button stack: the surface reports detail state via the frame
     // (focusSurfaceFrame.setBackVisible bubbles 'focus:surface-back') —
     // the back action shows only while a detail replaces the list.
-    const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+    const backBtn = el.querySelector(
+      "[data-focus-action='back']"
+    ) as HTMLElement;
     el.addEventListener('focus:surface-back', e => {
       const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
       backBtn.hidden = !detail?.visible;
-      if (detail?.visible) {
-        // A detail opened from THIS surface's own list (the handoff's
-        // setBackVisible fires detached and never reaches here) becomes
-        // its own history entry — back returns to the list, not past
-        // it. Unconditional push: the top entry is the list state the
-        // detail was opened from (same object id, different state).
-        this.hist.push(def.id);
+      if (
+        !detail?.visible &&
+        this.settingsDef?.id === def.id &&
+        this.settingsFromSecondary
+      ) {
+        // The secondary detail closed (e.g. composer posted/cancelled):
+        // its settings panel is state-specific — close the drawer with it.
+        this.drawer?.close();
       }
       // Sync the scroll-to-top action with the swap (no scroll event
       // fires when a view replaces another): a fresh detail starts at
@@ -379,9 +660,7 @@ export class FocusStage {
         if (detail?.visible) {
           st.btn.hidden = true;
         } else {
-          const slot = el.querySelector(
-            '.focus-object__surface'
-          ) as HTMLElement;
+          const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
           st.source = this.findMainScroller(slot);
           st.btn.hidden = !(
             st.source && st.source.scrollTop > SCROLL_TOP_THRESHOLD
@@ -392,24 +671,11 @@ export class FocusStage {
     backBtn.addEventListener('click', e => {
       e.stopPropagation();
       if (this.activeId !== def.id || this.morphing) return;
-      // History-aware back: pop the current state; the previous entry
-      // is either another object (morph back — its surface state was
-      // preserved on the way in) or this object's own list (in-column
-      // back). At the history root the surface's list back no-ops.
-      if (this.hist.length > 1) {
-        this.hist.pop();
-        const targetId = this.hist[this.hist.length - 1];
-        if (targetId === def.id) {
-          this.surfaces.get(def.id)?.view?.back?.();
-          return;
-        }
-        const target = FOCUS_DOMAINS.find(d => d.id === targetId);
-        if (target) {
-          void this.switchTo(target, undefined, true);
-          return;
-        }
-      }
-      this.surfaces.get(def.id)?.view?.back?.();
+      // History back, v1-parity: the Global Back Button mechanism. The
+      // current detail can veto first (e.g. the composer's unsaved-
+      // content guard) — the history must not move past a deferred back.
+      if (this.surfaces.get(def.id)?.view?.confirmBack?.() === false) return;
+      NavigationDispatcher.goBack();
     });
 
     // Scroll-to-top action: visible once the column's main scroller is
@@ -418,9 +684,9 @@ export class FocusStage {
     // itself (articles: the column scrolls) and internal scrollers
     // (social: the timeline scrolls inside the view) — scroll doesn't
     // bubble, but capture on the slot receives every descendant's event.
-    const slot = el.querySelector('.focus-object__surface') as HTMLElement;
+    const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
     const scrollTopBtn = el.querySelector(
-      '.focus-object__scroll-top'
+      "[data-focus-action='scroll-top']"
     ) as HTMLElement;
     const scrollTop = { btn: scrollTopBtn, source: null as HTMLElement | null };
     this.scrollTopState.set(def.id, scrollTop);
@@ -452,12 +718,12 @@ export class FocusStage {
     // object's settings panel (def.createSettings decides visibility).
     if (def.createSettings) {
       const settingsBtn = el.querySelector(
-        '.focus-object__settings'
+        "[data-focus-action='settings']"
       ) as HTMLElement;
       settingsBtn.addEventListener('click', e => {
         e.stopPropagation();
         if (this.activeId !== def.id || this.morphing) return;
-        this.toggleSettings(def, settingsBtn);
+        void this.toggleSettings(def, settingsBtn);
       });
     }
     // Tooltips on every 30px control (nn-tooltip, shared popup portalled
@@ -470,7 +736,9 @@ export class FocusStage {
       [_('Scroll to top'), scrollTopBtn],
       [
         _('Settings'),
-        el.querySelector('.focus-object__settings') as HTMLElement | null,
+        el.querySelector(
+          "[data-focus-action='settings']"
+        ) as HTMLElement | null,
       ],
     ];
     for (const [text, btn] of tips) {
@@ -514,12 +782,14 @@ export class FocusStage {
    * back to its circle while the new one grows into the column. The
    * optional handoff opens a detail on the new surface before the
    * morph, so the column lands on its final content (e.g. the quoted
-   * article clicked inside the timeline).
+   * article clicked inside the timeline). A `restore` state (history
+   * sync) replaces the handoff: the surface re-derives its state from
+   * the parsed URL instead of opening a fresh seam detail.
    */
   private async switchTo(
     def: FocusDomainDef,
     nav?: FocusHandoff,
-    viaBack = false
+    restore?: FocusUrlState
   ): Promise<void> {
     const el = this.objects.get(def.id);
     if (!el || !def.createSurface) return;
@@ -533,18 +803,14 @@ export class FocusStage {
       }
       return;
     }
-    // History: every forward activation pushes (back walks without
-    // pushing).
-    if (!viaBack && this.hist[this.hist.length - 1] !== def.id) {
-      this.hist.push(def.id);
-    }
-    await this.open(def, el, nav);
+    await this.open(def, el, nav, restore);
   }
 
   private async open(
     def: FocusDomainDef,
     el: HTMLElement,
-    nav?: FocusHandoff
+    nav?: FocusHandoff,
+    restore?: FocusUrlState
   ): Promise<void> {
     // Column content switches — object settings (ED-b) belong to the old
     // object and follow it out.
@@ -571,18 +837,42 @@ export class FocusStage {
       this.morphing = false; // closed again while loading
       return;
     }
-    if (nav) {
+    if (restore) {
+      // History sync (back/forward/deep-link): re-derive the surface's
+      // state from the parsed URL. Same detached-frame caveat as the
+      // handoff above — set the back action manually for detail states.
       try {
-        await surface.view?.openDetail?.(nav.param);
-        // The frame's setBackVisible event was dispatched while the frame
-        // was still detached (handoff runs before appendChild) — the
-        // object's back action is wired via that event, so set it here.
-        const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
-        if (backBtn) backBtn.hidden = false;
+        await surface.view?.restoreState?.(restore);
+        const backBtn = el.querySelector(
+          "[data-focus-action='back']"
+        ) as HTMLElement;
+        if (backBtn) backBtn.hidden = restore.kind === 'list';
       } catch {
-        // Handoff failed (e.g. detail import) — fall back to the list
-        // and its URL instead of bricking the morph.
         surface.view?.syncUrl?.();
+      }
+    } else if (nav) {
+      if (surface.view?.openDetail) {
+        try {
+          await surface.view.openDetail(nav.param);
+          // The frame's setBackVisible event was dispatched while the
+          // frame was still detached (handoff runs before appendChild) —
+          // the object's back action is wired via that event, so set it
+          // here.
+          const backBtn = el.querySelector(
+            "[data-focus-action='back']"
+          ) as HTMLElement;
+          if (backBtn) backBtn.hidden = false;
+        } catch {
+          // Handoff failed (e.g. detail import) — fall back to the list
+          // and its URL instead of bricking the morph.
+          surface.view?.syncUrl?.();
+        }
+      } else {
+        // Object-root seam nav (no detail — e.g. 'tribes' from the TV
+        // tab row): a deliberate object switch — the URL follows the
+        // domain route like a circle click would (push: real step).
+        if (surface.view?.syncUrl) surface.view.syncUrl();
+        else if (def.route) pushFocusUrl(def.route);
       }
     }
 
@@ -593,14 +883,21 @@ export class FocusStage {
     // Mutation phase (one task — no paint in between): swap the focus.
     if (oldId) {
       if (oldSurface) {
-        oldSurface.view?.pause?.();
-        // Handoff switch: the old object keeps its full state (list OR
-        // detail) — back returns to exactly what the user came from.
-        // Deliberate switches (circle click) reset it to the list.
-        if (!nav) {
-          oldSurface.view?.reset?.();
+        // Ephemeral surfaces (on-demand addon objects) die on switch —
+        // leaving the object unloads the addon runtime.
+        if (oldSurface.ephemeral) {
+          oldSurface.view?.destroy?.();
+          this.surfaces.delete(oldId);
+        } else {
+          oldSurface.view?.pause?.();
+          // Handoff switch: the old object keeps its full state (list OR
+          // detail) — back returns to exactly what the user came from.
+          // Deliberate switches (circle click) reset it to the list.
+          if (!nav) {
+            oldSurface.view?.reset?.();
+          }
         }
-        oldSurface.element.remove();
+        oldSurface.detach();
       }
       // The old column is gone — reset its scroll-to-top action for a
       // clean reopen (same contract as close()).
@@ -616,8 +913,8 @@ export class FocusStage {
       this.restoreSideCircles();
     }
 
-    const slot = el.querySelector('.focus-object__surface') as HTMLElement;
-    slot.appendChild(surface.element);
+    const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
+    surface.attach(slot);
     surface.view?.resume?.();
     el.classList.add('focus-object--active');
     this.grid.classList.add('is-focused');
@@ -641,10 +938,11 @@ export class FocusStage {
     // URL follows the restored state (in place, no history entry): a
     // handoff's detail set its own URL already; otherwise the surface
     // syncs — a preserved detail keeps its route — falling back to the
-    // domain route.
-    if (!nav) {
+    // domain route. Circle clicks PUSH (a real history step); restores
+    // no-op (pushUrl's same-path guard — the URL is already correct).
+    if (!nav && !restore) {
       if (surface.view?.syncUrl) surface.view.syncUrl();
-      else if (def.route) Router.getInstance().replaceUrl(def.route);
+      else if (def.route) pushFocusUrl(def.route);
     }
 
     let morphDone: Promise<unknown> = Promise.resolve();
@@ -677,11 +975,18 @@ export class FocusStage {
     // Detach the surface first: the view pauses, its element is kept
     // cached so reopening does not refetch everything. The surface
     // returns to its list state — reopening never shows a stale detail.
+    // Ephemeral surfaces (on-demand addon objects) are destroyed and
+    // evicted instead — leaving the object unloads the addon runtime.
     const surface = this.surfaces.get(def.id);
     if (surface) {
-      surface.view?.pause?.();
-      surface.view?.reset?.();
-      surface.element.remove();
+      if (surface.ephemeral) {
+        surface.view?.destroy?.();
+        this.surfaces.delete(def.id);
+      } else {
+        surface.view?.pause?.();
+        surface.view?.reset?.();
+      }
+      surface.detach();
     }
     // The column is gone — reset the scroll-to-top action for a clean
     // reopen (hidden until the user scrolls again).
@@ -695,11 +1000,9 @@ export class FocusStage {
     this.grid.classList.remove('is-focused');
     el.style.gridColumn = '';
     this.activeId = null;
-    // Back to the home grid URL (no-op when already there).
-    Router.getInstance().replaceUrl(HOME_ROUTE);
-    // The object left the history: its surface was reset above (a
-    // reopen starts at the list), so its history entries are gone too.
-    this.hist = this.hist.filter(id => id !== def.id);
+    // Back to the home grid URL (no-op when already there). PUSH: the
+    // grid is a state of its own — back from it returns to the object.
+    pushFocusUrl(HOME_ROUTE);
     this.restoreSideCircles();
     if (!first) return; // takeover / no-animate: plain class flip
 
@@ -741,7 +1044,7 @@ export class FocusStage {
       }
       el.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      const obj = hit?.closest('.focus-object') as HTMLElement | null;
+      const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
       const next = obj && obj !== el && obj.dataset.domainId ? obj : null;
       if (next !== target) {
         target?.classList.remove('is-drop-target');
@@ -769,21 +1072,20 @@ export class FocusStage {
 
   /**
    * Pointer drag on a side stack's move handle (focused state only).
-   * Dragging it toward the OPPOSITE stack highlights that stack as the
-   * drop zone; dropping there moves ALL circles into it — in the user's
-   * stored order — and persists the side (the source column empties as
-   * the future secondary-widget area). Same dead-zone mechanics as
-   * startOrderDrag.
+   * The WHOLE column rides at the cursor tip (same feel as the SV order
+   * drag) — transform only, so its grid slot stays occupied and the stage
+   * does not reflow mid-drag. Dragging it toward the OPPOSITE stack
+   * highlights that stack as the drop zone; dropping there moves ALL
+   * circles into it — in the user's stored order — and persists the side
+   * (the source column empties as the future secondary-widget area). Same
+   * dead-zone mechanics as startOrderDrag.
    */
-  private startStackDrag(
-    e: PointerEvent,
-    side: 'left' | 'right',
-    icon: HTMLElement
-  ): void {
+  private startStackDrag(e: PointerEvent, side: 'left' | 'right'): void {
     if (this.morphing || !this.sideStacks) return;
     e.stopPropagation();
     e.preventDefault(); // no text selection / native drag while moving
     const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
+    const sourceEl = this.sideStacks[side === 'left' ? 0 : 1];
     const startX = e.clientX;
     const startY = e.clientY;
     let dragging = false;
@@ -793,21 +1095,21 @@ export class FocusStage {
       if (!dragging) {
         if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
         dragging = true;
-        // pointer-events off: the translated icon must not shadow the
+        // pointer-events off: the translated column must not shadow the
         // drop zone in elementFromPoint.
-        icon.classList.add('is-drag-source');
+        sourceEl.classList.add('is-drag-source');
         targetEl.classList.add('is-dropzone');
       }
-      icon.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
+      sourceEl.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      over = !!hit && hit.closest('.focus-side-stack') === targetEl;
+      over = !!hit && hit.closest('[data-focus-stack]') === targetEl;
     };
     const cleanup = (): void => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cleanup);
-      icon.classList.remove('is-drag-source');
-      icon.style.transform = '';
+      sourceEl.classList.remove('is-drag-source');
+      sourceEl.style.transform = '';
       targetEl.classList.remove('is-dropzone');
     };
     const onUp = (): void => {
@@ -820,31 +1122,548 @@ export class FocusStage {
     window.addEventListener('pointercancel', cleanup);
   }
 
-  /** Move ALL circles into the given stack (stored order), persist. */
+  /**
+   * Pointer drag on a side-stack circle's move handle (focused state).
+   * The circle is lifted OUT of its stack (position: fixed — the stack's
+   * overflow clipping would otherwise cut the visual mid-flight) and
+   * follows the cursor; its slot closes up and an insertion line marks the
+   * exact drop position in BOTH columns: above all circles (column top,
+   * later the widget slot) or between two circles. Dropping writes the new
+   * per-column arrangement to FOCUS_UI_COLUMN_LAYOUT — the SV grid order
+   * is untouched — and re-distributes. Same dead-zone mechanics as
+   * startOrderDrag.
+   */
+  private startColumnDrag(
+    e: PointerEvent,
+    dragId: string,
+    el: HTMLElement
+  ): void {
+    this.startStackItemDrag({
+      e,
+      el,
+      dragClasses: ['is-drag-source', 'is-column-drag'],
+      itemsIn: stack =>
+        (
+          [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
+        ).filter(c => !c.classList.contains('is-column-drag')),
+      dropTarget: (x, y) => this.columnDropTarget(x, y),
+      onDrop: t => {
+        if (!t || !this.sideStacks) return;
+        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+        this.moveCircleTo(dragId, side, t.index);
+      },
+    });
+  }
+
+  /**
+   * Shared drag mechanics for side-stack items (circle drag ↔ widget
+   * drag): the item is lifted OUT of its stack (position: fixed — the
+   * stack's overflow clipping would otherwise cut the visual mid-flight)
+   * and follows the cursor; its slot closes up and an insertion line
+   * marks the exact drop position in BOTH stacks. Dead-zone activation
+   * (6px), pointerup/pointercancel cleanup, `onDrop` persists.
+   */
+  private startStackItemDrag(opts: {
+    e: PointerEvent;
+    el: HTMLElement;
+    /** Classes toggled while dragging (e.g. is-drag-source). */
+    dragClasses: string[];
+    /** Droppable items of a stack (excluding the dragged element). */
+    itemsIn: (stack: HTMLElement) => HTMLElement[];
+    dropTarget: (
+      x: number,
+      y: number
+    ) => { stack: HTMLElement; index: number } | null;
+    onDrop: (t: { stack: HTMLElement; index: number } | null) => void;
+  }): void {
+    const el = opts.el;
+    if (this.morphing || !this.sideStacks) return;
+    const e = opts.e;
+    e.stopPropagation();
+    e.preventDefault(); // no text selection / native drag while moving
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    const grabX = e.clientX - rect.left;
+    const grabY = e.clientY - rect.top;
+    let dragging = false;
+    let line: HTMLElement | null = null;
+    let target: { stack: HTMLElement; index: number } | null = null;
+
+    // Insertion line into the target stack at the boundary of `index`
+    // (0 = above the first visible item). Absolute inside the stack, so
+    // no grid rows shift while it moves; coordinates are content-space
+    // (scroll-aware).
+    const placeLine = (t: { stack: HTMLElement; index: number }): void => {
+      const stackRect = t.stack.getBoundingClientRect();
+      const scrollTop = t.stack.scrollTop;
+      const items = opts.itemsIn(t.stack);
+      const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
+      let y: number;
+      if (items.length === 0) {
+        const tools = t.stack.querySelector(
+          '[data-focus-stack-tools]'
+        ) as HTMLElement | null;
+        y = tools
+          ? tools.getBoundingClientRect().bottom -
+            stackRect.top +
+            scrollTop +
+            halfGap
+          : halfGap;
+      } else if (t.index >= items.length) {
+        const last = items[items.length - 1];
+        if (!last) return;
+        const r = last.getBoundingClientRect();
+        y = r.bottom - stackRect.top + scrollTop + halfGap;
+      } else {
+        const next = items[t.index];
+        if (!next) return;
+        const r = next.getBoundingClientRect();
+        y = r.top - stackRect.top + scrollTop - halfGap;
+      }
+      if (!line) {
+        line = document.createElement('div');
+        line.className = 'focus-side-stack__drop-line';
+      }
+      line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
+      if (line.parentElement !== t.stack) t.stack.appendChild(line);
+    };
+
+    const onMove = (ev: PointerEvent): void => {
+      if (!dragging) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
+        dragging = true;
+        // Fixed lift: escapes the stack's overflow clipping; the hole in
+        // the source column closes (the insertion line takes its place).
+        el.classList.add(...opts.dragClasses);
+        el.style.position = 'fixed';
+        el.style.left = `${rect.left}px`;
+        el.style.top = `${rect.top}px`;
+        el.style.width = `${rect.width}px`;
+        el.style.height = `${rect.height}px`;
+      }
+      el.style.left = `${ev.clientX - grabX}px`;
+      el.style.top = `${ev.clientY - grabY}px`;
+      const next = opts.dropTarget(ev.clientX, ev.clientY);
+      if (
+        !!next !== !!target ||
+        (next &&
+          target &&
+          (next.stack !== target.stack || next.index !== target.index))
+      ) {
+        line?.remove();
+        line = null;
+        if (next) placeLine(next);
+        target = next;
+      }
+    };
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      el.classList.remove(...opts.dragClasses);
+      el.style.position = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.width = '';
+      el.style.height = '';
+      line?.remove();
+      line = null;
+    };
+    const onUp = (): void => {
+      const t = target;
+      cleanup();
+      opts.onDrop(t);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', cleanup);
+  }
+
+  /** Move ALL circles into the given stack (SV order), persist. */
   private moveAllCircles(side: 'left' | 'right'): void {
     if (!this.sideStacks || !this.activeId) return;
-    this.stackSide = side;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, side);
+    const svOrder = this.orderedDefs().map(d => d.id);
+    this.columnLayout = {
+      left: side === 'left' ? svOrder : [],
+      right: side === 'right' ? svOrder : [],
+    };
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      this.columnLayout
+    );
     this.distributeSideCircles(
       this.sideStacks[0],
       this.sideStacks[1],
       this.activeId
     );
+    this.reapplyWidgets();
   }
 
   /**
-   * Reset the stack distribution to the default alternating 50/50
-   * (starting LEFT) and clear the persisted side. Wired to the reset
-   * button next to each stack's move handle.
+   * Which side stack the pointer is over and at which VISIBLE position the
+   * drop would insert (0 = above all circles of that column, circles.length
+   * = below the last). Null when the pointer is outside both stacks. The
+   * active circle never counts — it is not rendered in the stacks.
+   */
+  private columnDropTarget(
+    x: number,
+    y: number
+  ): { stack: HTMLElement; index: number } | null {
+    if (!this.sideStacks) return null;
+    const hit = document.elementFromPoint(x, y);
+    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
+    if (
+      !stack ||
+      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
+    )
+      return null;
+    // The lifted circle is still a DOM child of its source stack (fixed
+    // positioning) — exclude it, it holds no drop position.
+    const circles = (
+      [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
+    ).filter(c => !c.classList.contains('is-column-drag'));
+    for (let i = 0; i < circles.length; i++) {
+      const circle = circles[i];
+      if (!circle) continue;
+      const r = circle.getBoundingClientRect();
+      if (y < r.top + r.height / 2) return { stack, index: i };
+    }
+    return { stack, index: circles.length };
+  }
+
+  /**
+   * Move ONE circle to an exact position in a column (visible index,
+   * 0 = above all circles of the target column) and persist. The index
+   * counts the circles VISIBLE in the column — the active circle is skipped
+   * when mapping it onto the underlying id lists (it holds its own slot).
+   */
+  private moveCircleTo(
+    dragId: string,
+    side: 'left' | 'right',
+    index: number
+  ): void {
+    if (!this.sideStacks || !this.activeId) return;
+    const activeId = this.activeId;
+    const layout = this.effectiveLayout();
+    const source = layout.left.includes(dragId) ? 'left' : 'right';
+    const target = layout[side].filter(id => id !== dragId);
+    // Map the visible insertion index onto the full id list (active slot
+    // skipped): first position whose visible rank equals `index`.
+    let insertAt = target.length;
+    let seen = 0;
+    for (let i = 0; i < target.length; i++) {
+      if (target[i] === activeId) continue;
+      if (seen === index) {
+        insertAt = i;
+        break;
+      }
+      seen++;
+    }
+    target.splice(insertAt, 0, dragId);
+    if (source === side) {
+      layout[side] = target;
+    } else {
+      layout[source] = layout[source].filter(id => id !== dragId);
+      layout[side] = target;
+    }
+    this.columnLayout = { left: layout.left, right: layout.right };
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      this.columnLayout
+    );
+    this.distributeSideCircles(
+      this.sideStacks[0],
+      this.sideStacks[1],
+      activeId
+    );
+    this.reapplyWidgets();
+  }
+
+  /**
+   * Reset the column layout to the default alternating 50/50 (derived
+   * from the SV order, starting LEFT) and clear the persisted layout.
+   * Wired to the reset button next to each stack's move handle.
    */
   private resetStackSide(): void {
     if (!this.sideStacks || !this.activeId) return;
-    this.stackSide = null;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI_STACK, null);
+    this.columnLayout = null;
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
+      null
+    );
     this.distributeSideCircles(
       this.sideStacks[0],
       this.sideStacks[1],
       this.activeId
+    );
+    this.reapplyWidgets();
+  }
+
+  // ========== FV side-stack widgets (v2) ==========
+
+  /**
+   * The widget switch in the Live Streams object flipped: place the
+   * widget immediately (default spot) or remove its host — while stacks
+   * exist. Without stacks the next focus picks the setting up anyway.
+   */
+  private onWidgetToggle(enabled: boolean): void {
+    this.setWidgetAvailable('live-streams', enabled);
+    if (!enabled) {
+      // Widget gone: release the runtime unless another always-on reason
+      // remains (background pin — the guard lives in
+      // live-streams/index.ts isLiveStreamsAutoLoaded).
+      void AddonLoader.getInstance().deactivateOnDemand('live-streams');
+    }
+  }
+
+  /**
+   * A widget's availability flipped (setting toggle, background pin):
+   * place it immediately (default spot) or remove its host — while
+   * stacks exist. Without stacks the next focus picks the state up.
+   */
+  private setWidgetAvailable(id: string, available: boolean): void {
+    if (!this.sideStacks) return;
+    if (available) {
+      this.placeWidgets(this.sideStacks[0], this.sideStacks[1]);
+      return;
+    }
+    const entry = this.widgetHosts.get(id);
+    if (!entry) return;
+    entry.widget.setFocusHost(null);
+    entry.host.remove();
+    this.widgetHosts.delete(id);
+  }
+
+  /**
+   * The widget instance for a registered widget id — or null when its
+   * runtime is not loaded yet (login race). The widget's enabled flag is
+   * an always-on reason, so on first miss the runtime is loaded on
+   * demand and the stacks re-applied as soon as it is up.
+   */
+  private widgetFor(id: string): FocusWidgetLike | null {
+    let addonId = 'live-streams';
+    if (id === 'live-streams') {
+      // Same contract as classic: the widget exists only while the addon
+      // is enabled AND its "Show Live Streams Widget" switch is on —
+      // without the enabled gate a Master-OFF/Widget-ON combination
+      // would ensure-load a runtime whose widget never renders (zombie).
+      if (!isLiveStreamsEnabled() || !isLiveStreamsSidebarWidget()) {
+        return null;
+      }
+    } else if (id === 'live-streams-mini-player') {
+      // Shows only while a background stream is pinned — independent of
+      // the sidebar-widget setting.
+      if (!hasLiveStreamsBackgroundPin()) return null;
+    } else if (id === 'nostr-majlis') {
+      addonId = 'nostr-majlis';
+      if (!getNostrMajlisSettings().sidebarWidget) return null;
+    } else if (id === 'nostr-majlis-quran') {
+      addonId = 'nostr-majlis';
+      if (!getNostrMajlisSettings().quranDaily) return null;
+    } else if (id === 'btc-price') {
+      addonId = 'btc-price';
+      // Same contract as classic: the widget exists only while the addon
+      // is enabled AND its "Show BTC Sidebar Widget" switch is on.
+      if (!isBtcPriceEnabled() || !isBtcPriceSidebarWidget()) return null;
+    } else if (id === 'wallet-balance') {
+      addonId = 'wallet-balance';
+      // Same as classic: the display shows whenever the addon is enabled
+      // (no separate widget switch).
+      if (!isWalletBalanceEnabled()) return null;
+    } else {
+      return null;
+    }
+    const loader = AddonLoader.getInstance();
+    const runtime = loader.getRuntime<
+      AddonRuntime & {
+        widget: FocusWidgetLike | null;
+        miniPlayer?: FocusWidgetLike | null;
+        quranWidget?: FocusWidgetLike | null;
+      }
+    >(addonId);
+    if (runtime) {
+      if (addonId === 'nostr-majlis') {
+        return id === 'nostr-majlis-quran'
+          ? (runtime.quranWidget ?? null)
+          : (runtime.widget ?? null);
+      }
+      return id === 'live-streams-mini-player'
+        ? (runtime.miniPlayer ?? null)
+        : (runtime.widget ?? null);
+    }
+    void loader.ensureLoaded(addonId).then(() => {
+      if (this.sideStacks) this.reapplyWidgets();
+    });
+    return null;
+  }
+
+  /**
+   * Mount the activated widgets into the freshly built side stacks:
+   * persisted FOCUS_UI_WIDGET_LAYOUT spot or the default (right stack,
+   * top — above all circles). Each host wraps the widget's DOM plus its
+   * move handle.
+   */
+  private placeWidgets(left: HTMLElement, right: HTMLElement): void {
+    for (const id of WIDGET_IDS) {
+      const widget = this.widgetFor(id);
+      if (!widget || this.widgetHosts.has(id)) continue;
+      const host = this.createWidgetHost(id);
+      const spot = this.widgetLayout[id] ?? {
+        side: 'right' as const,
+        index: 0,
+      };
+      this.insertWidgetAt(
+        spot.side === 'left' ? left : right,
+        host,
+        spot.index,
+        host
+      );
+      this.widgetHosts.set(id, { widget, host });
+      widget.setFocusHost(host);
+    }
+  }
+
+  /** Re-insert the mounted hosts per their stored spot (circles moved). */
+  private reapplyWidgets(): void {
+    if (!this.sideStacks) return;
+    const [left, right] = this.sideStacks;
+    for (const [id, entry] of this.widgetHosts) {
+      const spot = this.widgetLayout[id] ?? {
+        side: 'right' as const,
+        index: 0,
+      };
+      this.insertWidgetAt(
+        spot.side === 'left' ? left : right,
+        entry.host,
+        spot.index,
+        entry.host
+      );
+    }
+    // Mount widgets that became available in the meantime (widgetFor
+    // fires ensureLoaded on the first miss; its guard skips ids that
+    // already have a host).
+    this.placeWidgets(left, right);
+  }
+
+  /** The widget's stage slot: move handle (drag) + the widget's DOM. */
+  private createWidgetHost(id: string): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'focus-widget-slot';
+    host.dataset.focusWidget = id;
+    const move = document.createElement('button');
+    move.type = 'button';
+    move.className = 'focus-widget-slot__move';
+    move.setAttribute('data-focus-widget-move', '');
+    move.setAttribute('aria-label', _('Move widget'));
+    move.innerHTML =
+      '<svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>';
+    move.addEventListener('pointerdown', ev =>
+      this.startWidgetDrag(ev, id, host)
+    );
+    move.addEventListener('click', ev => ev.stopPropagation());
+    Tooltip.attach(move, _('Move widget'));
+    host.appendChild(move);
+    return host;
+  }
+
+  /** The stack's item flow: circles + widget slots, in DOM order. */
+  private stackItems(stack: HTMLElement, exclude?: HTMLElement): HTMLElement[] {
+    return ([...stack.children] as HTMLElement[]).filter(
+      el =>
+        el !== exclude &&
+        (el.hasAttribute('data-domain-id') ||
+          el.hasAttribute('data-focus-widget'))
+    );
+  }
+
+  /**
+   * Insert a widget host at the given position in the stack's item flow
+   * (index 0 = directly under the tools). `exclude` keeps the dragged
+   * host from holding a position in its own target calculation.
+   */
+  private insertWidgetAt(
+    stack: HTMLElement,
+    host: HTMLElement,
+    index: number,
+    exclude?: HTMLElement
+  ): void {
+    const items = this.stackItems(stack, exclude);
+    const ref = items[index] ?? null;
+    if (ref) stack.insertBefore(host, ref);
+    else stack.appendChild(host);
+  }
+
+  /**
+   * Drag a widget to another position: fixed lift (escapes the stack's
+   * overflow clipping), a drop-line marks the exact insertion point in
+   * BOTH stacks (between any two items — circles and widget slots), the
+   * drop persists FOCUS_UI_WIDGET_LAYOUT and re-inserts. Same dead-zone
+   * mechanics as startColumnDrag.
+   */
+  private startWidgetDrag(
+    e: PointerEvent,
+    id: string,
+    host: HTMLElement
+  ): void {
+    this.startStackItemDrag({
+      e,
+      el: host,
+      dragClasses: ['is-drag-source'],
+      itemsIn: stack => this.stackItems(stack, host),
+      dropTarget: (x, y) => this.widgetDropTarget(x, y, host),
+      onDrop: t => {
+        if (!t || !this.sideStacks) return;
+        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
+        this.moveWidgetTo(id, side, t.index);
+      },
+    });
+  }
+
+  /**
+   * Which side stack the pointer is over and at which position the drop
+   * would insert (0 = above all items of that column). Null outside both
+   * stacks. The dragged host holds no drop position.
+   */
+  private widgetDropTarget(
+    x: number,
+    y: number,
+    dragHost: HTMLElement
+  ): { stack: HTMLElement; index: number } | null {
+    if (!this.sideStacks) return null;
+    const hit = document.elementFromPoint(x, y);
+    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
+    if (
+      !stack ||
+      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
+    )
+      return null;
+    const items = this.stackItems(stack, dragHost);
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      const r = item.getBoundingClientRect();
+      if (y < r.top + r.height / 2) return { stack, index: i };
+    }
+    return { stack, index: items.length };
+  }
+
+  /** Move ONE widget to an exact position in a column and persist. */
+  private moveWidgetTo(
+    id: string,
+    side: 'left' | 'right',
+    index: number
+  ): void {
+    if (!this.sideStacks) return;
+    this.widgetLayout[id] = { side, index };
+    this.persistWidgetLayout();
+    const entry = this.widgetHosts.get(id);
+    if (!entry) return;
+    this.insertWidgetAt(
+      side === 'left' ? this.sideStacks[0] : this.sideStacks[1],
+      entry.host,
+      index,
+      entry.host
     );
   }
 
@@ -885,9 +1704,11 @@ export class FocusStage {
   private reparentSideStacks(activeId: string): void {
     const left = document.createElement('div');
     left.className = 'focus-side-stack';
+    left.dataset.focusStack = '';
     left.style.gridColumn = '1';
     const right = document.createElement('div');
     right.className = 'focus-side-stack';
+    right.dataset.focusStack = '';
     right.style.gridColumn = '3';
     left.innerHTML = this.stackMoveIcon('left');
     right.innerHTML = this.stackMoveIcon('right');
@@ -897,17 +1718,15 @@ export class FocusStage {
     ] as const) {
       // The buttons must never open an object underneath.
       const tools = stack.querySelector(
-        '.focus-side-stack__tools'
+        '[data-focus-stack-tools]'
       ) as HTMLElement;
       tools.addEventListener('click', ev => ev.stopPropagation());
       const move = tools.querySelector(
-        '.focus-side-stack__move'
+        '[data-focus-stack-move]'
       ) as HTMLElement;
-      move.addEventListener('pointerdown', ev =>
-        this.startStackDrag(ev, side, move)
-      );
+      move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
       tools
-        .querySelector('.focus-side-stack__reset')
+        .querySelector('[data-focus-stack-reset]')
         ?.addEventListener('click', () => this.resetStackSide());
       // Stack tools live only while their stack exists (recreated per
       // focus, removed on close) — their listeners die with the elements,
@@ -922,12 +1741,13 @@ export class FocusStage {
         ],
         [
           _('Distribute circles evenly'),
-          tools.querySelector('.focus-side-stack__reset') as HTMLElement,
+          tools.querySelector('[data-focus-stack-reset]') as HTMLElement,
         ],
       ];
       for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
     }
     this.distributeSideCircles(left, right, activeId);
+    this.placeWidgets(left, right);
     const active = this.objects.get(activeId) as HTMLElement;
     this.grid.insertBefore(left, active);
     this.grid.insertBefore(right, active.nextSibling);
@@ -936,40 +1756,38 @@ export class FocusStage {
 
   /** The stack's top tools: move handle (drag moves ALL circles) + reset. */
   private stackMoveIcon(side: 'left' | 'right'): string {
-    return `<div class="focus-side-stack__tools">
-      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" aria-label="${_('Move all circles')}">
+    return `<div class="focus-side-stack__tools" data-focus-stack-tools>
+      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" data-focus-stack-move aria-label="${_('Move all circles')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
-      <button type="button" class="focus-side-stack__reset" aria-label="${_('Distribute circles evenly')}">
+      <button type="button" class="focus-side-stack__reset" data-focus-stack-reset aria-label="${_('Distribute circles evenly')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-pull-refresh"/></svg>
       </button>
     </div>`;
   }
 
   /**
-   * Fill the two stacks with the non-active circles. Persisted state
-   * (stackSide): ALL circles into that one stack — in the user's stored
-   * order, 1 2 3 … top to bottom — leaving the other column empty as the
-   * future secondary-widget area. Default: alternating starting LEFT
-   * (1 Content 2 / 3 4 / 5 6).
+   * Fill the two stacks with the non-active circles, in the order of the
+   * effective column layout (persisted FOCUS_UI_COLUMN_LAYOUT or the
+   * alternating default). The ACTIVE circle is skipped: it stays in the
+   * center column but KEEPS its slot in the layout, so it returns to its
+   * position when the focus ends.
    */
   private distributeSideCircles(
     left: HTMLElement,
     right: HTMLElement,
     activeId: string
   ): void {
-    let next: HTMLElement = left;
-    for (const def of this.orderedDefs()) {
-      if (def.id === activeId) continue;
-      const circle = this.objects.get(def.id);
-      if (!circle) continue;
-      (this.stackSide === 'left'
-        ? left
-        : this.stackSide === 'right'
-          ? right
-          : next
-      ).appendChild(circle);
-      if (!this.stackSide) next = next === left ? right : left;
+    const layout = this.effectiveLayout();
+    for (const [stack, ids] of [
+      [left, layout.left],
+      [right, layout.right],
+    ] as const) {
+      for (const id of ids) {
+        if (id === activeId) continue;
+        const circle = this.objects.get(id);
+        if (circle) stack.appendChild(circle);
+      }
     }
   }
 
@@ -985,6 +1803,11 @@ export class FocusStage {
       const circle = this.objects.get(def.id);
       if (circle) this.grid.appendChild(circle);
     }
+    for (const [, entry] of this.widgetHosts) {
+      entry.widget.setFocusHost(null);
+      entry.host.remove();
+    }
+    this.widgetHosts.clear();
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
   }

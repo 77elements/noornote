@@ -30,7 +30,7 @@ export class MarketplaceAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-marketplace';
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Marketplace')}</h1>
         <section class="section" id="marketplace-settings-content"></section>
         <div data-addon-content="marketplace"></div>

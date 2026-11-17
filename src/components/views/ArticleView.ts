@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
 import { NoteHeader } from '../ui/NoteHeader';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
@@ -48,11 +49,7 @@ import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 export class ArticleView extends View {
   private container: HTMLElement;
   private naddrRef: string;
-  private _articlesApi?: ArticlesModuleApi | null;
-  private get articlesApi(): ArticlesModuleApi | null {
-    return (this._articlesApi ??=
-      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles'));
-  }
+  private articlesApi = new LazyModuleApi<ArticlesModuleApi>('articles');
   private _zapsListController: SnvZapsListController | null = null;
   private get zapsListController(): SnvZapsListController {
     if (!this._zapsListController) {
@@ -84,7 +81,7 @@ export class ArticleView extends View {
   private async render(): Promise<void> {
     // Show loading state
     this.container.innerHTML = `
-        <div class="back-padder">
+        <div class="back-padder focus-flow-root">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
           <p>${_('Loading article...')}</p>
@@ -119,7 +116,7 @@ export class ArticleView extends View {
    * Render the loaded article
    */
   private renderArticle(event: NostrEvent & { id: string }): void {
-    const metadata = this.articlesApi?.extractArticleMetadata(event) ?? {
+    const metadata = this.articlesApi.get()?.extractArticleMetadata(event) ?? {
       title: '',
       image: '',
       summary: '',
@@ -142,16 +139,20 @@ export class ArticleView extends View {
       .getApi<PostsModuleApi>('posts')
       ?.registerNote(event);
 
-    // Create article structure with replies container
+    // Create article structure with replies container. The wrapper carries
+    // the v2 flow-root marker (clearance below the card — the card itself
+    // must not grow: its background/radius would show the padding). In
+    // classic the bare wrapper is layout-neutral (block, full width).
     this.container.innerHTML = `
-      <div class="article-view-content" data-event-id="${event.id}">
-        <div class="article-header">
-          ${metadata.image ? `<img src="${escapeHtmlAttr(metadata.image)}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
-          <div class="article-title-row">
-            <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
-            ${
-              isOwnArticle
-                ? `
+      <div class="article-view-wrapper focus-flow-root">
+        <div class="article-view-content" data-event-id="${event.id}">
+          <div class="article-header">
+            ${metadata.image ? `<img src="${escapeHtmlAttr(metadata.image)}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
+            <div class="article-title-row">
+              <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
+              ${
+                isOwnArticle
+                  ? `
               <div class="article-title-row__actions">
                 <button class="btn btn--medium btn--passive" data-action="edit-article" title="${_('Edit article')}">
                   <svg width="14" height="14"><use href="#icon-edit"/></svg>
@@ -160,14 +161,15 @@ export class ArticleView extends View {
                 <button class="btn btn--medium btn--danger" data-action="delete-article" title="${_('Delete article')}">${_('Delete')}</button>
               </div>
             `
-                : ''
-            }
+                  : ''
+              }
+            </div>
+            ${metadata.summary ? `<p class="article-summary">${escapeHtml(metadata.summary)}</p>` : ''}
+            <div class="article-author-container"></div>
           </div>
-          ${metadata.summary ? `<p class="article-summary">${escapeHtml(metadata.summary)}</p>` : ''}
-          <div class="article-author-container"></div>
+          <div class="article-body">${articleHtml}</div>
+          <div class="article-replies-container"></div>
         </div>
-        <div class="article-body">${articleHtml}</div>
-        <div class="article-replies-container"></div>
       </div>
     `;
 

@@ -22,6 +22,7 @@ import { diagLog } from '../../services/DiagnosticLogger';
 import { UserProfileService } from '../../services/UserProfileService';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
 import type { RSVPStatusValue } from './CalendarPublishService';
+import { openNoteComposer } from '../../helpers/composerHandoff';
 
 const RSVP_ACTIONS_RAW: Array<{
   status: RSVPStatusValue;
@@ -445,11 +446,8 @@ export class CalendarEventModal {
    */
   private async shareInTl(): Promise<void> {
     if (this.event.isPrivate) return;
-    const { PostNoteModal } = await import(
-      '../../components/post/PostNoteModal'
-    );
     ModalService.getInstance().hide();
-    PostNoteModal.getInstance().show(
+    openNoteComposer(
       `nostr:${encodeNaddr({
         kind: this.event.kind,
         pubkey: this.event.pubkey,

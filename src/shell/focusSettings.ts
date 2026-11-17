@@ -13,8 +13,28 @@
 
 import { Switch } from '../components/ui/Switch';
 import { NnDropdown } from '../components/ui/NnDropdown';
+import { NotificationPrioritySection } from '../components/settings/NotificationPrioritySection';
+import { confirmResetBookmarkReadState } from '../services/confirmResetBookmarkReadState';
+import { BookmarkReadStateService } from '../services/BookmarkReadStateService';
+import {
+  isReadSyncEnabled,
+  setReadSyncEnabled,
+  getReadSyncFrequency,
+  setReadSyncFrequency,
+  type BookmarkReadSyncFrequency,
+} from '../addons/bookmarks/index';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
+import { PetnameService } from '../services/PetnameService';
+import {
+  isPrivateFollowsEnabled,
+  setPrivateFollowsEnabled,
+} from '../lists/follows';
+import {
+  isPrivateBookmarksEnabled,
+  setPrivateBookmarksEnabled,
+} from '../lists/bookmarks';
+import { isPrivateMutesEnabled, setPrivateMutesEnabled } from '../lists/mutes';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -107,7 +127,7 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Hide self-reposts')}</span>
           <div class="setting__control" data-focus-setting="hide-self-reposts"></div>
           <p class="setting__desc">
-            ${_("When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.")}
+            ${_("Hides reposts of users' own notes from your timeline.")}
           </p>
           <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" data-focus-setting="self-repost-gap">
             <span class="setting__label">${_('Disable self-reposts younger than:')}</span>
@@ -130,7 +150,7 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Show reactions')}</span>
           <div class="setting__control" data-focus-setting="show-reactions"></div>
           <p class="setting__desc">
-            ${_('Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.')}
+            ${_('Shows reactions (likes) from people you follow as entries in your timeline.')}
           </p>
         </div>
       </section>
@@ -140,7 +160,7 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Hide highlights')}</span>
           <div class="setting__control" data-focus-setting="hide-highlights"></div>
           <p class="setting__desc">
-            ${_('When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.')}
+            ${_("Hides other users' highlight posts that quote an external website, including pure reposts of them.")}
           </p>
         </div>
       </section>
@@ -150,7 +170,7 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Show expiry notice')}</span>
           <div class="setting__control" data-focus-setting="expiry-notice"></div>
           <p class="setting__desc">
-            ${_('Show a small "Post expires on …" line under notes that carry an expiration time (NIP-40). Off by default.')}
+            ${_('Shows a "Post expires on …" line under notes with an expiration time (NIP-40).')}
           </p>
         </div>
       </section>
@@ -160,17 +180,7 @@ export class FocusSocialSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Disable post truncation')}</span>
           <div class="setting__control" data-focus-setting="post-truncation"></div>
           <p class="setting__desc">
-            ${_('When enabled, long posts will always be displayed in full without "Show More" buttons.')}
-          </p>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">${_('Memory optimization (experimental)')}</span>
-          <div class="setting__control" data-focus-setting="content-visibility"></div>
-          <p class="setting__desc">
-            ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast, disable if it bothers you.')}
+            ${_('Long posts are always displayed in full, without "Show More" buttons.')}
           </p>
         </div>
       </section>
@@ -286,25 +296,6 @@ export class FocusSocialSettings extends FocusSettingsPanel {
         );
       }
     );
-
-    // Memory optimization: content-visibility on off-screen note cards.
-    this.mountSwitch(
-      el.querySelector('[data-focus-setting="content-visibility"]'),
-      this.storage.get<boolean>(StorageKeys.CONTENT_VISIBILITY_AUTO, false),
-      checked => {
-        this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
-        document.documentElement.classList.toggle(
-          'content-visibility-auto',
-          checked
-        );
-        ToastService.show(
-          checked
-            ? _('Memory optimization enabled')
-            : _('Memory optimization disabled'),
-          'success'
-        );
-      }
-    );
   }
 }
 
@@ -320,7 +311,7 @@ export class FocusArticlesSettings extends FocusSettingsPanel {
           <span class="setting__label">${_('Article feed source, main view')}</span>
           <div class="setting__control" data-focus-setting="article-foaf"></div>
           <p class="setting__desc">
-            ${_('Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the feed beyond your direct follows but take longer to build and include authors you may not know.')}
+            ${_('Whose articles appear in the main article feed — higher degrees broaden the feed but take longer to build.')}
           </p>
         </div>
       </section>
@@ -374,3 +365,273 @@ export const socialSettings = (): FocusSettingsView =>
   new FocusSocialSettings();
 export const articlesSettings = (): FocusSettingsView =>
   new FocusArticlesSettings();
+
+/**
+ * Notifications object settings — the notification-priority drag list from
+ * the classic settings, mounted as-is (same storage keys, same save toast,
+ * same `notifications:priorities-changed` event the badge and orchestrator
+ * listen on). The v1 section mounts itself into a `#<sectionId>-content`
+ * slot, so the panel only renders that slot and cleans up via unmount().
+ */
+export class FocusNotificationsSettings extends FocusSettingsPanel {
+  private section = new NotificationPrioritySection();
+
+  protected render(): string {
+    return '<div id="notification-priority-content"></div>';
+  }
+
+  protected bind(el: HTMLElement): void {
+    this.section.mount(el);
+  }
+
+  override destroy(): void {
+    this.section.unmount();
+    super.destroy();
+  }
+}
+
+export const notificationsSettings = (): FocusSettingsView =>
+  composePanels([new FocusNotificationsSettings()]);
+
+/**
+ * Bookmarks object settings — the read-state sync block from the classic
+ * addon settings (identical storage keys, toasts and service calls). The
+ * addon Enable toggle is deliberately NOT repeated here: enabling/disabling
+ * the addon is an addon-lifecycle action (Settings → Addons), not a
+ * bookmark-object setting.
+ */
+export class FocusBookmarksSettings extends FocusSettingsPanel {
+  protected render(): string {
+    const freqOptions: Array<[BookmarkReadSyncFrequency, string]> = [
+      ['rare', 'Rare (every 60 min)'],
+      ['moderate', 'Moderate (every 30 min)'],
+      ['frequent', 'Frequent (every 15 min)'],
+      ['more-frequent', 'More Frequent (every 5 min)'],
+      ['realtime', 'Every 60 seconds'],
+    ];
+    const syncEnabled = isReadSyncEnabled();
+    return `
+      <section class="section">
+        <div class="setting">
+          <span class="setting__label">${_('Sync read bookmarks across relays')}</span>
+          <div class="setting__control" data-focus-setting="read-sync"></div>
+          <p class="setting__desc">
+            ${_('Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total.')}
+          </p>
+        </div>
+
+        <div class="frequency-selector${syncEnabled ? '' : ' is-hidden'}">
+          <p class="setting__label">${_('Sync frequency')}</p>
+          ${freqOptions
+            .map(
+              ([value, label]) => `
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span class="setting__label">${_(label)}</span>
+              <input type="radio" name="focus-bookmarks-read-freq" value="${value}" ${getReadSyncFrequency() === value ? 'checked' : ''} />
+            </label>
+          `
+            )
+            .join('')}
+          <div class="setting">
+            <div class="setting__control">
+              <button class="btn btn--medium" data-focus-setting="reset-read-state">${_('Reset read state')}</button>
+            </div>
+            <p class="setting__desc">
+              ${_('Marks ALL bookmarks as unread again (also on your other devices after their next sync).')}
+            </p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  protected bind(el: HTMLElement): void {
+    this.mountSwitch(
+      el.querySelector('[data-focus-setting="read-sync"]'),
+      isReadSyncEnabled(),
+      checked => {
+        setReadSyncEnabled(checked);
+        const service = BookmarkReadStateService.getInstance();
+        if (checked) void service.start();
+        else service.stop();
+        // Same visibility coupling as the classic addon settings: the
+        // frequency block follows the sync switch, not the addon toggle.
+        el.querySelector('.frequency-selector')?.classList.toggle(
+          'is-hidden',
+          !checked
+        );
+        // Mounted bookmarks views re-render: unread borders drop when the
+        // feature deactivates, appear when it activates.
+        this.bus.emit('bookmark:updated');
+        ToastService.show(
+          checked
+            ? _('Bookmark read-state sync enabled')
+            : _('Bookmark read-state sync disabled'),
+          'success'
+        );
+      }
+    );
+
+    el.querySelectorAll<HTMLInputElement>(
+      'input[name="focus-bookmarks-read-freq"]'
+    ).forEach(radio => {
+      radio.addEventListener('change', () => {
+        const value = radio.value as BookmarkReadSyncFrequency;
+        setReadSyncFrequency(value);
+        ToastService.show(_('Sync frequency: %s', value), 'success');
+      });
+    });
+
+    el.querySelector(
+      '[data-focus-setting="reset-read-state"]'
+    )?.addEventListener('click', () => confirmResetBookmarkReadState());
+  }
+}
+
+export const bookmarksSettings = (): FocusSettingsView =>
+  composePanels([
+    new FocusBookmarksSettings(),
+    new FocusPrivateListSettings({
+      hook: 'private-bookmarks',
+      label: _('Use private bookmarks (NIP-51)'),
+      description: _(
+        'Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.'
+      ),
+      listName: _('bookmarks'),
+      isEnabled: () => isPrivateBookmarksEnabled(),
+      setEnabled: setPrivateBookmarksEnabled,
+    }),
+  ]);
+
+/**
+ * Private-list (NIP-51) toggle — the same switch the classic Settings →
+ * Privacy section carries, surfaced on the v2 list objects. One panel
+ * class, three wirings (follows / bookmarks / mutes): identical storage
+ * via the list orchestrators, identical toasts, identical texts — only
+ * the labels differ.
+ */
+export class FocusPrivateListSettings extends FocusSettingsPanel {
+  constructor(
+    private config: {
+      /** data-focus-setting hook name (must be unique per object panel). */
+      hook: string;
+      label: string;
+      description: string;
+      /** e.g. "follow lists" — interpolated into the NIP-51 caution line. */
+      listName: string;
+      isEnabled: () => boolean;
+      setEnabled: (enabled: boolean) => void;
+      /** NIP-51 caution line — off for non-list toggles (e.g. petnames). */
+      caution?: boolean;
+    }
+  ) {
+    super();
+  }
+
+  protected render(): string {
+    const caution =
+      this.config.caution === false
+        ? ''
+        : `<p class="setting__desc ${this.config.hook}-warning">
+            <strong>${_('Caution:')}</strong>
+            ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", this.config.listName)}
+          </p>`;
+    return `
+      <section class="section">
+        <div class="setting">
+          <span class="setting__label">${_(this.config.label)}</span>
+          <div class="setting__control" data-focus-setting="${this.config.hook}"></div>
+          <p class="setting__desc">${_(this.config.description)}</p>
+          ${caution}
+        </div>
+      </section>
+    `;
+  }
+
+  protected bind(el: HTMLElement): void {
+    this.mountSwitch(
+      el.querySelector(`[data-focus-setting="${this.config.hook}"]`),
+      this.config.isEnabled(),
+      checked => {
+        this.config.setEnabled(checked);
+        ToastService.show(
+          checked
+            ? _('Private %s enabled', this.config.listName)
+            : _('Private %s disabled', this.config.listName),
+          'success'
+        );
+      }
+    );
+  }
+}
+
+export const followsSettings = (): FocusSettingsView =>
+  new FocusPrivateListSettings({
+    hook: 'private-follows',
+    label: _('Use private follow lists (NIP-51)'),
+    description: _(
+      'Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it.'
+    ),
+    listName: _('follow lists'),
+    isEnabled: () => isPrivateFollowsEnabled(),
+    setEnabled: setPrivateFollowsEnabled,
+  });
+
+export const mutesSettings = (): FocusSettingsView =>
+  new FocusPrivateListSettings({
+    hook: 'private-mutes',
+    label: _('Use private mutes (NIP-51)'),
+    description: _(
+      'Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it.'
+    ),
+    listName: _('mutes'),
+    isEnabled: () => isPrivateMutesEnabled(),
+    setEnabled: setPrivateMutesEnabled,
+  });
+
+export const profileSettings = (): FocusSettingsView =>
+  new FocusPrivateListSettings({
+    hook: 'private-petnames',
+    label: _('Private petnames'),
+    description: _(
+      'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted, only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.'
+    ),
+    listName: _('petnames'),
+    isEnabled: () => PetnameService.getInstance().isPrivateNotesEnabled(),
+    setEnabled: enabled =>
+      PetnameService.getInstance().setPrivateNotesEnabled(enabled),
+    caution: false,
+  });
+
+/**
+ * Compose several settings panels into one vertical stack — each child
+ * mounts into its own wrapper, `<hr>` dividers (`--color-3`) separate
+ * them. Destroy runs in reverse mount order. Used where a detail state
+ * pulls together panels from multiple sources (e.g. the composer's
+ * ED-b: custom emojis manager above the scheduled posts list).
+ */
+export const composePanels = (
+  panels: FocusSettingsView[]
+): FocusSettingsView => {
+  return {
+    mount(el: HTMLElement): void {
+      const stack = document.createElement('div');
+      stack.className = 'focus-settings__stack';
+      panels.forEach((panel, i) => {
+        if (i > 0) {
+          const hr = document.createElement('hr');
+          hr.className = 'focus-settings__divider';
+          stack.appendChild(hr);
+        }
+        const child = document.createElement('div');
+        child.className = 'focus-settings__panel';
+        stack.appendChild(child);
+        panel.mount(child);
+      });
+      el.appendChild(stack);
+    },
+    destroy(): void {
+      [...panels].reverse().forEach(p => p.destroy());
+    },
+  };
+};

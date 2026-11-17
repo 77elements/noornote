@@ -15,8 +15,8 @@
 // you have a private petname note about them, green = they follow you.
 // Fixed SASS colors so it stays identical across themes. Rule order encodes
 // priority when classes collide on one avatar: red > orange > green.
-// 2px border on the --medium avatar (which already carries a 1px border, so
-// the extra 1px is the only layout change).
+// 2px border on the --medium avatar (the base avatar has no border, so the
+// ring adds 2px of layout).
 .profile-pic--medium.author-rel--follows,
 .profile-pic--mini.author-rel--follows {
   border: 2px solid $color-6;
@@ -32,9 +32,10 @@
   border: 2px solid $color-red;
 }
 
-// Memory optimization: skip rendering of off-screen notes
-// Toggled via UI Settings → applied as class on <html>
-html.content-visibility-auto .note-card {
+// Memory optimization: skip rendering of off-screen notes (always on —
+// the former UI switch is gone; contain-intrinsic-size remembers real
+// heights, so the only cost is a first-scroll estimate).
+.note-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 400px;
   contain: layout style paint;

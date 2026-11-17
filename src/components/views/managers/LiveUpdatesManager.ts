@@ -9,7 +9,7 @@
  * - Reply confirmation
  */
 
-import { ModuleLoader } from '../../../core/ModuleLoader';
+import { LazyModuleApi } from '../../../core/LazyModuleApi';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { SystemLogger } from '../../../services/SystemLogger';
@@ -30,16 +30,8 @@ export interface LiveUpdatesConfig {
 
 export class LiveUpdatesManager {
   private config: LiveUpdatesConfig;
-  private _singleNoteApi?: SingleNoteModuleApi | null;
-  private get singleNoteApi(): SingleNoteModuleApi | null {
-    return (this._singleNoteApi ??=
-      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
-  }
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private singleNoteApi = new LazyModuleApi<SingleNoteModuleApi>('single-note');
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
   private router: Router;
@@ -66,14 +58,14 @@ export class LiveUpdatesManager {
     );
 
     // Start live reply subscription (real-time)
-    this.singleNoteApi?.startLiveReplies(this.config.noteId, newReply => {
+    this.singleNoteApi.get()?.startLiveReplies(this.config.noteId, newReply => {
       if (this.config.onLiveReply) {
         this.config.onLiveReply(newReply);
       }
     });
 
     // Start live reactions polling (30s interval)
-    this.reactionsApi?.startLiveReactions(
+    this.reactionsApi.get()?.startLiveReactions(
       this.config.noteId,
       stats => {
         if (this.config.onStatsUpdate) {
@@ -85,7 +77,7 @@ export class LiveUpdatesManager {
 
     // Real-time interaction subscription (kinds 7/9735/6/16) — instant lists
     // and counters; the 30s poll above stays as a catch-up fallback.
-    this.reactionsApi?.startLiveStats(
+    this.reactionsApi.get()?.startLiveStats(
       this.config.noteId,
       stats => {
         if (this.config.onStatsUpdate) {
@@ -193,7 +185,7 @@ export class LiveUpdatesManager {
       `🔍 Subscribing for reply confirmation: ${replyId.slice(0, 8)}`
     );
 
-    await this.singleNoteApi?.waitForReplyOnRelays(replyId, onConfirmed);
+    await this.singleNoteApi.get()?.waitForReplyOnRelays(replyId, onConfirmed);
   }
 
   /**
@@ -215,9 +207,9 @@ export class LiveUpdatesManager {
     }
 
     // Stop orchestrators
-    this.singleNoteApi?.stopLiveReplies(this.config.noteId);
-    this.reactionsApi?.stopLiveReactions(this.config.noteId);
-    this.reactionsApi?.stopLiveStats(this.config.noteId);
+    this.singleNoteApi.get()?.stopLiveReplies(this.config.noteId);
+    this.reactionsApi.get()?.stopLiveReactions(this.config.noteId);
+    this.reactionsApi.get()?.stopLiveStats(this.config.noteId);
 
     this.systemLogger.info(
       'LiveUpdatesManager',

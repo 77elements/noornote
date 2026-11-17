@@ -5,7 +5,7 @@
  */
 
 import { NoteUI } from '../ui/NoteUI';
-import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -15,17 +15,13 @@ import {
   mergeChronologicalComments,
   pinAuthorReplies,
   isAuthorTopLevelReply,
+  renderQuotedNoteCard,
   renderThreadedReplyNodes,
 } from '../../helpers/quotedReposts';
-import {
-  buildThreadTree as buildSharedThreadTree,
-  type ThreadNode,
-} from '../../helpers/threadTree';
+import { buildThreadTree as buildSharedThreadTree } from '../../helpers/threadTree';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../services/SystemLogger';
-import { encodeNeventWithHints } from '../../helpers/encodeNeventWithHints';
 import { escapeHtml } from '../../helpers/escapeHtml';
-import { Router } from '../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { _ } from '../../i18n';
 
@@ -57,16 +53,8 @@ export class RepliesRenderer {
     noteElement: HTMLElement
   ) => void;
 
-  private _singleNoteApi?: SingleNoteModuleApi | null;
-  private get singleNoteApi(): SingleNoteModuleApi | null {
-    return (this._singleNoteApi ??=
-      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
-  }
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private singleNoteApi = new LazyModuleApi<SingleNoteModuleApi>('single-note');
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
@@ -96,7 +84,8 @@ export class RepliesRenderer {
     try {
       // Fetch both replies and quoted reposts in parallel
       const [allReplies, allQuotedReposts] = await Promise.all([
-        this.singleNoteApi?.fetchReplies(this.noteId) ?? Promise.resolve([]),
+        this.singleNoteApi.get()?.fetchReplies(this.noteId) ??
+          Promise.resolve([]),
         this.fetchQuotedReposts(this.noteId),
       ]);
 
@@ -158,7 +147,7 @@ export class RepliesRenderer {
           });
 
           // Also update the cache so Timeline shows correct count
-          this.reactionsApi?.updateCachedStats(this.noteId, {
+          this.reactionsApi.get()?.updateCachedStats(this.noteId, {
             replies: replies.length,
             quotedReposts: quotedReposts.length,
           });
@@ -186,10 +175,17 @@ export class RepliesRenderer {
         // Render all comments
         for (const comment of comments) {
           if (comment.type === 'reply') {
-            this.renderThreadedReply(
+            // isAuthorPin applies ONLY to the pinned node itself (depth 0) —
+            // replies below it must NOT inherit the (Author) badge.
+            renderThreadedReplyNodes(
               comment.node,
               repliesList,
-              isAuthorTopLevelReply(comment, this.noteAuthor)
+              (event, depth) =>
+                this.createReplyElement(
+                  event,
+                  depth,
+                  isAuthorTopLevelReply(comment, this.noteAuthor) && depth === 0
+                )
             );
           } else {
             await this.renderQuotedRepost(comment.event, repliesList);
@@ -231,22 +227,6 @@ export class RepliesRenderer {
       );
       return [];
     }
-  }
-
-  /**
-   * Render a threaded reply recursively with indentation
-   */
-  private renderThreadedReply(
-    node: ThreadNode,
-    container: Element,
-    isAuthorPin: boolean = false
-  ): void {
-    renderThreadedReplyNodes(node, container, (event, depth) =>
-      // isAuthorPin applies ONLY to the pinned node itself (depth 0) — the
-      // callback runs for the whole subtree, and replies hanging below the
-      // pinned author reply must NOT inherit the (Author) badge.
-      this.createReplyElement(event, depth, isAuthorPin && depth === 0)
-    );
   }
 
   /**
@@ -310,58 +290,25 @@ export class RepliesRenderer {
       `🎨 Rendering quoted repost: ${quoteEventId.slice(0, 8)}`
     );
 
-    // Strip the embedded event/note/naddr references from content (the
-    // quoted target is already indicated by the "X quoted this note:" header
-    // and would render redundantly as an inline preview card otherwise).
-    // Keep nostr:npub / nostr:nprofile mentions — those are user mentions,
-    // distinct from the quoted target, and useful UX.
-    const cleanedEvent = {
-      ...quoteEvent,
-      content: quoteEvent.content
-        .replace(/nostr:(nevent|note|naddr)[a-z0-9]+/gi, '')
-        .trim(),
-    };
-
-    // Create wrapper for quote
-    const quoteWrapper = document.createElement('div');
-    quoteWrapper.className = 'snv-quoted-repost';
-    quoteWrapper.dataset.eventId = quoteEventId;
-
-    // Fetch author's profile for header
-    const profileService = UserProfileService.getInstance();
-    const profile = await profileService.getUserProfile(quoteEvent.pubkey);
-    const username = profile?.display_name || profile?.name || 'Anonymous';
-
-    // Convert hex ID to nevent for navigation link (with NIP-19 relay/author
-    // hints so the URL survives a browser reload)
-    const nevent = encodeNeventWithHints(quoteEvent);
-
-    // Create "X quoted this note:" header — entire line is one clickable link
-    // (matches ThreadManager pattern; uses Router.navigate so SPA routing kicks in)
-    const quoteHeader = document.createElement('div');
-    quoteHeader.className = 'snv-quoted-repost__header';
-    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this note:</a>`;
-    const link = quoteHeader.querySelector(
-      '.snv-quoted-repost__link'
-    ) as HTMLAnchorElement | null;
-    link?.addEventListener('click', e => {
-      e.preventDefault();
-      Router.getInstance().navigate(`/note/${nevent}`);
+    const noteElement = await renderQuotedNoteCard({
+      quoteEvent,
+      container,
+      // Strip the embedded event/note/naddr references from content (the
+      // quoted target is already indicated by the header below and would
+      // render redundantly as an inline preview card otherwise).
+      // Keep nostr:npub / nostr:nprofile mentions — those are user mentions,
+      // distinct from the quoted target, and useful UX.
+      stripPattern: /nostr:(nevent|note|naddr)[a-z0-9]+/gi,
+      // "X quoted this note:" header — entire line is one clickable link
+      headerHtml: (username, nevent) =>
+        `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this note:</a>`,
+      getUsername: async pubkey => {
+        const profile =
+          await UserProfileService.getInstance().getUserProfile(pubkey);
+        return profile?.display_name || profile?.name || null;
+      },
     });
-
-    // Use NoteUI to render the quote (disable auto-setup)
-    const noteElement = NoteUI.createNoteElement(cleanedEvent, {
-      collapsible: false, // Disable auto-setup - will setup manually after DOM insertion
-      islFetchStats: false,
-      isLoggedIn: false,
-      headerSize: 'small',
-      depth: 0,
-    });
-
-    // Assemble: header + note
-    quoteWrapper.appendChild(quoteHeader);
-    quoteWrapper.appendChild(noteElement);
-    container.appendChild(quoteWrapper);
+    if (!noteElement) return;
 
     // Setup CollapsibleManager AFTER element is in DOM
     const { CollapsibleManager } = await import(

@@ -136,8 +136,7 @@ export class NostrMajlisReminderService {
         {
           action: {
             label: tp('action', 'Open'),
-            onClick: () =>
-              Router.getInstance().navigate('/addons/nostr-majlis'),
+            onClick: () => Router.getInstance().navigate('/nostr-majlis'),
           },
         }
       );
@@ -197,7 +196,7 @@ export class NostrMajlisReminderService {
       ToastService.alert(text, () => this.ackHoliday(dedup), {
         action: {
           label: tp('action', 'Open'),
-          onClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+          onClick: () => Router.getInstance().navigate('/nostr-majlis'),
         },
       });
       if (
@@ -262,7 +261,7 @@ export class NostrMajlisReminderService {
       tag,
       autoCloseMs: closeAfterMs,
       osWhen: 'always',
-      onClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+      onClick: () => Router.getInstance().navigate('/nostr-majlis'),
     });
   }
 

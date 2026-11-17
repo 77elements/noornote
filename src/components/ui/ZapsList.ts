@@ -5,6 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import type { ZapPendingState } from '../../services/ZapService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
@@ -54,16 +55,8 @@ export class ZapsList {
     return (this._zapsApi ??=
       ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
   }
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
   /** Open zap-pill pulldowns — torn down with the list (destroy contract). */
   private dropdowns: NnDropdown[] = [];
   /** Receipt id → pill, for instant reaction-hint updates. */
@@ -337,7 +330,7 @@ export class ZapsList {
     if (receiptBadges.size === 0) return;
     const ids = [...receiptBadges.keys()];
     try {
-      await this.reactionsApi?.batchFetchStats(ids);
+      await this.reactionsApi.get()?.batchFetchStats(ids);
     } catch {
       return;
     }
@@ -353,7 +346,7 @@ export class ZapsList {
   private appendHint(receiptId: string, badge: HTMLElement): void {
     if (!badge.isConnected) return;
     badge.querySelector('.zaps-list__reaction-hint')?.remove();
-    const stats = this.reactionsApi?.peekDetailedStats(receiptId);
+    const stats = this.reactionsApi.get()?.peekDetailedStats(receiptId);
     const entries = buildZapReactionEntries(stats?.reactionEvents ?? []);
     if (entries.length === 0) return;
     // Group identical emojis with a count: "💜2👍" instead of "💜💜👍"
@@ -408,7 +401,7 @@ export class ZapsList {
     const zapIds = replyables
       .map(r => r.zap.event?.id)
       .filter((id): id is string => !!id);
-    const counts = await this.reactionsApi?.getZapReplyCounts(zapIds);
+    const counts = await this.reactionsApi.get()?.getZapReplyCounts(zapIds);
     if (!counts || counts.size === 0) return;
 
     for (const { zap, anchor } of replyables) {
@@ -425,7 +418,7 @@ export class ZapsList {
         userHoverCard.hide();
         // Prime the cache so the zap-rooted SNV resolves instantly — zap
         // receipts are often unfetchable by id from relays alone.
-        if (zap.event) this.postsApi?.registerNote(zap.event);
+        if (zap.event) this.postsApi.get()?.registerNote(zap.event);
         // No click event passed on purpose: in right-pane this opens the zap
         // thread as a NEW tab so the original note tab stays reachable.
         getViewNavigationController().openView('single-note', zapId);
@@ -506,7 +499,7 @@ export class ZapsList {
     const senderPubkey = zap.isAnonymous
       ? receipt.tags.find(t => t[0] === 'p')?.[1] || zap.zapperPubkey
       : zap.zapperPubkey;
-    await this.reactionsApi?.publishReaction({
+    await this.reactionsApi.get()?.publishReaction({
       noteId: receipt.id,
       authorPubkey: senderPubkey,
       emoji,

@@ -23,6 +23,8 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { isTribesEnabled } from '../../addons/tribes/index';
+import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
+import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 
 type TabType = 'timeline' | 'last-notes' | 'tribe';
 
@@ -43,6 +45,14 @@ export class TimelineView extends View {
   private userLoginSubscriptionId: string | null = null;
   private isRendering: boolean = false;
   private pendingRerender: boolean = false;
+  // Tab-row rebuild serialization: several tribe:updated events can fire
+  // in quick succession (e.g. folder create emits twice). Interleaved
+  // async rebuilds would corrupt this.tabs (core tabs pushed sync, tribe
+  // tabs after the dynamic import — the resets overwrite each other and
+  // the tribe pushes pile up). One rebuild at a time; late events coalesce
+  // into exactly one more run.
+  private tabRowRefreshing = false;
+  private tabRowRefreshPending = false;
 
   constructor() {
     super();
@@ -75,6 +85,13 @@ export class TimelineView extends View {
     this.eventBus.on('tribes:addon-toggle', () => {
       this.currentTabId = 'timeline';
       this.rerender();
+    });
+
+    // Rebuild the tab row when a tribe changes (created/renamed/reordered/
+    // deleted — also from the v2 Tribes surface). In-place: the active tab
+    // and the timeline stay untouched.
+    this.eventBus.on('tribe:updated', () => {
+      void this.refreshTabRow();
     });
   }
 
@@ -126,55 +143,30 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
-    // Page heading — visible, mirrors the article view's title style
-    // (v2 surface chrome; classic v1 shows it above the tab bar too).
-    const pageHeading = document.createElement('h1');
-    pageHeading.className = 'timeline-view__title visually-hidden';
-    pageHeading.textContent = _('Social Media');
-    this.container.appendChild(pageHeading);
+    // Page heading ("Social Media"): visible in v2 as the domain heading,
+    // screen-reader-only in v1 — the hiding is scoped per interface in
+    // SCSS (see .timeline-view__title in _timeline-view.scss), not via
+    // the .visually-hidden class (that would hide it in v2 as well).
+    // Shared focus-view-header row: h1 left, action button right. The
+    // Write Note button routes through the focus nav seam; classic v1
+    // hides it (the +New Post dropup owns note composition there).
+    const titleRow = createFocusViewHeader({
+      title: _('Social Media'),
+      titleClass: 'timeline-view__title',
+      actionLabel: _('Write Note'),
+      onAction: () => {
+        delegateToFocusUi('new-note');
+      },
+    });
+
+    this.container.appendChild(titleRow);
 
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
     await this.buildTabs();
 
     // The tab bar always carries at least Timeline + Last notes per follow.
-    const showTabBar = this.tabs.length > 1;
-
-    if (showTabBar) {
-      // Build header with tabs and edit link
-      const header = document.createElement('div');
-      header.className = 'timeline-view__header';
-
-      // Tabs container (horizontal scrollable)
-      const tabsContainer = document.createElement('div');
-      tabsContainer.className = 'timeline-view__tabs-container';
-
-      // Tabs wrapper for horizontal scroll
-      const tabsWrapper = document.createElement('div');
-      tabsWrapper.className = 'tabs tabs--scrollable';
-
-      // Create all tabs
-      this.tabs.forEach(tab => {
-        const isActive = tab.id === this.currentTabId;
-        const tabEl = this.createTab(tab, isActive);
-        tabsWrapper.appendChild(tabEl);
-      });
-
-      tabsContainer.appendChild(tabsWrapper);
-
-      // Edit link — only meaningful when the Tribes addon is on.
-      if (isTribesEnabled()) {
-        const editLink = document.createElement('button');
-        editLink.className =
-          'timeline-view__edit-link btn btn--mini btn--passive';
-        editLink.textContent = _('Edit tribes');
-        editLink.addEventListener('click', () => {
-          this.eventBus.emit('list:open', { listType: 'tribes' });
-        });
-        tabsContainer.appendChild(editLink);
-      }
-
-      header.appendChild(tabsContainer);
-      this.container.appendChild(header);
+    if (this.tabs.length > 1) {
+      this.container.appendChild(this.buildHeader());
     }
 
     // Timeline container
@@ -193,6 +185,90 @@ export class TimelineView extends View {
       logger.info('TimelineView', 'Processing deferred rerender');
       this.pendingRerender = false;
       this.rerender();
+    }
+  }
+
+  /**
+   * Build the tab-row header: the scrollable tabs plus the "Edit tribes"
+   * link (the link morphs to the Tribes object in the Focus UI via the
+   * navigation seam; the classic UI keeps the list tab).
+   */
+  private buildHeader(): HTMLElement {
+    const header = document.createElement('div');
+    header.className = 'timeline-view__header';
+
+    // Tabs container (horizontal scrollable)
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'timeline-view__tabs-container';
+
+    // Tabs wrapper for horizontal scroll
+    const tabsWrapper = document.createElement('div');
+    tabsWrapper.className = 'tabs tabs--scrollable';
+
+    // Create all tabs
+    this.tabs.forEach(tab => {
+      const isActive = tab.id === this.currentTabId;
+      const tabEl = this.createTab(tab, isActive);
+      tabsWrapper.appendChild(tabEl);
+    });
+
+    tabsContainer.appendChild(tabsWrapper);
+
+    // Edit link — only meaningful when the Tribes addon is on.
+    if (isTribesEnabled()) {
+      const editLink = document.createElement('button');
+      editLink.className =
+        'timeline-view__edit-link btn btn--mini btn--passive';
+      editLink.textContent = _('Edit tribes');
+      editLink.addEventListener('click', () => {
+        // Focus UI: the Tribes object owns the 'tribes' view type — the
+        // stage switches to it (same as clicking the circle). Classic:
+        // the list tab as before.
+        if (!delegateToFocusUi('tribes')) {
+          this.eventBus.emit('list:open', { listType: 'tribes' });
+        }
+      });
+      tabsContainer.appendChild(editLink);
+    }
+
+    header.appendChild(tabsContainer);
+    return header;
+  }
+
+  /**
+   * Rebuild the tab row in place after tribe edits (`tribe:updated`):
+   * tabs re-derive from the tribes list while the active tab survives
+   * renames — only a deleted current tribe falls back to the main
+   * timeline. No full rerender: the timeline and its scroll position
+   * stay untouched. The v2 Tribes surface edits run through this too.
+   */
+  private async refreshTabRow(): Promise<void> {
+    // Serialize: late events coalesce into one more run instead of
+    // interleaving with a running rebuild.
+    if (this.tabRowRefreshing) {
+      this.tabRowRefreshPending = true;
+      return;
+    }
+    this.tabRowRefreshing = true;
+    try {
+      await this.buildTabs();
+      if (!this.tabs.some(tab => tab.id === this.currentTabId)) {
+        this.currentTabId = 'timeline';
+        await this.updateTimeline();
+      }
+      const timelineContainer = this.container.querySelector(
+        '.timeline-view__timeline'
+      );
+      this.container.querySelector('.timeline-view__header')?.remove();
+      if (this.tabs.length > 1 && timelineContainer) {
+        this.container.insertBefore(this.buildHeader(), timelineContainer);
+      }
+    } finally {
+      this.tabRowRefreshing = false;
+      if (this.tabRowRefreshPending) {
+        this.tabRowRefreshPending = false;
+        await this.refreshTabRow();
+      }
     }
   }
 

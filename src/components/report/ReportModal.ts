@@ -5,7 +5,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import type { PostsModuleApi, ReportType } from '../../modules/posts/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -24,11 +24,7 @@ export interface ReportModalOptions {
 export class ReportModal {
   private static instance: ReportModal | null = null;
   private modalService: ModalService;
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
   private userProfileService: UserProfileService;
   private systemLogger: SystemLogger;
   private currentOptions: ReportModalOptions | null = null;
@@ -82,7 +78,7 @@ export class ReportModal {
   private renderContent(options: ReportModalOptions): HTMLElement {
     const username =
       this.userProfileService.getUsername(options.reportedPubkey) ?? 'Unknown';
-    const reportTypes = this.postsApi?.getReportTypes() ?? [];
+    const reportTypes = this.postsApi.get()?.getReportTypes() ?? [];
 
     const container = document.createElement('div');
     container.className = 'report-modal';
@@ -95,9 +91,9 @@ export class ReportModal {
     // Report types list
     const reportTypesHtml = reportTypes
       .map(type => {
-        const label = _(this.postsApi?.getReportTypeLabel(type) ?? '');
+        const label = _(this.postsApi.get()?.getReportTypeLabel(type) ?? '');
         const description = _(
-          this.postsApi?.getReportTypeDescription(type) ?? ''
+          this.postsApi.get()?.getReportTypeDescription(type) ?? ''
         );
 
         return `
@@ -243,7 +239,9 @@ export class ReportModal {
       if (this.currentOptions.reportedEventId) {
         reportOptions.reportedEventId = this.currentOptions.reportedEventId;
       }
-      const result = (await this.postsApi?.createReport(reportOptions)) ?? {
+      const result = (await this.postsApi
+        .get()
+        ?.createReport(reportOptions)) ?? {
         success: false,
         error: 'Module not loaded',
       };

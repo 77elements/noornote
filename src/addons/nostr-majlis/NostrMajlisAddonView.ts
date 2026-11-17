@@ -13,7 +13,6 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
-import { AddonLoader } from '../AddonLoader';
 import type { NostrMajlisRuntime } from './runtime';
 import {
   NnDropdown,
@@ -35,11 +34,14 @@ import type { DhikrService } from './DhikrService';
 import type { DhikrRound } from './dhikr';
 import {
   isNostrMajlisEnabled,
+  isNostrMajlisAutoLoaded,
   setNostrMajlisEnabled,
   getNostrMajlisSettings,
   setNostrMajlisSettings,
   type ReminderPrayers,
 } from './index';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import {
   DiyanetService,
   type DiyanetPlace,
@@ -144,6 +146,11 @@ export class NostrMajlisAddonView extends View {
 
   private renderToken = 0;
   private disposed = false;
+  /** v2 on-demand object lifecycle (see LiveStreamsAddonView.v2OnDemand). */
+  private readonly v2OnDemand = isFocusUiEnabled();
+
+  /** Wired by focusTabbedObjectSurface: user tab switches sync the URL. */
+  onTabChange?: (tabId: string) => void;
 
   constructor(initialTab?: string) {
     super();
@@ -151,6 +158,12 @@ export class NostrMajlisAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-nostr-majlis';
     this.initialTab = initialTab ?? 'salah';
+    // v2 on-demand: the object loads the addon regardless of the stored
+    // preference — the enable switch and the tabs render either way.
+    // Released again in destroy().
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('nostr-majlis');
+    }
     this.render();
   }
 
@@ -177,7 +190,7 @@ export class NostrMajlisAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Nostr-Majlis')}</h1>
         <section class="section">
           <div class="setting">
@@ -199,9 +212,10 @@ export class NostrMajlisAddonView extends View {
       </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
-    setupTabClickHandlers(this.container, tabId =>
-      switchTabWithContent(this.container, tabId)
-    );
+    setupTabClickHandlers(this.container, tabId => {
+      switchTabWithContent(this.container, tabId);
+      this.onTabChange?.(tabId);
+    });
     void this.renderSalah();
     this.renderHolidays();
     this.renderDhikr();
@@ -227,7 +241,9 @@ export class NostrMajlisAddonView extends View {
 
   private stale(token: number): boolean {
     return (
-      this.disposed || token !== this.renderToken || !isNostrMajlisEnabled()
+      this.disposed ||
+      token !== this.renderToken ||
+      (!isNostrMajlisEnabled() && !this.v2OnDemand)
     );
   }
 
@@ -247,7 +263,7 @@ export class NostrMajlisAddonView extends View {
     const tabsBar = this.container.querySelector(
       '[data-el="majlis-tabs"]'
     ) as HTMLElement | null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       if (tabsBar) tabsBar.hidden = true;
       slot.innerHTML = '';
       return;
@@ -300,7 +316,7 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLElement | null;
     if (!slot) return;
     this.disposeHolidayReminders();
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -403,6 +419,19 @@ export class NostrMajlisAddonView extends View {
     );
   }
 
+  /**
+   * Dhikr relay subscriptions start on demand (tab-open reason — the
+   * runtime only auto-starts them while a majlis widget is active).
+   * Resolves true once the service is running; re-render then.
+   */
+  private async ensureDhikrRunning(): Promise<boolean> {
+    const runtime =
+      AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis');
+    if (!runtime) return false;
+    const svc = await runtime.ensureDhikr();
+    return !!svc;
+  }
+
   /** Build the Community Dhikr tab: "Create new dhikr" button + the live actions table. */
   private renderDhikr(): void {
     const slot = this.container.querySelector(
@@ -411,7 +440,7 @@ export class NostrMajlisAddonView extends View {
     if (!slot) return;
     this.notifySwitch?.destroy();
     this.notifySwitch = null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -440,6 +469,11 @@ export class NostrMajlisAddonView extends View {
       .querySelector('[data-action="create-dhikr"]')
       ?.addEventListener('click', () => new DhikrModal('create').open());
     this.renderDhikrList();
+    // Dhikr relays start on demand (widget/tab reason) — once running,
+    // re-render with the fetched state.
+    void this.ensureDhikrRunning().then(running => {
+      if (running) this.renderDhikrList();
+    });
   }
 
   // ---------- Daily Ayah tab ----------
@@ -457,7 +491,7 @@ export class NostrMajlisAddonView extends View {
     const token = ++this.quranToken;
     this.quranSwitch?.destroy();
     this.quranSwitch = null;
-    if (!isNostrMajlisEnabled()) {
+    if (!isNostrMajlisEnabled() && !this.v2OnDemand) {
       slot.innerHTML = '';
       return;
     }
@@ -1377,6 +1411,11 @@ export class NostrMajlisAddonView extends View {
     this.enableSwitch = null;
     this.notifySwitch?.destroy();
     this.notifySwitch = null;
+    // v2 on-demand: leaving the object releases the addon — unless an
+    // always-on reason survives (one of the two widgets active).
+    if (this.v2OnDemand && !isNostrMajlisAutoLoaded()) {
+      void AddonLoader.getInstance().deactivateOnDemand('nostr-majlis');
+    }
     this.container.innerHTML = '';
   }
 }

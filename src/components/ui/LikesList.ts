@@ -11,8 +11,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { _ } from '../../i18n';
-import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 import { escapeHtml } from '../../helpers/escapeHtml';
@@ -39,11 +39,7 @@ export class LikesList {
   private reactionEvents: NostrEvent[];
   private noteId: string;
   private authorPubkey: string;
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
-  }
+  private reactionsApi = new LazyModuleApi<ReactionsModuleApi>('reactions');
   /** Original reacted-to event — required for NIP-25-compliant reactions on
    *  addressable events (long-form articles etc.) and used as the "react with
    *  the same emoji" target for top-level badges. */
@@ -74,14 +70,15 @@ export class LikesList {
       .map(e => e.id)
       .filter((id): id is string => !!id);
     const tree =
-      (await this.reactionsApi?.fetchReactionTree(rootIds)) ??
+      (await this.reactionsApi.get()?.fetchReactionTree(rootIds)) ??
       new Map<string, NostrEvent[]>();
     // Remote NIP-09 take-backs: sweep the tree's child reactions so an
     // emoji-reply whose author un-reacted never renders. Idempotent — the
     // orchestrator skips already-swept ids, so re-renders stay cheap.
-    if (tree.size > 0 && this.reactionsApi) {
+    const reactionsApi = this.reactionsApi.get();
+    if (tree.size > 0 && reactionsApi) {
       const children = [...tree.values()].flat();
-      const deleted = await this.reactionsApi.sweepRemoteDeletions(children);
+      const deleted = await reactionsApi.sweepRemoteDeletions(children);
       if (deleted.size > 0) {
         for (const [parentId, childEvents] of tree) {
           tree.set(
@@ -93,7 +90,7 @@ export class LikesList {
     }
     const profiles = await buildReactionProfileMap(collectTreePubkeys(tree));
     this.ctx = {
-      reactionsApi: this.reactionsApi,
+      reactionsApi: this.reactionsApi.get(),
       tree,
       profiles,
       dropdowns: [],

@@ -25,6 +25,9 @@ export class CustomEmojisRuntime implements AddonRuntime {
   public service: Service | null = null;
 
   async init(_ctx: AddonContext): Promise<void> {
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
+    // eslint-disable-next-line no-console -- TEMP debug, stays until user says remove
+    console.log('Custom Emoji: on'); // console-ok: TEMP user-requested lifecycle trace
     if (this.service) return;
     const { EmojiService } = await import('./EmojiService');
     this.service = EmojiService.getInstance();
@@ -34,6 +37,9 @@ export class CustomEmojisRuntime implements AddonRuntime {
   }
 
   async destroy(): Promise<void> {
+    // TEMP debug (user-requested): observe on-demand load/unload in console.
+    // eslint-disable-next-line no-console -- TEMP debug, stays until user says remove
+    console.log('Custom Emoji: off'); // console-ok: TEMP user-requested lifecycle trace
     if (!this.service) return;
     this.service.destroy();
     this.service = null;

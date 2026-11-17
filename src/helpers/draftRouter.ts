@@ -4,6 +4,7 @@
  */
 
 import type { NoteDraft } from '../services/NoteDraftService';
+import { openNoteComposer } from './composerHandoff';
 
 export function openDraftInComposer(draft: NoteDraft): void {
   if (draft.type === 'reply' && draft.parentEventId) {
@@ -15,8 +16,6 @@ export function openDraftInComposer(draft: NoteDraft): void {
       )
     );
   } else {
-    void import('../components/post/PostNoteModal').then(({ PostNoteModal }) =>
-      PostNoteModal.getInstance().show({ initialContent: draft.content })
-    );
+    openNoteComposer({ initialContent: draft.content });
   }
 }

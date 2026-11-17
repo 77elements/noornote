@@ -24,10 +24,12 @@ html.ui--focus {
   }
 }
 
+// The shell is the frame (chrome lives here later); the empty central
+// area below the ED overlays is the stage (.focus-stage). The class is
+// the anchor for the #app:has(> .focus-shell) background scoping — the
+// element's width comes from #app.
 .focus-shell {
-  // The shell is the frame (chrome lives here later); the empty central
-  // area below the ED overlays is the stage (.focus-stage).
-  width: 100%;
+  // empty by design
 }
 
 // The section radial lives on #app (not on the shell — the shell is only
@@ -141,7 +143,9 @@ html.ui--focus {
   // Soft radial glow in the object hue, centered toward the top right,
   // slightly lighter in the middle — gives the circle a lit, dome-like feel.
   background-image: $focus-glow;
-  transition: border-color $transition-fast, outline-color $transition-fast,
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast,
     background-color $transition-fast;
 
   // Hover tint only on the circle state — the focused column must not
@@ -236,12 +240,23 @@ html.ui--focus {
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
 
-  // Reordering is a home-grid affordance only — while ANY domain is
-  // focused (grid.is-focused, e.g. /timeline) the handles stay hidden
-  // (the circles live in the side stacks there).
-  .focus-stage__grid:not(.is-focused) .focus-object:not(.focus-object--active):hover & {
+  // Reordering affordance: shown on hover in the home grid (SV swap
+  // reorder) AND on side-stack circles in the focused state (FV column
+  // drag) — the active object's handle stays hidden there.
+  .focus-stage__grid:not(.is-focused)
+    .focus-object:not(.focus-object--active):hover
+    &,
+  .focus-side-stack .focus-object:hover & {
     display: grid;
   }
+}
+
+// FV column drag: the lifted circle follows the cursor as a fixed overlay
+// (position/left/top set inline by focusStage.startColumnDrag) — it must
+// ride above the stack tools (sticky, $z-back-bar) in BOTH columns.
+.focus-object.is-column-drag {
+  z-index: $z-fullscreen-overlay;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 // Active drag: the source circle follows the cursor (transform set by
@@ -354,6 +369,11 @@ html.ui--focus {
   justify-self: center;
   align-self: start;
   gap: inherit; // mirror the responsive grid gap
+  // Packs rows at the natural top: the grid's default align-content
+  // (stretch) would otherwise spread rows over the full column height
+  // when the content is shorter (widgets-only stack) — widgets grew
+  // apart instead of stacking compactly.
+  align-content: start;
 
   .focus-stage__grid.is-focused & {
     height: 100%;
@@ -366,6 +386,16 @@ html.ui--focus {
       display: none;
     }
   }
+}
+
+// Whole-stack move drag (FV): the column travels at the cursor tip
+// (transform set inline by focusStage.startStackDrag) — same feel as the
+// SV order drag. It must ride above the other stack's sticky tools and
+// drop-zone outline, and must not shadow the drop zone in elementFromPoint.
+.focus-side-stack.is-drag-source {
+  pointer-events: none;
+  z-index: $z-fullscreen-overlay;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 // Stack top tools: move handle (drag moves ALL circles) + reset (back to
@@ -416,15 +446,98 @@ html.ui--focus {
   background: color-mix(in srgb, var(--color-3) 8%, transparent);
 }
 
+// Insertion line during a single-circle column drag (FV): absolutely
+// positioned at the drop boundary (top set inline by focusStage) — no grid
+// rows shift while it moves between positions.
+.focus-side-stack__drop-line {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  height: 2px;
+  border-radius: $radius-full;
+  background: var(--color-3);
+  pointer-events: none; // never shadow elementFromPoint
+  z-index: $z-back-bar;
+}
+
+// FV side-stack widget slot (v2): wraps a widget's DOM plus its move
+// handle; an item in the stack flow like the circles. Hidden entirely
+// while the widget has no content (the Live Streams widget renders
+// NOTHING when nobody followed is live) — no floating orphan handle.
+.focus-widget-slot {
+  position: relative; // anchor for the move handle
+  display: none; // empty slot (widget has no content) shows NOTHING
+
+  &:has(> .sidebar-widget) {
+    display: grid;
+  }
+}
+
+// v2 only: extra right padding keeps the widget content clear of the
+// move handle that appears top-right on hover.
+.ui--focus .sidebar-widget {
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+}
+
+.focus-widget-slot__move {
+  position: absolute;
+  top: 5px;
+  right: 0;
+  display: none; // hover affordance only (see below)
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: grab;
+  touch-action: none; // the pointer drag must not scroll the page
+  z-index: $z-back-bar;
+
+  // Reorder affordance: shown while hovering the widget slot (during a
+  // drag the lifted host stays under the pointer → handle stays visible).
+  .focus-widget-slot:hover & {
+    display: grid;
+  }
+
+  // Grab cursor while the host is lifted (fixed overlay follows the
+  // pointer; pointer-events off so elementFromPoint sees the drop zone).
+  .focus-widget-slot.is-drag-source & {
+    pointer-events: none;
+    cursor: grabbing;
+  }
+}
+
+// Lifted widget slot during a drag: must not shadow the drop zone in
+// elementFromPoint (same as the circle column drag) — without this the
+// fixed overlay keeps resolving to its SOURCE stack and cross-column
+// drops are impossible. Rides above the sticky stack tools.
+.focus-widget-slot.is-drag-source {
+  pointer-events: none;
+  z-index: $z-fullscreen-overlay;
+}
+
 // Surface slot: the focused domain's view mounts here (after the morph).
 // Definite height (fills the active object) — the view's own .view-content
 // (height: 100%) resolves against it exactly like in the classic layout.
 // The only sanctioned override on .view-content is the focus-scoped top
 // spacing below (clears the ED-t overlay).
-.focus-object__surface {
+.focus-object__content {
   grid-column: 1; // first column of the active object's grid body
   grid-row: 1; // pinned — see .focus-object__actions
   height: 100%;
+  // ED-b clearance, uniform for EVERY focus view: the slot's content box
+  // ends $fv-padding-bottom above the bottom edge, so height:100% view
+  // roots — including their internal scrollers (timeline, media feed,
+  // muted) — end above the closed ED-b tab. Measured caveat (Chromium):
+  // a scroll container's OWN padding-bottom is excluded from its scroll
+  // extent, so this rule alone cannot clear views whose content simply
+  // overflows the slot (addon views, marketplace, composers) — those get
+  // the clearance on their flow root instead (the .back-padder rule and
+  // the marketplace rule below).
+  padding-bottom: $fv-padding-bottom;
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling
   // (social timeline: overflow hidden + inner scroll) fit exactly and
@@ -441,6 +554,22 @@ html.ui--focus {
   padding: 0;
 }
 
+// Focus flow root (v2): the element that wraps a slot-scrolled view's
+// whole content at natural height. Chromium excludes the scroll
+// container's own padding-bottom from its scroll extent, so the slot
+// rule's clearance cannot clear such views — theirs goes HERE, on the
+// flow root, extending the slot's scrollable area instead. The slot rule
+// keeps serving the internal-scroller views (timeline, media, muted):
+// their height:100% roots shrink with the slot's content box.
+// (.back-padder, the v1 relic these roots also carry, stays untouched —
+// the optional back-button padding is v1 business; v2 marks the roots
+// with its own class. The extra .view-content descendant beats the v1
+// `.view-content > .back-padder` clearance (same value family, later
+// source order) so the v2 amount wins on shared roots.)
+.ui--focus .view-content .focus-flow-root {
+  padding-bottom: $fv-padding-bottom;
+}
+
 // The classic note-card hover panel is a v1 feed affordance — the shell's
 // timeline cards stay flat on hover.
 .ui--focus .note-card:hover {
@@ -448,13 +577,58 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// Focus surface wrapper: hosts a domain's inner view swaps (articles:
-// list ↔ detail) inside the focus column. The classic SCC tab system has
-// no equivalent in the shell — detail views render in the column, the
-// object's action-button stack (focusStage) provides the back control.
-.focus-surface {
-  position: relative;
+// Shared surface header: a .l-row--split row — title (h1) left, optional
+// action button right (button is a SIBLING of the h1; inside the h1 it
+// would inherit the heading's font size). The row owns the vertical
+// spacing — title classes drop their own margin here.
+// Classic v1 renders the same rows (Timeline, Articles) with the action
+// button hidden — composition comes from the +New Post dropup there.
+.focus-view-header {
+  margin-bottom: $gap;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+html:not(.ui--focus) .focus-view-header__action {
+  display: none;
+}
+
+// Title-only headers (createFocusViewHeader without an action) render the
+// bare h1 — no split row wrapper. The heading takes over the row's
+// vertical spacing.
+.focus-object__content > h1 {
+  margin-bottom: $gap;
+}
+
+// Media: header row + the feed's own internal scroller. The list root is
+// the slot's direct child (the surface frame div is gone) — it carries the
+// full column height so the feed's internal scroll resolves; the composer
+// detail (.view-content, height: 100%) replaces it 1:1.
+.focus-object__content--media .media-surface__body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
+  min-height: 0;
+
+  // The feed is the grid's second row — a plain item would overflow.
+  .media-feed {
+    min-height: 0;
+  }
+}
+
+// Muted: header + the manager's own scroller (classic .tab-content
+// contract: height 100% + overflow-y auto — trimmed to the slot's
+// remaining row so header and list scroll as one column).
+.focus-object__content--muted {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+
+  .tab-content {
+    height: auto;
+    min-height: 0;
+  }
 }
 
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in
@@ -594,6 +768,8 @@ $focus-tab-overlap: 1px;
     // Settings lists grow per object — the panel body scrolls internally,
     // the tab stays at the screen edge (it sits outside the panel box).
     overflow-y: auto;
+    // Same chrome as the timeline's scrollers (thin, themed thumb).
+    @include custom-scrollbar;
   }
 
   // Top surface: top + bottom line, no side borders.
@@ -604,30 +780,36 @@ $focus-tab-overlap: 1px;
   }
 }
 
-// Object settings (ED-b content, mounted by focusStage): the domain's
-// settings sections laid out in responsive columns — 1 on phone, 2 on
-// tablet, 3 on desktop. Reuses the classic .section/.setting markup.
+// Object settings (ED-b content, mounted by focusStage): simple block
+// flow in the classic .section/.setting markup. The container mirrors the
+// focused object's column (600px surface + $gap + 30px actions strip), so
+// the natural auto-centering lands exactly on the surface behind the
+// drawer: left edges flush in the wide layout, centered on it in
+// takeover (<1100px, where the surface flexes) — no per-content overrides.
 .focus-settings {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $gap;
-  align-content: start;
-  align-items: start;
-  padding: $gap $gap calc($gap * 1.5);
-  max-width: 1400px;
+  box-sizing: border-box;
+  max-width: calc(600px + #{$gap * 3} + 30px);
   margin: 0 auto;
+  padding: $gap $gap calc($gap * 1.5);
+  padding-right: calc(#{$gap * 2} + 30px);
 
-  @include tablet {
-    grid-template-columns: repeat(2, 1fr);
+  @media (max-width: 1099px) {
+    max-width: none;
   }
 
-  @include desktop {
-    grid-template-columns: repeat(3, 1fr);
+  // Composed multi-panel content (composePanels): the panels stack with
+  // <hr> dividers between them — plain flow, readable width.
+  .focus-settings__stack {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
   }
 
-  // Grid gap takes over spacing — the sections' own margin would double it.
-  .section {
-    margin-bottom: 0;
+  .focus-settings__divider {
+    width: 100%;
+    margin: $gap 0;
+    border: 0;
+    border-top: 1px solid var(--color-3);
   }
 }
 

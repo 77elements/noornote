@@ -40,6 +40,13 @@ export interface SubscriptionCallbacks {
   onEose?: () => void;
 }
 
+/** Dev diagnostics: one live subscription as reported by DevLoadMonitor. */
+export interface LiveSubSnapshot {
+  subId: string;
+  relays: string[];
+  kinds: string;
+}
+
 interface SubCloser {
   close: () => void;
 }
@@ -1873,6 +1880,25 @@ export class NostrTransport {
 
     subscription.closer.close();
     this.subscriptions.delete(subId);
+  }
+
+  /**
+   * Dev diagnostics (DevLoadMonitor): read-only view of the live
+   * subscription registry — pure accounting, no behavior.
+   */
+  public getLiveSubscriptionSnapshot(): LiveSubSnapshot[] {
+    return Array.from(this.subscriptions.entries()).map(([subId, sub]) => ({
+      subId,
+      relays: sub.relays,
+      kinds: sub.filters
+        .map(
+          f =>
+            `k:${f.kinds ? f.kinds.join(',') : 'any'}${
+              f.limit ? ` lim:${f.limit}` : ''
+            }`
+        )
+        .join(' | '),
+    }));
   }
 
   /**

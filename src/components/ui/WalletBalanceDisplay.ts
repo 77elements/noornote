@@ -36,7 +36,7 @@ export class WalletBalanceDisplay {
   private onWidgetClick: (e: MouseEvent) => void = e => {
     if ((e.target as HTMLElement | null)?.closest('.wallet-balance-toggle'))
       return;
-    Router.getInstance().navigate('/addons/wallet-balance');
+    Router.getInstance().navigate('/wallet-balance');
   };
   private onNwcRestored: () => void = () => this.loadBalance();
   private onZapSent: () => void = () => {
@@ -324,5 +324,20 @@ export class WalletBalanceDisplay {
 
   public getElement(): HTMLElement {
     return this.element;
+  }
+
+  /**
+   * Focus UI (v2): render into the stage's side-stack slot while it
+   * exists (null on stack teardown — detaches; a re-mount re-parents the
+   * same root). Classic keeps mounting via the runtime's container.
+   */
+  public setFocusHost(host: HTMLElement | null): void {
+    const target = host ?? document.querySelector('.wallet-balance-container');
+    if (target) {
+      if (this.element.parentElement !== target)
+        target.appendChild(this.element);
+    } else {
+      this.element.remove();
+    }
   }
 }

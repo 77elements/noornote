@@ -23,6 +23,8 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
 import { AuthService } from '../../services/AuthService';
+import { AddonLoader } from '../AddonLoader';
+import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -82,6 +84,8 @@ export class BulkDeleteView extends View {
   private contentEl: HTMLElement | null = null;
   private enableSwitch: Switch | null = null;
   private toggleSubId: string | null = null;
+  /** v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand). */
+  private v2OnDemand = false;
 
   private range: DateRangeResult | null = null;
   private notes: NostrEvent[] = [];
@@ -114,58 +118,72 @@ export class BulkDeleteView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-bulk-delete';
 
+    // v2 on-demand object lifecycle (see CustomEmojisView.v2OnDemand) —
+    // pure on-demand: a tool has no always-on reason, and entering the
+    // object IS enabling (no switch in v2). Released in destroy().
+    this.v2OnDemand = isFocusUiEnabled();
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().ensureLoaded('bulk-delete');
+    }
+
     const enabled = isBulkDeleteEnabled();
 
-    this.enableSwitch = new Switch({
-      label: '',
-      checked: enabled,
-      onChange: checked => {
-        setBulkDeleteEnabled(checked);
-        TypedEventBus.getInstance().emit('bulk-delete:addon-toggle', {
-          enabled: checked,
-        });
-        ToastService.show(
-          checked
-            ? _('%s enabled', _('Bulk delete'))
-            : _('%s disabled', _('Bulk delete')),
-          'success'
-        );
-        if (checked) this.mountContent();
-        else this.unmountContent();
-      },
-    });
+    if (!this.v2OnDemand) {
+      this.enableSwitch = new Switch({
+        label: '',
+        checked: enabled,
+        onChange: checked => {
+          setBulkDeleteEnabled(checked);
+          TypedEventBus.getInstance().emit('bulk-delete:addon-toggle', {
+            enabled: checked,
+          });
+          ToastService.show(
+            checked
+              ? _('%s enabled', _('Bulk delete'))
+              : _('%s disabled', _('Bulk delete')),
+            'success'
+          );
+          if (checked) this.mountContent();
+          else this.unmountContent();
+        },
+      });
+    }
 
     this.container.innerHTML = `
-      <div class="back-padder">
+      <div class="back-padder focus-flow-root">
         <h1>${_('Bulk delete')}</h1>
-        <section class="section">
+        ${
+          this.v2OnDemand
+            ? ''
+            : `<section class="section">
           <div class="setting">
             <span class="setting__label">${_('Enable Bulk delete')}</span>
-            <div class="setting__control"></div>
+            <div class="setting__control">${this.enableSwitch?.render() ?? ''}</div>
             <p class="setting__desc">${_('Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background, relays may honor it or not. Deletion is not guaranteed and cannot be undone.')}</p>
           </div>
-        </section>
+        </section>`
+        }
         <div data-addon-content="bulk-delete"></div>
       </div>
     `;
 
-    const controlEl = this.container.querySelector('.setting__control');
-    if (controlEl) controlEl.innerHTML = this.enableSwitch.render();
-    this.enableSwitch.setupEventListeners(this.container);
+    this.enableSwitch?.setupEventListeners(this.container);
 
     this.contentEl = this.container.querySelector(
       '[data-addon-content="bulk-delete"]'
     );
 
-    if (enabled) this.mountContent();
+    if (enabled || this.v2OnDemand) this.mountContent();
 
-    this.toggleSubId = TypedEventBus.getInstance().on(
-      'bulk-delete:addon-toggle',
-      (p: { enabled: boolean }) => {
-        if (p.enabled) this.mountContent();
-        else this.unmountContent();
-      }
-    );
+    if (this.enableSwitch) {
+      this.toggleSubId = TypedEventBus.getInstance().on(
+        'bulk-delete:addon-toggle',
+        (p: { enabled: boolean }) => {
+          if (p.enabled) this.mountContent();
+          else this.unmountContent();
+        }
+      );
+    }
   }
 
   public getElement(): HTMLElement {
@@ -176,6 +194,14 @@ export class BulkDeleteView extends View {
     if (this.toggleSubId) {
       TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
+    }
+    // Detach the broadcast-progress feed — otherwise relay events keep
+    // scheduling poll timers on the destroyed view (timer chain).
+    this.progressUnsub?.();
+    this.progressUnsub = null;
+    if (this.pollTimer) {
+      window.clearTimeout(this.pollTimer);
+      this.pollTimer = 0;
     }
     if (this.progressRaf) {
       cancelAnimationFrame(this.progressRaf);
@@ -188,6 +214,11 @@ export class BulkDeleteView extends View {
     this.unmountContent();
     this.contentEl = null;
     this.container.innerHTML = '';
+    // v2 on-demand release: leaving the object ALWAYS releases the addon —
+    // a tool has no always-on reason.
+    if (this.v2OnDemand) {
+      void AddonLoader.getInstance().deactivateOnDemand('bulk-delete');
+    }
   }
 
   private mountContent(): void {

@@ -16,7 +16,6 @@ import { isBulkDeleteEnabled } from './bulk-delete/index';
 import { isCalendarEnabled } from './calendar/index';
 import { isContentWordFilterEnabled } from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
-import { isExtendedFollowsEnabled } from './extended-follows/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
 import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isGroupChatsEnabled } from './group-chats/index';
@@ -49,8 +48,6 @@ export function getAddonEnabled(id: string): boolean {
       return isContentWordFilterEnabled();
     case 'custom-emojis':
       return isCustomEmojisEnabled();
-    case 'extended-follows':
-      return isExtendedFollowsEnabled();
     case 'follow-packs':
       return isFollowPacksEnabled();
     case 'follower-notification':

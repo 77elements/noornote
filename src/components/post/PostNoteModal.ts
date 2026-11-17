@@ -12,8 +12,8 @@
  */
 
 import { _ } from '../../i18n';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import { ModalService } from '../../services/ModalService';
-import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
@@ -21,39 +21,46 @@ import { switchComposerTab } from '../../helpers/switchComposerTab';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
-import { RelaySelector } from './RelaySelector';
-import { ClientTagControl } from './ClientTagControl';
-import { PostEditorToolbar } from './PostEditorToolbar';
 import type { GifItem } from '../../services/GifSearchService';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
-import { Switch } from '../ui/Switch';
-import { PollCreator, type PollData } from '../poll/PollCreator';
-import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
-import { decodeNip19 } from '../../services/NostrToolsAdapter';
-import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
-import { AppState } from '../../services/AppState';
-import { ContentValidationManager } from './ContentValidationManager';
-import { EditorStateManager } from './EditorStateManager';
-import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
-import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
-import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
-import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import {
   ModalEventHandlerManager,
   type TabMode,
 } from '../modals/ModalEventHandlerManager';
-import { escapeHtml } from '../../helpers/escapeHtml';
 import { NoteDraftService } from '../../services/NoteDraftService';
 import { ToastService } from '../../services/ToastService';
+import { EditorStateManager } from './EditorStateManager';
+import { AppState } from '../../services/AppState';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
+import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import {
-  composerDraftsTabLabel,
+  clearComposerQuoteCaches,
+  runComposerPublish,
+  composerHighlightQuoteHtml,
+  composerEditorEditHtml,
+  composerEditorPlaceholder,
+  composerTabsHtml,
+  createComposerHeaderControls,
+  createComposerToolbar,
+  composerPostButtonMeta,
+  composerActionsHtml,
+  composerSwitchTabPreviewHtml,
+  mountComposerExpiryDropdown,
+  composerScheduleHintHtml,
+  updateComposerScheduleHint,
+  updateComposerPostButtonLabel,
+  pickComposerSchedule,
+  composerInsertMedia,
+  composerInsertEmoji,
+  ComposerPoll,
+  ComposerImageTags,
+  ComposerControls,
   updateComposerDraftsBadge,
   setComposerActiveTab,
   saveComposerDraft,
   composerPostFailure,
   renderQuotedNotesInPreview as fillQuotedPreviewMarkers,
   renderComposerPreviewContent,
-  buildComposerPreviewHtml,
   updateComposerPreview,
   createNsfwSwitchIn,
   mountRelaySelectorInHeader,
@@ -64,11 +71,7 @@ import {
   createComposerEventHandlers,
 } from './composerShared';
 import { openDraftInComposer } from '../../helpers/draftRouter';
-import { EXPIRY_CHOICES } from '../../helpers/nip40';
-import { NnDropdown } from '../ui/NnDropdown';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
-import { isImageUrl } from '../../helpers/extractMedia';
-import { UserProfileService } from '../../services/UserProfileService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface HighlightSource {
@@ -78,47 +81,21 @@ export interface HighlightSource {
   event: NostrEvent;
 }
 
-/**
- * One tagged user inside an image (NIP-68).
- * `pubkey` is the canonical hex; `npub` and `username` are cached for
- * re-rendering the chips without an extra profile round-trip.
- */
-export interface ImageTagEntry {
-  pubkey: string;
-  npub: string;
-  username: string;
-}
-
 export class PostNoteModal {
   private static instance: PostNoteModal;
   private modalService: ModalService;
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
 
-  // Sub-components
-  private relaySelector: RelaySelector | null = null;
-  private clientTagControl: ClientTagControl | null = null;
-  private toolbar: PostEditorToolbar | null = null;
-  private nsfwSwitch: Switch | null = null;
-  private pollCreator: PollCreator | null = null;
+  // Sub-components (shared teardown — see ComposerControls.destroy)
+  private controls = new ComposerControls();
+  /** Poll-creator toggle state (creator + live poll config). */
+  private poll = new ComposerPoll();
   /** NIP-40: selected lifetime in seconds (undefined = never expires). */
   private expiresInSeconds: number | undefined;
-  private expiryDropdown: NnDropdown | null = null;
-  private mentionAutocomplete: MentionAutocomplete | null = null;
-  private customEmojiAutocomplete:
-    | import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete
-    | null = null;
-  private customEmojiService:
-    | import('../../addons/custom-emojis/EmojiService').EmojiService
-    | null = null;
-  private eventHandlerManager: ModalEventHandlerManager | null = null;
 
   // State
   private currentTab: TabMode = 'edit';
@@ -127,24 +104,17 @@ export class PostNoteModal {
   private availableRelays: string[] = [];
   private isTestMode: boolean = false;
   private isNSFW: boolean = false;
-  private pollData: PollData | null = null;
   private scheduledAt: number | null = null;
   private highlightSource: HighlightSource | null = null;
   // Per-post custom client tag — overrides the global "via NoorNote" UI setting
   // for this one note. Empty = fall back to the UI setting (see AuthService.signEvent).
   private customClientTag: string = '';
 
-  // NIP-68 image tagging state — one entry per uploaded image URL.
-  // Map preserves insertion order (ES2015 guarantee), so thumbnails and the
-  // underlying text URLs stay in lockstep.
-  private imageTags: Map<string, ImageTagEntry[]> = new Map();
-  // Per-thumbnail ProfileSearchComponent instances (lazily created on first
-  // tag-button click). Reused across reopens so chip state survives.
-  private tagOverlays: Map<string, ProfileSearchComponent> = new Map();
-  // Mention autocomplete instances, keyed the same way.
-  private tagMentionAutocompletes: Map<string, MentionAutocomplete> = new Map();
-  // Hard cap per image (NIP-68 has no protocol limit; we enforce a UI one).
-  private static readonly MAX_TAGS_PER_IMAGE = 50;
+  // NIP-68 image tagging state + overlay UI (scoped to the document-wide modal).
+  private imageTags = new ComposerImageTags(
+    () => document,
+    'post-note-media-strip'
+  );
 
   private constructor() {
     this.modalService = ModalService.getInstance();
@@ -259,66 +229,34 @@ export class PostNoteModal {
    * The user cannot edit the source passage; their thoughts go in the textarea.
    */
   private renderHighlightQuote(): string {
-    if (!this.highlightSource) return '';
-    return `
-      <div class="post-note-highlight-quote">
-        <blockquote class="highlight__quote">${escapeHtml(this.highlightSource.selectedText)}</blockquote>
-      </div>
-    `;
+    return composerHighlightQuoteHtml(
+      this.highlightSource?.selectedText ?? null
+    );
   }
 
   /**
    * Render tabs header (Edit/Preview + Relay Selector)
    */
   private renderTabs(): string {
-    // Create relay selector component
-    this.relaySelector = new RelaySelector({
+    // Create the shared header controls (relay selector + client tag).
+    ({
+      relaySelector: this.controls.relaySelector,
+      clientTagControl: this.controls.clientTagControl,
+    } = createComposerHeaderControls({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: selectedRelays => {
+      customClientTag: this.customClientTag,
+      onRelaysChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updatePostButton();
       },
-    });
-
-    // Per-post custom client tag control (mounted into modal__header, see setupEventHandlers)
-    this.clientTagControl = new ClientTagControl({
-      initialValue: this.customClientTag,
-      onChange: value => {
+      onClientTagChange: value => {
         this.customClientTag = value;
       },
-    });
+    }));
 
-    return `
-      <div class="post-note-header">
-        <div class="tabs">
-          <button
-            class="tab ${this.currentTab === 'edit' ? 'tab--active' : ''}"
-            data-tab="edit"
-          >
-            Edit
-          </button>
-          <button
-            class="tab ${this.currentTab === 'preview' ? 'tab--active' : ''}"
-            data-tab="preview"
-          >
-            Preview
-          </button>
-          <button
-            class="tab ${this.currentTab === 'drafts' ? 'tab--active' : ''}"
-            data-tab="drafts"
-          >${this.renderDraftsTabLabel()}</button>
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Tab label for the Drafts tab, with a count badge when drafts exist.
-   */
-  private renderDraftsTabLabel(): string {
-    return composerDraftsTabLabel();
+    return composerTabsHtml(this.currentTab);
   }
 
   /**
@@ -340,17 +278,11 @@ export class PostNoteModal {
    */
   private renderEditor(): string {
     if (this.currentTab === 'edit') {
-      const placeholder = this.highlightSource
-        ? _('Write your thoughts about this highlight (optional)…')
-        : _("What's on your mind?");
-      return `
-        <textarea
-          class="textarea"
-          placeholder="${escapeHtml(placeholder)}"
-          data-textarea
-        >${this.content}</textarea>
-        <div class="post-note-modal__media-strip" id="post-note-media-strip"></div>
-      `;
+      return composerEditorEditHtml({
+        content: this.content,
+        placeholder: composerEditorPlaceholder(!!this.highlightSource),
+        mediaStripId: 'post-note-media-strip',
+      });
     } else {
       const currentUser = this.authService.getCurrentUser();
       return renderComposerPreviewContent(
@@ -367,7 +299,7 @@ export class PostNoteModal {
    */
   private renderActions(): string {
     // Create toolbar component
-    this.toolbar = new PostEditorToolbar({
+    this.controls.toolbar = createComposerToolbar({
       onMediaUploaded: url => this.handleMediaUploaded(url),
       onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
       onGifSelected: gif => this.handleGifSelected(gif),
@@ -379,49 +311,30 @@ export class PostNoteModal {
 
     // Highlight mode: comment is optional, only require relays.
     // Regular notes: require content (or poll) + relays.
-    const isValid = this.highlightSource
-      ? this.selectedRelays.size > 0
-      : ContentValidationManager.validate({
-          content: this.content,
-          selectedRelays: this.selectedRelays,
-          pollData: this.pollData,
-        }).isValid;
-
-    const postButtonLabel = this.highlightSource
-      ? _('Post Highlight')
-      : this.scheduledAt !== null
-        ? _('Schedule')
-        : _('Post');
-    return `
-      <div class="l-row l-row--split">
-        <div>
-          ${this.toolbar.render()}
-          <div class="post-note-options" id="post-note-options-container"></div>
-          <div class="post-note-expiry" id="post-note-expiry-container"></div>
-          <div class="post-note-schedule-hint" id="post-note-schedule-hint">${this.renderScheduleHintHtml()}</div>
-        </div>
-        <div>
-          ${this.highlightSource ? '' : `<button class="btn btn--passive" data-action="save-draft">${_('Save draft')}</button>`}
-          <button class="btn btn--passive" data-action="cancel">${_('Cancel')}</button>
-          <button class="btn" data-action="post" ${isValid ? '' : 'disabled'}>${postButtonLabel}</button>
-        </div>
-      </div>
-    `;
+    const { isValid, label } = composerPostButtonMeta({
+      isHighlight: !!this.highlightSource,
+      scheduledAt: this.scheduledAt,
+      content: this.content,
+      selectedRelays: this.selectedRelays,
+      pollData: this.poll.data,
+    });
+    return composerActionsHtml({
+      toolbarHtml: this.controls.toolbar.render(),
+      optionsId: 'post-note-options-container',
+      expiryId: 'post-note-expiry-container',
+      hintId: 'post-note-schedule-hint',
+      hintHtml: this.renderScheduleHintHtml(),
+      showSaveDraft: !this.highlightSource,
+      isValid,
+      postLabel: label,
+    });
   }
 
   /**
    * Render the "will be published on..." hint when a schedule is set.
    */
   private renderScheduleHintHtml(): string {
-    if (this.scheduledAt === null) return '';
-    const when = new Date(this.scheduledAt * 1000).toLocaleString();
-    return `
-      <span class="post-note-schedule-hint__icon">
-        <svg width="14" height="14"><use href="#icon-calendar"/></svg>
-      </span>
-      <span class="post-note-schedule-hint__text">${_('Will be published on')} ${escapeHtml(when)}</span>
-      <button type="button" class="post-note-schedule-hint__clear" data-action="clear-schedule">${_('Clear')}</button>
-    `;
+    return composerScheduleHintHtml(this.scheduledAt);
   }
 
   /**
@@ -430,72 +343,20 @@ export class PostNoteModal {
    * scheduled posts).
    */
   private mountExpiryDropdown(): void {
-    const container = document.querySelector(
-      '#post-note-expiry-container'
-    ) as HTMLElement | null;
-    if (!container) return;
-
-    if (this.pollData || this.highlightSource || this.scheduledAt !== null) {
-      container.innerHTML = '';
-      return;
-    }
-
-    const options = [
-      { value: '', label: _('Never expires') },
-      ...EXPIRY_CHOICES.map(c => ({
-        value: String(c.seconds),
-        label: _(c.labelKey),
-      })),
-      { value: 'custom', label: _('Custom…') },
-    ];
-
-    this.expiryDropdown = new NnDropdown({
-      options,
-      selectedValue: this.expiresInSeconds ? String(this.expiresInSeconds) : '',
-      className: 'post-note-expiry__dropdown',
-      width: '180px',
-      onChange: value => {
-        if (value === 'custom') {
-          void this.pickCustomExpiry();
-          return;
-        }
-        const seconds = Number(value);
-        this.expiresInSeconds =
-          Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
-        this.expiryDropdown?.setCustomLabel('');
+    this.controls.expiryDropdown = mountComposerExpiryDropdown({
+      container: document.querySelector(
+        '#post-note-expiry-container'
+      ) as HTMLElement | null,
+      blocked: !!(
+        this.poll.data ||
+        this.highlightSource ||
+        this.scheduledAt !== null
+      ),
+      expiresInSeconds: this.expiresInSeconds,
+      onSeconds: seconds => {
+        this.expiresInSeconds = seconds;
       },
     });
-
-    container.innerHTML = '';
-    container.appendChild(this.expiryDropdown.getElement());
-  }
-
-  /**
-   * Custom expiry via the shared date/time picker (NIP-40 allows any unix
-   * timestamp). Falls back to "never" when the picker is cancelled.
-   */
-  private async pickCustomExpiry(): Promise<void> {
-    const { pickDateTime } = await import('../../helpers/datePickerModal');
-    const picked = await pickDateTime({
-      confirmLabel: _('Set expiry'),
-      min: new Date(),
-    });
-
-    if (!picked) {
-      // Cancelled — revert to "Never expires".
-      this.expiresInSeconds = undefined;
-      this.expiryDropdown?.setValue('');
-      this.expiryDropdown?.setCustomLabel('');
-      return;
-    }
-
-    const seconds = Math.max(
-      60,
-      Math.floor(picked.getTime() / 1000) - Math.floor(Date.now() / 1000)
-    );
-    this.expiresInSeconds = seconds;
-    this.expiryDropdown?.setValue('custom');
-    this.expiryDropdown?.setCustomLabel(picked.toLocaleString());
   }
 
   /**
@@ -504,61 +365,40 @@ export class PostNoteModal {
    * so it survives any subsequent innerHTML replacements.
    */
   private updateScheduleHint(): void {
-    const hintEl = document.querySelector(
-      '#post-note-schedule-hint'
-    ) as HTMLElement | null;
-    if (!hintEl) return;
-    hintEl.innerHTML = this.renderScheduleHintHtml();
-    if (!hintEl.dataset.delegated) {
-      hintEl.dataset.delegated = 'true';
-      hintEl.addEventListener('click', e => {
-        const target = (e.target as HTMLElement).closest(
-          '[data-action="clear-schedule"]'
-        );
-        if (!target) return;
-        e.preventDefault();
-        e.stopPropagation();
+    updateComposerScheduleHint({
+      scope: document,
+      hintId: 'post-note-schedule-hint',
+      scheduledAt: this.scheduledAt,
+      onClear: () => {
         this.scheduledAt = null;
         this.updateScheduleHint();
         this.updatePostButtonLabel();
-      });
-    }
+      },
+    });
   }
 
   /**
    * Update the Post/Schedule button label based on scheduledAt state.
    */
   private updatePostButtonLabel(): void {
-    const btn = document.querySelector(
-      '[data-action="post"]'
-    ) as HTMLButtonElement | null;
-    if (!btn) return;
-    btn.textContent = this.scheduledAt !== null ? _('Schedule') : _('Post');
+    updateComposerPostButtonLabel(document, this.scheduledAt);
   }
 
   /**
    * Open the date/time picker to schedule this post.
    */
   private async handleScheduleClick(): Promise<void> {
-    const { pickDateTime } = await import('../../helpers/datePickerModal');
-    const initial = this.scheduledAt
-      ? new Date(this.scheduledAt * 1000)
-      : new Date(Date.now() + 60 * 60 * 1000); // Default: +1h
-    const anchorEl = document.querySelector(
-      '.post-note-toolbar [data-action="schedule"]'
-    ) as HTMLElement | null;
-    const picked = await pickDateTime({
-      title: _('Schedule Post'),
-      initial,
-      min: new Date(Date.now() + 60 * 1000),
-      max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      confirmLabel: _('Schedule'),
-      ...(anchorEl ? { anchorEl } : {}),
+    await pickComposerSchedule({
+      scheduledAt: this.scheduledAt,
+      anchorEl: document.querySelector(
+        '.post-note-toolbar [data-action="schedule"]'
+      ) as HTMLElement | null,
+      onPicked: timestampSeconds => {
+        this.scheduledAt = timestampSeconds;
+        this.updateScheduleHint();
+        this.updatePostButtonLabel();
+      },
     });
-    if (!picked) return;
-    this.scheduledAt = Math.floor(picked.getTime() / 1000);
-    this.updateScheduleHint();
-    this.updatePostButtonLabel();
   }
 
   /**
@@ -572,37 +412,40 @@ export class PostNoteModal {
     const modalHeader = modal.closest('.modal__body')
       ?.previousElementSibling as HTMLElement;
     const relaySelectorEl =
-      this.relaySelector && modalHeader
-        ? mountRelaySelectorInHeader(modal, this.relaySelector)
+      this.controls.relaySelector && modalHeader
+        ? mountRelaySelectorInHeader(modal, this.controls.relaySelector)
         : null;
 
     // Mount the client-tag control just before the relay selector
     // → header order: <h1>New Note</h1> | [tag icon+field] | Post to: | ×
-    if (relaySelectorEl && this.clientTagControl) {
+    if (relaySelectorEl && this.controls.clientTagControl) {
       const clientTagDiv = document.createElement('div');
-      clientTagDiv.innerHTML = this.clientTagControl.render();
+      clientTagDiv.innerHTML = this.controls.clientTagControl.render();
       const clientTagEl = clientTagDiv.firstElementChild as HTMLElement;
       modalHeader.insertBefore(clientTagEl, relaySelectorEl);
-      this.clientTagControl.setupEventListeners(clientTagEl);
+      this.controls.clientTagControl.setupEventListeners(clientTagEl);
     }
 
     // Setup toolbar
     const toolbarContainer = modal.querySelector('.post-note-toolbar');
-    if (this.toolbar && toolbarContainer) {
-      this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
+    if (this.controls.toolbar && toolbarContainer) {
+      this.controls.toolbar.setupEventListeners(
+        toolbarContainer as HTMLElement
+      );
     }
 
     // NIP-40 expiry dropdown
     this.mountExpiryDropdown();
 
-    this.mentionAutocomplete = createMentionAutocomplete('PostNoteModal');
+    this.controls.mentionAutocomplete =
+      createMentionAutocomplete('PostNoteModal');
 
     // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
     if (isCustomEmojisEnabled()) {
       void this.initCustomEmojiAutocomplete();
     }
 
-    this.eventHandlerManager = createComposerEventHandlers({
+    this.controls.eventHandlerManager = createComposerEventHandlers({
       modalSelector: '.post-note-modal',
       currentTab: this.currentTab,
       onTabSwitch: tab => this.switchTab(tab),
@@ -622,7 +465,7 @@ export class PostNoteModal {
     if (textarea)
       setupPasteUpload(
         textarea,
-        files => void this.toolbar?.handleFileUpload(files)
+        files => void this.controls.toolbar?.handleFileUpload(files)
       );
   }
 
@@ -637,19 +480,17 @@ export class PostNoteModal {
       modalSelector: '.post-note-modal',
       tab,
       renderEditorHtml: () => this.renderEditor(),
-      onEditRendered: () => this.eventHandlerManager?.refreshTextareaListener(),
+      onEditRendered: () =>
+        this.controls.eventHandlerManager?.refreshTextareaListener(),
       buildPreviewHtml: () => {
         const currentUser = this.authService.getCurrentUser();
-        let html = buildComposerPreviewHtml(
-          this.content,
-          this.isNSFW,
-          currentUser?.pubkey || '',
-          cleaned => this.buildPreviewEmojiTags(cleaned)
-        );
-        // Add poll preview if poll is configured
-        const pollPreviewHtml = this.renderPollPreview();
-        if (pollPreviewHtml) html += pollPreviewHtml;
-        return html;
+        return composerSwitchTabPreviewHtml({
+          content: this.content,
+          isNSFW: this.isNSFW,
+          currentUserPubkey: currentUser?.pubkey || '',
+          scanEmojiTags: cleaned => this.buildPreviewEmojiTags(cleaned),
+          pollData: this.poll.data,
+        });
       },
       onPreviewRendered: previewContainer => {
         void this.renderQuotedNotesInPreview(previewContainer);
@@ -693,7 +534,7 @@ export class PostNoteModal {
       '[data-action="post"]',
       this.content,
       this.selectedRelays,
-      this.pollData
+      this.poll.data
     );
   }
 
@@ -714,7 +555,9 @@ export class PostNoteModal {
    * Handle media uploaded callback
    */
   private handleMediaUploaded(url: string): void {
-    EditorStateManager.handleMediaUploaded(url, '[data-textarea]', {
+    composerInsertMedia({
+      textareaSelector: '[data-textarea]',
+      url,
       onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
@@ -723,10 +566,7 @@ export class PostNoteModal {
     });
     // NIP-68 image tagging — register URL in state + render thumbnail.
     // Skip non-image URLs (videos, audio) — NIP-68 is image-only.
-    if (isImageUrl(url)) {
-      this.imageTags.set(url, []);
-      this.appendToMediaStrip(url);
-    }
+    this.imageTags.registerUpload(url);
   }
 
   /**
@@ -736,7 +576,9 @@ export class PostNoteModal {
    * (two imeta tags for one URL would be invalid).
    */
   private handleGifSelected(gif: GifItem): void {
-    EditorStateManager.handleMediaUploaded(gif.url, '[data-textarea]', {
+    composerInsertMedia({
+      textareaSelector: '[data-textarea]',
+      url: gif.url,
       onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
@@ -746,231 +588,12 @@ export class PostNoteModal {
   }
 
   /**
-   * Append a thumbnail + tag-button to the media-strip.
-   */
-  private appendToMediaStrip(url: string): void {
-    const strip = document.querySelector('#post-note-media-strip');
-    if (!strip) return;
-
-    const thumb = document.createElement('div');
-    thumb.className = 'post-note-modal__media-thumb';
-    thumb.dataset.imageUrl = url;
-    thumb.innerHTML = `
-      <img class="post-note-modal__media-thumb-img" src="${escapeHtml(url)}" alt="" loading="lazy">
-      <button type="button" class="post-note-modal__tag-btn" data-tag-url="${escapeHtml(url)}" title="${_('Tag users in this image')}" aria-label="${_('Tag users')}">
-        <svg width="14" height="14"><use href="#icon-tag"/></svg>
-        <span class="post-note-modal__tag-badge is-hidden" data-tag-badge>0</span>
-      </button>
-    `;
-    strip.appendChild(thumb);
-
-    // Wire tag-button click
-    const tagBtn = thumb.querySelector(
-      '.post-note-modal__tag-btn'
-    ) as HTMLElement;
-    tagBtn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.openTagOverlay(url, tagBtn);
-    });
-  }
-
-  /**
-   * Open the tagging overlay for a specific image.
-   *
-   * Toggle behaviour: if an overlay is already open for this URL, the click
-   * closes it (and removes the host). Otherwise a fresh overlay is created
-   * and pre-filled with the chips currently stored in `this.imageTags`.
-   *
-   * State survives close/reopen because chips are live-synced to
-   * `this.imageTags` via `onChipsChange`. The component itself is destroyed
-   * on close so outside-click / ESC / Apply all clean up identically.
-   */
-  private openTagOverlay(url: string, _anchorBtn: HTMLElement): void {
-    // If already open for this URL, the click toggles closed.
-    const existing = this.tagOverlays.get(url);
-    if (existing) {
-      existing.collapseSearch(); // triggers onClose → closeTagOverlay cleanup
-      return;
-    }
-
-    const component = new ProfileSearchComponent({
-      sizeVariant: 'compact-modal',
-      triggerIconId: 'icon-tag',
-      triggerTitle: _('Tag users'),
-      placeholder: _('Tag different users, separate by comma'),
-      buttonText: _('Apply'),
-      buttonLoadingText: _('Applying...'),
-      buttonClass: 'btn-small btn-passive',
-      statusEnabled: false,
-      privacyHint: _('Tagged users will be publicly visible'),
-      chipMode: true,
-      initialChips: (this.imageTags.get(url) ?? []).map(e => ({ ...e })),
-      onChipsChange: chips => {
-        // Hard cap (UI guard before publish — also enforced in PostService).
-        if (chips.length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
-          ToastService.show(_('Only 50 tags permitted'), 'error');
-          // Trim back to the cap so the user sees the limit enforced.
-          const trimmed = chips.slice(0, PostNoteModal.MAX_TAGS_PER_IMAGE);
-          this.imageTags.set(url, trimmed);
-        } else {
-          this.imageTags.set(
-            url,
-            chips.map(c => ({ ...c }))
-          );
-        }
-        this.updateTagBadge(url);
-
-        // Async username enrichment — when a chip was added from raw npub
-        // text (no MentionAutocomplete selection), its username is the
-        // truncated npub. Resolve the real username in the background.
-        // (No-op for chips that already have a real username.)
-        void this.enrichChipUsernames(url);
-      },
-      onClose: () => {
-        this.closeTagOverlay(url);
-      },
-      onSubmit: async (_value, helpers) => {
-        // Chips are already synced via onChipsChange — Apply just closes.
-        if (
-          (this.imageTags.get(url) ?? []).length >
-          PostNoteModal.MAX_TAGS_PER_IMAGE
-        ) {
-          ToastService.show(_('Only 50 tags permitted'), 'error');
-          return;
-        }
-        helpers.collapse();
-      },
-    });
-
-    // Mount next to the thumbnail
-    const allThumbs = Array.from(
-      document.querySelectorAll('.post-note-modal__media-thumb')
-    ) as HTMLElement[];
-    const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
-    if (!thumb) return;
-    const host = document.createElement('div');
-    host.className = 'post-note-modal__tag-overlay-host';
-    host.appendChild(component.getElement());
-    thumb.appendChild(host);
-    component.expandSearch();
-
-    // Wire MentionAutocomplete to the component's input. When the user
-    // picks a suggestion, cache the username so the chip created from
-    // Enter/comma later shows the proper name instead of a truncated npub.
-    const inputEl = component
-      .getElement()
-      .querySelector('.textinput-overlay__input') as HTMLInputElement | null;
-    if (inputEl) {
-      inputEl.setAttribute('data-image-tags', url);
-      const autocomplete = new MentionAutocomplete({
-        textareaSelector: `[data-image-tags]`,
-        onMentionInserted: (npub, username) => {
-          // Convert the mention directly into a chip — the user never sees
-          // the raw `nostr:npub1...` text in the input.
-          component.addChipFromMention(npub, username);
-        },
-      });
-      autocomplete.init();
-      this.tagMentionAutocompletes.set(url, autocomplete);
-    }
-
-    this.tagOverlays.set(url, component);
-  }
-
-  /**
-   * Teardown for a single image-tag overlay — destroys the component, drops
-   * it from the maps, removes the host element. Triggered by the component's
-   * onClose callback (fires on ESC, outside-click, Apply via helpers.collapse,
-   * and the toggle branch of openTagOverlay).
-   */
-  private closeTagOverlay(url: string): void {
-    const component = this.tagOverlays.get(url);
-    if (component) {
-      component.destroy();
-      this.tagOverlays.delete(url);
-    }
-    const autocomplete = this.tagMentionAutocompletes.get(url);
-    if (autocomplete) {
-      autocomplete.destroy();
-      this.tagMentionAutocompletes.delete(url);
-    }
-    // Remove the host (and its DOM subtree) from the thumbnail.
-    const allThumbs = Array.from(
-      document.querySelectorAll('.post-note-modal__media-thumb')
-    ) as HTMLElement[];
-    const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
-    thumb?.querySelector('.post-note-modal__tag-overlay-host')?.remove();
-  }
-
-  /**
-   * Background-pass: resolve real usernames for chips whose `username` is
-   * still the truncated-npub fallback. Mutates `this.imageTags` in place
-   * and updates chip DOM if the overlay is still open.
-   */
-  private async enrichChipUsernames(url: string): Promise<void> {
-    const entries = this.imageTags.get(url);
-    if (!entries || entries.length === 0) return;
-
-    await Promise.all(
-      entries.map(async entry => {
-        // Only enrich chips that still show the truncated-npub fallback.
-        if (!entry.username.endsWith('…')) return;
-        const real = await this.usernameFromPubkey(entry.pubkey);
-        if (real) entry.username = real;
-      })
-    );
-
-    // Update chip DOM if the overlay is still open.
-    const component = this.tagOverlays.get(url);
-    if (component) {
-      const chipNames = component
-        .getElement()
-        .querySelectorAll('.textinput-overlay__chip-name');
-      chipNames.forEach((el, i) => {
-        if (entries[i]) el.textContent = entries[i].username;
-      });
-    }
-  }
-
-  /**
-   * Update the count badge on a thumbnail after tag changes.
-   */
-  private updateTagBadge(url: string): void {
-    const allBtns = Array.from(
-      document.querySelectorAll('.post-note-modal__tag-btn')
-    ) as HTMLElement[];
-    const btn = allBtns.find(b => b.dataset.tagUrl === url);
-    if (!btn) return;
-    const badge = btn.querySelector('[data-tag-badge]') as HTMLElement;
-    if (!badge) return;
-    const count = this.imageTags.get(url)?.length ?? 0;
-    if (count > 0) {
-      badge.textContent = String(count);
-      badge.classList.remove('is-hidden');
-    } else {
-      badge.classList.add('is-hidden');
-    }
-  }
-
-  /**
-   * Async username lookup via UserProfileService.
-   */
-  private async usernameFromPubkey(hex: string): Promise<string | null> {
-    try {
-      const profile =
-        await UserProfileService.getInstance().getUserProfile(hex);
-      return profile?.name || profile?.display_name || null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Handle emoji selected callback
    */
   private handleEmojiSelected(emoji: string): void {
-    EditorStateManager.handleEmojiSelected(emoji, '[data-textarea]', {
+    composerInsertEmoji({
+      textareaSelector: '[data-textarea]',
+      emoji,
       onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
@@ -983,9 +606,9 @@ export class PostNoteModal {
    */
   private showNSFWSwitch(): void {
     // Don't create switch if it already exists
-    if (this.nsfwSwitch) return;
+    if (this.controls.nsfwSwitch) return;
 
-    this.nsfwSwitch = createNsfwSwitchIn(
+    this.controls.nsfwSwitch = createNsfwSwitchIn(
       '#post-note-options-container',
       this.isNSFW,
       checked => {
@@ -1003,37 +626,7 @@ export class PostNoteModal {
    */
   private handlePollToggle(): void {
     const pollContainer = document.querySelector('#poll-creator-container');
-    if (!pollContainer) return;
-
-    // Toggle poll creator
-    if (this.pollCreator) {
-      // Remove poll
-      this.pollCreator.destroy();
-      this.pollCreator = null;
-      this.pollData = null;
-      pollContainer.innerHTML = '';
-      this.updatePostButton();
-    } else {
-      // Add poll
-      this.pollCreator = new PollCreator({
-        onPollDataChange: data => {
-          if (data === null) {
-            // Remove poll requested
-            this.pollCreator?.destroy();
-            this.pollCreator = null;
-            this.pollData = null;
-            pollContainer.innerHTML = '';
-          } else {
-            this.pollData = data;
-          }
-          // Update post button state when poll data changes
-          this.updatePostButton();
-        },
-      });
-
-      pollContainer.innerHTML = this.pollCreator.render();
-      this.pollCreator.setupEventListeners(pollContainer as HTMLElement);
-    }
+    this.poll.toggle(pollContainer, () => this.updatePostButton());
   }
 
   /**
@@ -1094,149 +687,48 @@ export class PostNoteModal {
    * Handle post button click
    */
   private async handlePost(): Promise<void> {
-    if (this.highlightSource) {
-      await this.handlePostHighlight();
-      return;
-    }
-
-    const validation = ContentValidationManager.validate({
+    await runComposerPublish({
+      isHighlight: !!this.highlightSource,
+      onHighlight: () => this.handlePostHighlight(),
       content: this.content,
       selectedRelays: this.selectedRelays,
-      pollData: this.pollData,
-    });
-
-    if (!validation.isValid) return;
-    if (!AuthGuard.requireAuth('create a post')) return;
-
-    this.toolbar?.hideEmojiPicker();
-
-    const modalContainer = document.querySelector('.modal') as HTMLElement;
-    let originalDisplay = '';
-    if (modalContainer) {
-      originalDisplay = modalContainer.style.display;
-      modalContainer.style.display = 'none';
-    }
-
-    const postLabel = this.scheduledAt !== null ? _('Schedule') : _('Post');
-    const loadingId = ToastService.loading(_('Waiting for signer approval…'));
-    try {
-      const quotedRefs = extractQuotedReferences(this.content);
-      let quotedEvent:
-        | { eventId: string; authorPubkey: string; relayHint?: string }
-        | undefined;
-      let quotedArticle:
-        | { addressableId: string; authorPubkey: string; relayHint?: string }
-        | undefined;
-
-      const ref = quotedRefs[0];
-      if (ref) {
-        const cleanRef = ref.id.replace(/^nostr:/, '');
-
-        try {
-          const decoded = decodeNip19(cleanRef);
-
-          if (decoded.type === 'nevent') {
-            const neventData = decoded.data as {
-              id: string;
-              author?: string;
-              relays?: string[];
-            };
-            const relayHint = neventData.relays?.[0];
-            quotedEvent = {
-              eventId: neventData.id,
-              authorPubkey: neventData.author || '',
-              ...(relayHint ? { relayHint } : {}),
-            };
-          } else if (decoded.type === 'naddr') {
-            const naddrData = decoded.data as {
-              kind: number;
-              pubkey: string;
-              identifier: string;
-              relays?: string[];
-            };
-            const addressableId = `${naddrData.kind}:${naddrData.pubkey}:${naddrData.identifier}`;
-            const relayHint = naddrData.relays?.[0];
-            quotedArticle = {
-              addressableId,
-              authorPubkey: naddrData.pubkey,
-              ...(relayHint ? { relayHint } : {}),
-            };
-          }
-        } catch (error) {
-          console.debug('Failed to decode quoted reference:', error);
+      pollData: this.poll.data,
+      isNSFW: this.isNSFW,
+      customClientTag: this.customClientTag,
+      scheduledAt: this.scheduledAt,
+      expiresInSeconds: this.expiresInSeconds,
+      imageTagsPayload: this.imageTags.buildPayload(),
+      // Classic modal: scheduling requires the stored addon preference.
+      gateScheduleOnPreference: true,
+      hideEmojiPicker: () => this.controls.toolbar?.hideEmojiPicker(),
+      createPost: payload =>
+        this.postsApi.get()?.createPost(payload) ?? Promise.resolve(false),
+      // Hide the modal behind the signer-approval toast; the captured
+      // container + display state is handed back for failure restore.
+      beforePublish: () => {
+        const modalContainer = document.querySelector('.modal') as HTMLElement;
+        let originalDisplay = '';
+        if (modalContainer) {
+          originalDisplay = modalContainer.style.display;
+          modalContainer.style.display = 'none';
         }
-      }
-
-      const clientTag = this.customClientTag.trim();
-
-      let success: boolean;
-      if (this.scheduledAt !== null && isScheduledPostsEnabled()) {
-        const { scheduleNote } = await import(
-          '../../addons/scheduled-posts/scheduleNote'
-        );
-        success = await scheduleNote({
-          content: this.content,
-          relays: Array.from(this.selectedRelays),
-          contentWarning: this.isNSFW,
-          ...(this.pollData ? { pollData: this.pollData } : {}),
-          ...(quotedEvent ? { quotedEvent } : {}),
-          ...(quotedArticle ? { quotedArticle } : {}),
-          ...(clientTag ? { clientTag } : {}),
-          scheduledAt: this.scheduledAt,
-        });
-      } else {
-        // Build optional imageTags payload from the per-URL state. Skip empty
-        // entries and the whole field when nothing is tagged (keeps legacy
-        // notes byte-identical to before NIP-68 support).
-        const imageTagsPayload = Array.from(this.imageTags.entries())
-          .filter(([, tags]) => tags.length > 0)
-          .map(([imageUrl, tags]) => ({
-            imageUrl,
-            taggedPubkeys: tags.map(t => t.pubkey),
-          }));
-
-        success =
-          (await this.postsApi?.createPost({
-            content: this.content,
-            relays: Array.from(this.selectedRelays),
-            contentWarning: this.isNSFW,
-            ...(this.pollData ? { pollData: this.pollData } : {}),
-            ...(quotedEvent ? { quotedEvent } : {}),
-            ...(quotedArticle ? { quotedArticle } : {}),
-            ...(clientTag ? { clientTag } : {}),
-            ...(imageTagsPayload.length > 0
-              ? { imageTags: imageTagsPayload }
-              : {}),
-            ...(this.expiresInSeconds
-              ? { expiresInSeconds: this.expiresInSeconds }
-              : {}),
-          })) ?? false;
-      }
-
-      ToastService.dismiss(loadingId);
-
-      if (success) {
-        if (quotedEvent?.eventId) {
-          ModuleLoader.getInstance()
-            .getApi<ReactionsModuleApi>('reactions')
-            ?.clearCacheOnly(quotedEvent.eventId);
-        }
-        if (quotedArticle?.addressableId) {
-          ModuleLoader.getInstance()
-            .getApi<ReactionsModuleApi>('reactions')
-            ?.clearCacheOnly(quotedArticle.addressableId);
-        }
-
+        return { modalContainer, originalDisplay };
+      },
+      onSuccess: quoted => {
+        clearComposerQuoteCaches(quoted);
         this.cleanup();
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Note posted successfully');
-      } else {
-        this.handlePostFailure(modalContainer, originalDisplay, postLabel);
-      }
-    } catch (error) {
-      ToastService.dismiss(loadingId);
-      this.handlePostFailure(modalContainer, originalDisplay, postLabel, error);
-    }
+      },
+      onFailure: (label, error, ctx) => {
+        this.handlePostFailure(
+          ctx?.modalContainer ?? null,
+          ctx?.originalDisplay ?? '',
+          label,
+          error
+        );
+      },
+    });
   }
 
   /**
@@ -1282,7 +774,7 @@ export class PostNoteModal {
     if (this.selectedRelays.size === 0) return;
     if (!AuthGuard.requireAuth('post a highlight')) return;
 
-    this.toolbar?.hideEmojiPicker();
+    this.controls.toolbar?.hideEmojiPicker();
 
     const modalContainer = document.querySelector('.modal') as HTMLElement;
     let originalDisplay = '';
@@ -1292,7 +784,7 @@ export class PostNoteModal {
     }
 
     try {
-      const success = await this.postsApi?.createHighlight({
+      const success = await this.postsApi.get()?.createHighlight({
         highlightedText: this.highlightSource.selectedText,
         comment: this.content,
         sourceEvent: this.highlightSource.event,
@@ -1330,92 +822,15 @@ export class PostNoteModal {
   }
 
   /**
-   * Render poll preview for Preview tab
-   */
-  private renderPollPreview(): string {
-    if (!this.pollData) return '';
-
-    const validOptions = this.pollData.options.filter(o => o.label.trim());
-    if (validOptions.length < 2) return '';
-
-    const metaItems: string[] = [];
-    if (this.pollData.multipleChoice) {
-      metaItems.push(
-        `<span class="nip88-poll__meta-item">${_('Multiple choice allowed')}</span>`
-      );
-    }
-    if (this.pollData.endDate) {
-      const endDate = new Date(this.pollData.endDate * 1000);
-      metaItems.push(
-        `<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`
-      );
-    }
-    const metaHtml =
-      metaItems.length > 0
-        ? `<div class="nip88-poll__meta">${metaItems.join('')}</div>`
-        : '';
-
-    const optionsHtml = validOptions
-      .map(
-        option => `
-      <div class="nip88-poll__option nip88-poll__option--preview">
-        <span class="nip88-poll__option-label">${escapeHtml(option.label)}</span>
-        <span class="nip88-poll__option-stats">
-          <span class="nip88-poll__option-count">0 votes</span>
-          <span class="nip88-poll__option-percentage">0%</span>
-        </span>
-        <span class="nip88-poll__option-bar" style="width: 0%"></span>
-      </div>
-    `
-      )
-      .join('');
-
-    return `
-      <div class="nip88-poll nip88-poll--preview">
-        ${metaHtml}
-        <div class="nip88-poll__options">
-          ${optionsHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  /**
    * Cleanup sub-components
    */
   private cleanup(): void {
-    this.relaySelector?.destroy();
-    this.relaySelector = null;
-
-    this.clientTagControl?.destroy();
-    this.clientTagControl = null;
-
-    this.toolbar?.destroy();
-    this.toolbar = null;
-
-    this.nsfwSwitch?.destroy();
-    this.expiryDropdown?.destroy();
-    this.expiryDropdown = null;
-    this.nsfwSwitch = null;
-
-    this.pollCreator?.destroy();
-    this.pollCreator = null;
-
-    this.mentionAutocomplete?.destroy();
-    this.mentionAutocomplete = null;
+    this.controls.destroy();
+    this.poll.destroy();
 
     // NIP-68 image-tagging state
-    this.tagOverlays.forEach(c => c.destroy());
-    this.tagOverlays.clear();
-    this.tagMentionAutocompletes.forEach(a => a.destroy());
-    this.tagMentionAutocompletes.clear();
-    this.imageTags.clear();
+    this.imageTags.destroy();
 
-    this.customEmojiAutocomplete?.destroy();
-    this.customEmojiAutocomplete = null;
-    this.customEmojiService = null;
-
-    this.pollData = null;
     this.scheduledAt = null;
     this.highlightSource = null;
   }
@@ -1427,8 +842,8 @@ export class PostNoteModal {
   private async initCustomEmojiAutocomplete(): Promise<void> {
     const loaded = await loadComposerEmojiAutocomplete('PostNoteModal');
     if (!loaded) return;
-    this.customEmojiService = loaded.service;
-    this.customEmojiAutocomplete = loaded.autocomplete;
+    this.controls.customEmojiService = loaded.service;
+    this.controls.customEmojiAutocomplete = loaded.autocomplete;
   }
 
   /**
@@ -1436,6 +851,9 @@ export class PostNoteModal {
    * NIP-30 emoji tags. Used by the Preview tab so animated GIFs render inline.
    */
   private buildPreviewEmojiTags(content: string): string[][] {
-    return scanComposerEmojiShortcodes(content, this.customEmojiService);
+    return scanComposerEmojiShortcodes(
+      content,
+      this.controls.customEmojiService
+    );
   }
 }

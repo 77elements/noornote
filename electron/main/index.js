@@ -155,9 +155,11 @@ function createWindow() {
     },
   });
 
-  // User agent
-  const version = app.getVersion();
-  mainWindow.webContents.setUserAgent(`NoorNote/${version}`);
+  // No custom User-Agent: the Electron default UA already carries the app
+  // identity (NoorNote/<version> as a token) inside a browser-shaped string.
+  // A bare `NoorNote/<version>` UA has no browser tokens — YouTube answers
+  // embedded players with the "sign in" bot wall (reported by users) and any
+  // other UA-sniffing site misbehaves.
 
   // macOS: minimize on window close button, but allow CMD+Q / Menu > Quit
   mainWindow.on('close', (event) => {

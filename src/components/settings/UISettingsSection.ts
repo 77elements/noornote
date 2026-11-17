@@ -65,7 +65,6 @@ export class UISettingsSection extends SettingsSection {
   private backBarSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private expiryNoticeSwitch: Switch | null = null;
-  private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: NnDropdown | null = null;
   private languageDropdown: NnDropdown | null = null;
@@ -177,7 +176,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Hide self-reposts')}</span>
             <div class="setting__control" id="hide-self-reposts-switch-container"></div>
             <p class="setting__desc">
-              ${_("When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.")}
+              ${_("Hides reposts of users' own notes from your timeline.")}
             </p>
             <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" id="self-repost-gap-selector">
               <span class="setting__label">${_('Disable self-reposts younger than:')}</span>
@@ -220,7 +219,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Show reactions')}</span>
             <div class="setting__control" id="show-reactions-switch-container"></div>
             <p class="setting__desc">
-              ${_('Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.')}
+              ${_('Shows reactions (likes) from people you follow as entries in your timeline.')}
             </p>
           </div>
         </section>
@@ -230,7 +229,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Hide highlights')}</span>
             <div class="setting__control" id="hide-highlights-switch-container"></div>
             <p class="setting__desc">
-              ${_('When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.')}
+              ${_("Hides other users' highlight posts that quote an external website, including pure reposts of them.")}
             </p>
           </div>
         </section>
@@ -240,7 +239,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Show expiry notice')}</span>
             <div class="setting__control" id="show-expiry-notice-switch-container"></div>
             <p class="setting__desc">
-              ${_('Show a small "Post expires on …" line under notes that carry an expiration time (NIP-40). Off by default.')}
+              ${_('Shows a "Post expires on …" line under notes with an expiration time (NIP-40).')}
               ${_('Check that all of your write relays support NIP-40. Note: even if they do, someone could repost your note to relays without NIP-40 support, and the expiration no longer applies there.')}
             </p>
           </div>
@@ -251,7 +250,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Disable post truncation')}</span>
             <div class="setting__control" id="post-truncation-switch-container"></div>
             <p class="setting__desc">
-              ${_('When enabled, long posts will always be displayed in full without "Show More" buttons.')}
+              ${_('Long posts are always displayed in full, without "Show More" buttons.')}
             </p>
           </div>
         </section>
@@ -281,16 +280,6 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control article-foaf-scc-dropdown-container"></div>
             <p class="setting__desc">
               ${_('Whose articles appear in the side column\'s "Newest Articles" tab. Same degree meaning as above; you can pick a narrower degree here to keep the side panel focused on closer contacts.')}
-            </p>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="setting">
-            <span class="setting__label">${_('Memory optimization (experimental)')}</span>
-            <div class="setting__control" id="content-visibility-switch-container"></div>
-            <p class="setting__desc">
-              ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast, disable if it bothers you.')}
             </p>
           </div>
         </section>
@@ -798,41 +787,6 @@ export class UISettingsSection extends SettingsSection {
       });
       sccFoafContainer.appendChild(
         this.articleFeedFoafSccDropdown.getElement()
-      );
-    }
-
-    // Initialize Content Visibility switch
-    const contentVisibilityContainer = contentContainer.querySelector(
-      '#content-visibility-switch-container'
-    );
-    if (contentVisibilityContainer) {
-      const enabled = this.storage.get<boolean>(
-        StorageKeys.CONTENT_VISIBILITY_AUTO,
-        false
-      );
-
-      this.contentVisibilitySwitch = new Switch({
-        label: '',
-        checked: enabled,
-        onChange: checked => {
-          this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
-          document.documentElement.classList.toggle(
-            'content-visibility-auto',
-            checked
-          );
-          ToastService.show(
-            checked
-              ? _('Memory optimization enabled')
-              : _('Memory optimization disabled'),
-            'success'
-          );
-        },
-      });
-
-      contentVisibilityContainer.innerHTML =
-        this.contentVisibilitySwitch.render();
-      this.contentVisibilitySwitch.setupEventListeners(
-        contentVisibilityContainer as HTMLElement
       );
     }
 

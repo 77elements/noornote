@@ -5,7 +5,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { ModuleLoader } from '../../core/ModuleLoader';
+import { LazyModuleApi } from '../../core/LazyModuleApi';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
@@ -19,11 +19,7 @@ export interface DeleteNoteModalOptions {
 export class DeleteNoteModal {
   private static instance: DeleteNoteModal | null = null;
   private modalService: ModalService;
-  private _postsApi?: PostsModuleApi | null;
-  private get postsApi(): PostsModuleApi | null {
-    return (this._postsApi ??=
-      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
-  }
+  private postsApi = new LazyModuleApi<PostsModuleApi>('posts');
   private currentOptions: DeleteNoteModalOptions | null = null;
 
   private constructor() {
@@ -118,9 +114,9 @@ export class DeleteNoteModal {
     if (!this.currentOptions) return;
 
     try {
-      const success = await (this.postsApi?.deleteEvent(
-        this.currentOptions.eventId
-      ) ?? Promise.resolve(false));
+      const success = await (this.postsApi
+        .get()
+        ?.deleteEvent(this.currentOptions.eventId) ?? Promise.resolve(false));
 
       if (success) {
         // Close modal

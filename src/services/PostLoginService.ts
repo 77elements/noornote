@@ -60,20 +60,6 @@ export class PostLoginService {
     this.loggedInPubkey = data.pubkey;
 
     try {
-      // Apply per-account UI prefs that need to be on <html> before any rendering
-      const { PerAccountLocalStorage: PALS, StorageKeys: SK } = await import(
-        './PerAccountLocalStorage'
-      );
-      const cvEnabled = PALS.getInstance().getForPubkey<boolean>(
-        SK.CONTENT_VISIBILITY_AUTO,
-        data.pubkey,
-        false
-      );
-      document.documentElement.classList.toggle(
-        'content-visibility-auto',
-        cvEnabled
-      );
-
       // Logged-out CTA stash: when the user came in through a "logged out"
       // modal (e.g. on a public note/profile/article) and just authenticated,
       // jump to the action-specific destination (DM thread, etc.) via a full
@@ -159,7 +145,12 @@ export class PostLoginService {
 
       // Initialize AutoSyncService for Easy Mode list syncing
       const { AutoSyncService } = await import('./AutoSyncService');
-      AutoSyncService.getInstance();
+      const autoSync = AutoSyncService.getInstance();
+      // Focus UI (v2): the v1 list auto-sync (startup fetch, 5-min
+      // poller, event-driven relay pushes) is silenced — a v2 user
+      // carries only the diode trio. Idempotent; the switch bridge
+      // (syncBackgroundFetchGate) resumes it when returning to classic.
+      if (isFocusUiEnabled()) autoSync.pauseForFocusUi();
 
       // Sync petnames from relays (NIP-78 encrypted, non-blocking)
       void import('./PetnameService').then(({ PetnameService }) => {
@@ -175,6 +166,16 @@ export class PostLoginService {
           .syncFromRelays()
           .catch(() => {});
       });
+
+      // Bookmark read-state sync (unread counter) — part of the bookmark
+      // diode: cross-device read markers must sync on EVERY interface (v1
+      // also starts it via the sidebar managers; start() is idempotent).
+      // No-op unless the bookmarks addon and its sync toggle are on.
+      void import('./BookmarkReadStateService').then(
+        ({ BookmarkReadStateService }) => {
+          void BookmarkReadStateService.getInstance().start();
+        }
+      );
 
       // Runtime interface switch (instant, no reload): keep the v1-only
       // background fetches in sync with the active interface.
@@ -251,9 +252,19 @@ export class PostLoginService {
           ArticleNotificationService.getInstance().stopPolling();
         }
       );
+      // Focus UI (v2): silence the v1 list auto-sync (idempotent pause;
+      // resume happens in the classic branch below).
+      void import('./AutoSyncService').then(({ AutoSyncService }) => {
+        AutoSyncService.getInstance().pauseForFocusUi();
+      });
       return;
     }
-    // Classic interface: start the poller (no-op when already running)…
+    // Classic interface: re-arm the v1 list auto-sync (no-op when
+    // already running)…
+    void import('./AutoSyncService').then(({ AutoSyncService }) => {
+      AutoSyncService.getInstance().resumeFromFocusUi();
+    });
+    // …start the article poller (no-op when already running)…
     void import('./ArticleNotificationService').then(
       ({ ArticleNotificationService }) => {
         ArticleNotificationService.getInstance().startPolling();

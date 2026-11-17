@@ -115,6 +115,15 @@ module.exports = {
       },
     },
     {
+      // Dev-only console diagnostics tool: dumping load snapshots IS its
+      // purpose (window.__v2load / __loadmon). Dynamically imported under
+      // import.meta.env.DEV only — never part of production bundles.
+      files: ['src/services/DevLoadMonitor.ts'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+    {
       // Test files
       files: ['**/*.test.ts', '**/*.spec.ts'],
       rules: {
