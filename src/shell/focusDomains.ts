@@ -154,16 +154,10 @@ export interface FocusSettingsDrawer {
   /**
    * Callback fired on every transition to OPEN (tab click/drag) — the
    * stage mounts the Hidden Features panel when the tab opens the drawer
-   * without a per-object settings panel.
+   * on the start view without a per-object settings panel; in a focused
+   * view the panel stays empty (future: system logs + diag-log export).
    */
   setOnOpened(cb: (() => void) | null): void;
-  /**
-   * Tab-open veto: runs before a TAB-initiated open (click or drag snap);
-   * false keeps the drawer closed. Programmatic opens (the per-object
-   * gear) bypass it — the SV-only content (Hidden Features) must never
-   * block the FV settings path.
-   */
-  setOpenGuard(cb: (() => boolean) | null): void;
 }
 
 export interface FocusDomainDef {

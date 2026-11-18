@@ -76,6 +76,8 @@ export class SystemLogger {
   private router: Router | null = null;
   private globalLogs: LogEntry[] = [];
   private pageLogs: LogEntry[] = [];
+  /** Change callback for the v2 ED-b flat log panel (see setOnEntriesChanged). */
+  private onEntriesChanged: (() => void) | null = null;
   private maxGlobalLogs = 1000; // Desktop: Keep last 1000 global logs (web: 100)
   private maxPageLogs = 5000; // Desktop: Keep last 5000 page logs (web: 500)
   private globalAutoScroll = true;
@@ -318,6 +320,9 @@ export class SystemLogger {
     this.renderScheduled = false;
     if (this.dirty.global && this.renderGlobalLogs()) this.dirty.global = false;
     if (this.dirty.page && this.renderPageLogs()) this.dirty.page = false;
+    // The v2 ED-b panel pulls the flat stream itself (its own element,
+    // outside this class's visibility gating) — notify on every flush.
+    this.onEntriesChanged?.();
   }
 
   /**
@@ -444,19 +449,8 @@ export class SystemLogger {
     }
 
     // Get current view from Router
-    const currentView = this.router.getCurrentView();
-    const allowedCategories = VIEW_CATEGORIES[currentView] || [];
-
     // Filter logs by current view (only show logs relevant to active view)
-    let filteredLogs = this.pageLogs;
-    if (currentView && allowedCategories.length > 0) {
-      filteredLogs = this.pageLogs.filter(log =>
-        allowedCategories.some(cat => log.category.includes(cat))
-      );
-    }
-
-    // Only render last 50 visible logs for performance
-    const visibleLogs = filteredLogs.slice(-50);
+    const visibleLogs = this.currentPageLogs().slice(-50);
 
     logsContainer.innerHTML = `<table class="system-log-table"><tbody>${visibleLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
     if (this.pageAutoScroll) this.scrollToBottom('page');
@@ -549,6 +543,7 @@ export class SystemLogger {
   public clearPageLogs(): void {
     this.pageLogs = [];
     this.renderPageLogs();
+    this.onEntriesChanged?.();
   }
 
   /**
@@ -577,6 +572,49 @@ export class SystemLogger {
     this.dirty.global = true;
     this.dirty.page = true;
     this.flushRender();
+  }
+
+  /**
+   * Page logs as the classic panel paints them: filtered by the current
+   * Router view (the VIEW_CATEGORIES map). Shared by the classic render
+   * and the v2 flat stream (same filter semantics, one source).
+   */
+  private currentPageLogs(): LogEntry[] {
+    if (!this.router) return this.pageLogs;
+    const currentView = this.router.getCurrentView();
+    const allowedCategories = VIEW_CATEGORIES[currentView] || [];
+    if (!currentView || allowedCategories.length === 0) return this.pageLogs;
+    return this.pageLogs.filter(log =>
+      allowedCategories.some(cat => log.category.includes(cat))
+    );
+  }
+
+  /**
+   * Flat stream for the v2 ED-b log panel: ONE continuous list — global
+   * entries (persistent) + the current view's page entries merged
+   * chronologically. The classic panel's global/page split is
+   * display-only; the view filter and the navigate-clear semantics
+   * carry over unchanged, so a view switch drops the previous view's
+   * local logs (Timeline logs don't interest the Articles reader).
+   */
+  public getFlatEntries(): LogEntry[] {
+    return [...this.globalLogs, ...this.currentPageLogs()].sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
+  }
+
+  /** Change callback for the v2 panel (coalesced — fires per flush). */
+  public setOnEntriesChanged(cb: (() => void) | null): void {
+    this.onEntriesChanged = cb;
+  }
+
+  /**
+   * In-memory collection is off (Capacitor — file logging only): a v2
+   * panel shows a hint instead of the stream; the file-based export
+   * still works.
+   */
+  public isInMemorySuppressed(): boolean {
+    return this.suppressInMemory;
   }
 
   /**

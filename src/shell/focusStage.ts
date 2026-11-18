@@ -65,6 +65,7 @@ import {
   type DetachedDetailComponent,
 } from './detachedDetails';
 import { HiddenFeaturesPanel } from './hiddenFeaturesPanel';
+import { FocusLogPanel } from './focusLogPanel';
 import { applyDomainShutdown } from './domainShutdown';
 
 /** URL of the home grid (no domain focused). */
@@ -209,6 +210,9 @@ export class FocusStage {
   /** Hidden Features panel (tab-open ED-b) — mount/destroy contract. */
   private hiddenPanelView: HiddenFeaturesPanel | null = null;
   private hiddenPanelHost: HTMLElement | null = null;
+  /** Flattened system-log panel (tab-open ED-b in a FV) — same contract. */
+  private logPanelView: FocusLogPanel | null = null;
+  private logPanelHost: HTMLElement | null = null;
   /**
    * Detached detail (Phase 5): a hidden owner's detail component rendered
    * directly in the active column — without the owner object. The stashed
@@ -736,35 +740,52 @@ export class FocusStage {
     // mounted panel down and clears the gear's active state.
     drawer.setOnClosed(() => this.onSettingsClosed());
     // Tab-open (no gear): the drawer opens onto the Hidden Features
-    // panel — the compact restorable list of hidden objects. SV-only:
-    // in a focused view (FV) the tab opens nothing — the panel belongs
-    // to the start grid; per-object settings run through the gear.
+    // panel (SV) or an empty panel (FV — future home of the system
+    // logs with their diag-log export buttons).
     drawer.setOnOpened(() => this.onDrawerOpened());
-    drawer.setOpenGuard(() => !this.activeId);
   }
 
   /**
-   * The ED-b opened via its tab (not the gear): mount the Hidden
-   * Features panel unless a per-object settings panel is already up.
+   * The ED-b opened via its tab (not the gear): on the start view mount
+   * the Hidden Features panel; in a focused view (FV) mount the
+   * flattened system-log stream + Export DiagLogs. A per-object
+   * settings panel (gear) always wins.
    */
   private onDrawerOpened(): void {
     if (this.settingsView || !this.drawer) return;
-    this.unmountHiddenPanel();
+    this.unmountTabPanels();
     const host = document.createElement('div');
-    host.className = 'focus-settings focus-settings--hidden-features';
-    this.hiddenPanelHost = host;
-    this.hiddenPanelView = new HiddenFeaturesPanel();
-    this.hiddenPanelView.mount(host);
+    if (this.activeId) {
+      // FV: one continuous log stream (classic global/page split gone;
+      // page entries keep the v1 semantics — view-filtered, cleared on
+      // navigation) + the diag-log export button.
+      host.className = 'focus-settings focus-settings--focus-log';
+      this.logPanelHost = host;
+      this.logPanelView = new FocusLogPanel();
+      this.logPanelView.mount(host);
+    } else {
+      host.className = 'focus-settings focus-settings--hidden-features';
+      this.hiddenPanelHost = host;
+      this.hiddenPanelView = new HiddenFeaturesPanel();
+      this.hiddenPanelView.mount(host);
+    }
     this.drawer.panel.appendChild(host);
   }
 
-  /** Tear the Hidden Features panel down (close or gear takeover). */
-  private unmountHiddenPanel(): void {
-    if (!this.hiddenPanelView) return;
-    this.hiddenPanelView.destroy();
-    this.hiddenPanelView = null;
-    this.hiddenPanelHost?.remove();
-    this.hiddenPanelHost = null;
+  /** Tear the tab-open panels down (close or gear takeover). */
+  private unmountTabPanels(): void {
+    if (this.hiddenPanelView) {
+      this.hiddenPanelView.destroy();
+      this.hiddenPanelView = null;
+      this.hiddenPanelHost?.remove();
+      this.hiddenPanelHost = null;
+    }
+    if (this.logPanelView) {
+      this.logPanelView.destroy();
+      this.logPanelView = null;
+      this.logPanelHost?.remove();
+      this.logPanelHost = null;
+    }
   }
 
   /**
@@ -783,9 +804,9 @@ export class FocusStage {
       this.drawer.close();
       return;
     }
-    // Gear takeover: a mounted Hidden Features panel (tab-open) yields
-    // to the object's own settings panel.
-    this.unmountHiddenPanel();
+    // Gear takeover: a mounted tab-open panel (Hidden Features / log
+    // stream) yields to the object's own settings panel.
+    this.unmountTabPanels();
     const surface = this.surfaces.get(def.id);
     let settings: FocusSettingsView | null = null;
     if (surface?.view?.getSettingsForCurrentState) {
@@ -806,7 +827,7 @@ export class FocusStage {
 
   /** Drawer closed (any way): tear the settings panel down. */
   private onSettingsClosed(): void {
-    this.unmountHiddenPanel();
+    this.unmountTabPanels();
     if (this.settingsDef) {
       this.objects
         .get(this.settingsDef.id)
@@ -1145,9 +1166,10 @@ export class FocusStage {
     restore?: FocusUrlState
   ): Promise<void> {
     // Column content switches — object settings (ED-b) belong to the old
-    // object and follow it out; the SV-only Hidden Features panel too
-    // (it must not ride along into a focused view).
-    if (this.settingsView || this.hiddenPanelView) this.drawer?.close();
+    // object and follow it out; the tab-open panels (Hidden Features,
+    // log stream) too — they must not ride along into a focused view.
+    if (this.settingsView || this.hiddenPanelView || this.logPanelView)
+      this.drawer?.close();
     // Object-to-object switch: capture the old object up front — it is
     // torn down inside the mutation phase below, so one FLIP pass
     // animates the old object back to its circle while the new one

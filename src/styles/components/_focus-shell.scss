@@ -865,7 +865,6 @@ $focus-tab-overlap: 1px;
   @media (max-width: 1099px) {
     max-width: none;
   }
-
   // Composed multi-panel content (composePanels): the panels stack with
   // <hr> dividers between them — plain flow, readable width.
   .focus-settings__stack {
@@ -889,6 +888,114 @@ $focus-tab-overlap: 1px;
 // 15px, same $ring hues + alpha darkening).
 .focus-settings--hidden-features {
   max-width: none; // full width — the SV's chips grid spans the drawer
+}
+
+// Focused-view ED-b log panel (tab-open): the flattened system-log
+// stream + Export DiagLogs. Same 600px content column as the settings
+// stack (symmetric $gap padding, centered by the base margin); fills
+// the drawer height, the list scrolls internally so the header
+// (title + export) stays pinned.
+.focus-settings--focus-log {
+  height: 100%;
+  max-width: calc(600px + #{$gap * 2});
+  // The inner panel owns the padding — the base .focus-settings padding
+  // would stack on top of it (600px column + double gap).
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.focus-log-panel {
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: $gap $gap calc($gap * 1.5);
+
+  .focus-log-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc($gap * 0.75);
+    margin-bottom: calc($gap * 0.75);
+  }
+
+  .focus-log-panel__heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-3);
+  }
+
+  .focus-log-panel__export {
+    padding: 2px 12px;
+    border: 2px solid var(--color-4);
+    border-radius: $radius-full;
+    background: var(--color-1);
+    color: var(--color-4);
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
+
+  .focus-log-panel__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    user-select: text; // log lines are copy material
+    @include custom-scrollbar;
+  }
+
+  .focus-log-panel__table {
+    width: 100%;
+    // Fixed layout: a long token (npub/nevent/URL) in a log line must
+    // never stretch the table beyond the 600px column.
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .focus-log-panel__time {
+    padding-right: calc($gap * 0.5);
+    color: var(--color-3);
+    white-space: nowrap;
+    vertical-align: top;
+    opacity: 0.7;
+  }
+
+  .focus-log-panel__msg {
+    color: var(--color-5);
+    word-break: break-word;
+  }
+
+  .focus-log-panel__row--error .focus-log-panel__msg {
+    color: $color-red;
+  }
+
+  .focus-log-panel__row--warn .focus-log-panel__msg {
+    color: var(--color-3);
+  }
+
+  .focus-log-panel__count {
+    margin-left: calc($gap * 0.4);
+    color: var(--color-3);
+    font-size: 0.7rem;
+  }
+
+  .focus-log-panel__older,
+  .focus-log-panel__empty {
+    color: var(--color-3);
+    font-size: 0.8rem;
+    padding: calc($gap * 0.5) 0;
+  }
 }
 
 .hidden-features {

@@ -261,7 +261,7 @@ msgstr "Konten und Threads, die du stummgeschaltet hast."
 #: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2373
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:222
+#: src/shell/focusDomains.ts:223
 msgid "Articles"
 msgstr "Artikel"
 
@@ -272,7 +272,7 @@ msgstr "Artikel"
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:264
+#: src/shell/focusDomains.ts:265
 msgid "Bookmarks"
 msgstr "Lesezeichen"
 
@@ -300,6 +300,8 @@ msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 #: src/components/layout/MainLayout.ts:2300
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
+#: src/shell/focusLogPanel.ts:31
+#: src/shell/focusLogPanel.ts:57
 msgid "Export DiagLogs"
 msgstr "DiagLogs exportieren"
 
@@ -307,7 +309,7 @@ msgstr "DiagLogs exportieren"
 #: src/components/layout/MainLayout.ts:109
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:284
+#: src/shell/focusDomains.ts:285
 msgid "Follows"
 msgstr "Follows"
 
@@ -326,7 +328,7 @@ msgstr "Listen"
 
 #: src/components/layout/MainLayout.ts:1914
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:231
+#: src/shell/focusDomains.ts:232
 #: src/shell/focusMediaSurface.ts:43
 msgid "Media"
 msgstr "Medien"
@@ -334,7 +336,7 @@ msgstr "Medien"
 #: src/components/layout/MainLayout.ts:110
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:295
+#: src/shell/focusDomains.ts:296
 #: src/shell/focusMutesSurface.ts:36
 msgid "Muted"
 msgstr "Stummgeschaltet"
@@ -365,8 +367,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1067
-#: src/shell/focusStage.ts:908
+#: src/shell/focusStage.ts:1091
+#: src/shell/focusStage.ts:932
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -389,7 +391,7 @@ msgstr "Timeline"
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:272
+#: src/shell/focusDomains.ts:273
 msgid "Tribes"
 msgstr "Tribes"
 
@@ -1301,7 +1303,7 @@ msgstr "Nachrichten-Optionen"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:256
+#: src/shell/focusDomains.ts:257
 msgid "Messages"
 msgstr "Nachrichten"
 
@@ -1496,8 +1498,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1064
-#: src/shell/focusStage.ts:896
+#: src/shell/focusStage.ts:1088
+#: src/shell/focusStage.ts:920
 msgid "Back"
 msgstr "Zurück"
 
@@ -1727,7 +1729,7 @@ msgstr "Abzeichen verleihen"
 #: src/addons/badges/BadgesView.ts:49
 #: src/components/views/ProfileView.ts:2285
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:476
+#: src/shell/focusDomains.ts:477
 msgid "Badges"
 msgstr "Abzeichen"
 
@@ -1742,7 +1744,7 @@ msgstr "von"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2220
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:398
+#: src/shell/focusDomains.ts:399
 msgid "Calendar"
 msgstr "Kalender"
 
@@ -1908,7 +1910,7 @@ msgstr "Zu privaten Lesezeichen hinzugefügt"
 #: src/addons/analytics/AnalyticsAddonView.ts:334
 #: src/components/analytics/AnalyticsModal.ts:50
 #: src/components/ui/InteractionStatusLine.ts:288
-#: src/shell/focusDomains.ts:457
+#: src/shell/focusDomains.ts:458
 msgid "Analytics"
 msgstr "Statistik"
 
@@ -1926,8 +1928,8 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1063
-#: src/shell/focusStage.ts:891
+#: src/shell/focusStage.ts:1087
+#: src/shell/focusStage.ts:915
 msgid "Close"
 msgstr "Schließen"
 
@@ -2355,7 +2357,7 @@ msgstr "Lädt…"
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:358
+#: src/shell/focusDomains.ts:359
 #: src/shell/focusMarketplaceSurface.ts:38
 msgid "Marketplace"
 msgstr "Marktplatz"
@@ -4925,7 +4927,7 @@ msgstr "Notiz"
 
 #: src/components/layout/MainLayout.ts:2183
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:248
+#: src/shell/focusDomains.ts:249
 msgid "Notifications"
 msgstr "Mitteilungen"
 
@@ -4951,7 +4953,7 @@ msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2176
-#: src/shell/focusDomains.ts:304
+#: src/shell/focusDomains.ts:305
 msgid "Profile"
 msgstr "Profil"
 
@@ -4960,7 +4962,7 @@ msgid "Profile: %s"
 msgstr "Profil: %s"
 
 #: src/components/layout/MainLayout.ts:1915
-#: src/shell/focusDomains.ts:239
+#: src/shell/focusDomains.ts:240
 #: src/shell/focusRecipesSurface.ts:29
 msgid "Recipes"
 msgstr "Rezepte"
@@ -4975,8 +4977,8 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1065
-#: src/shell/focusStage.ts:901
+#: src/shell/focusStage.ts:1089
+#: src/shell/focusStage.ts:925
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
@@ -4985,7 +4987,7 @@ msgstr "Nach oben scrollen"
 #: src/components/layout/MainLayout.ts:2124
 #: src/components/layout/MainLayout.ts:2125
 #: src/components/layout/MainLayout.ts:2210
-#: src/shell/focusDomains.ts:315
+#: src/shell/focusDomains.ts:316
 #: src/shell/focusSearchSurface.ts:37
 msgid "Search"
 msgstr "Suche"
@@ -5024,6 +5026,7 @@ msgid "Syncing follow list..."
 msgstr "Folgelist wird synchronisiert…"
 
 #: src/components/layout/MainLayout.ts:1912
+#: src/shell/focusLogPanel.ts:30
 msgid "System Logs"
 msgstr "System-Logs"
 
@@ -5505,7 +5508,7 @@ msgstr "Beide Kalender nebeneinander"
 #: src/addons/btc-price/BtcPriceAddonView.ts:55
 #: src/addons/btc-price/BtcPriceAddonView.ts:56
 #: src/addons/btc-price/BtcPriceAddonView.ts:66
-#: src/shell/focusDomains.ts:639
+#: src/shell/focusDomains.ts:640
 msgid "BTC Price"
 msgstr "BTC-Kurs"
 
@@ -6313,7 +6316,7 @@ msgstr "Follow-Pack aktualisiert"
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:369
+#: src/shell/focusDomains.ts:370
 msgid "Follow Packs"
 msgstr "Follow-Packs"
 
@@ -6321,7 +6324,7 @@ msgstr "Follow-Packs"
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:31
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:584
+#: src/shell/focusDomains.ts:585
 msgid "Follower Notification"
 msgstr "Follower-Benachrichtigung"
 
@@ -6367,7 +6370,7 @@ msgstr "dabei"
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:35
-#: src/shell/focusDomains.ts:604
+#: src/shell/focusDomains.ts:605
 msgid "Group Chats"
 msgstr "Gruppen-Chats"
 
@@ -6391,7 +6394,7 @@ msgstr "Gast"
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:62
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:67
-#: src/shell/focusDomains.ts:523
+#: src/shell/focusDomains.ts:524
 msgid "Hashtag Subscriptions"
 msgstr "Hashtag-Abos"
 
@@ -6855,7 +6858,7 @@ msgstr "Notiz gespeichert"
 #: src/addons/note-taking/NoteTakingAddonView.ts:65
 #: src/addons/note-taking/NoteTakingAddonView.ts:66
 #: src/addons/note-taking/NoteTakingAddonView.ts:76
-#: src/shell/focusDomains.ts:419
+#: src/shell/focusDomains.ts:420
 msgid "Note taking"
 msgstr "Notizen"
 
@@ -7381,7 +7384,7 @@ msgstr "Beitrag planen"
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:439
+#: src/shell/focusDomains.ts:440
 msgid "Scheduled Posts"
 msgstr "Geplante Beiträge"
 
@@ -8273,7 +8276,7 @@ msgstr "Erstelle dein erstes Produkt-Listing"
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:65
 #: src/addons/custom-emojis/CustomEmojisView.ts:37
-#: src/shell/focusDomains.ts:325
+#: src/shell/focusDomains.ts:326
 msgid "Custom Emojis"
 msgstr "Eigene Emojis"
 
@@ -9335,7 +9338,7 @@ msgstr "Warte auf die Bestätigungs-E-Mail und klicke darin auf „Verify your a
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:624
+#: src/shell/focusDomains.ts:625
 msgid "Wallet Balance"
 msgstr "Wallet-Guthaben"
 
@@ -9421,7 +9424,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:32
-#: src/shell/focusDomains.ts:657
+#: src/shell/focusDomains.ts:658
 msgid "Word Filter"
 msgstr "Wortfilter"
 
@@ -10848,11 +10851,11 @@ msgstr "Folge Konten, um deren Medien hier zu sehen."
 msgid "Follow users to see their recipes here."
 msgstr "Folge Konten, um deren Rezepte hier zu sehen."
 
-#: src/services/SystemLogger.ts:148
+#: src/services/SystemLogger.ts:150
 msgid "Global"
 msgstr "Global"
 
-#: src/services/SystemLogger.ts:149
+#: src/services/SystemLogger.ts:151
 msgid "Global logs"
 msgstr "Globale Logs"
 
@@ -10903,11 +10906,11 @@ msgstr "Lade zitierte Note..."
 msgid "Loading replies..."
 msgstr "Lade Antworten..."
 
-#: src/services/SystemLogger.ts:154
+#: src/services/SystemLogger.ts:156
 msgid "Local"
 msgstr "Lokal"
 
-#: src/services/SystemLogger.ts:155
+#: src/services/SystemLogger.ts:157
 msgid "Local logs"
 msgstr "Lokale Logs"
 
@@ -11545,7 +11548,7 @@ msgid "Enable Feedback Board"
 msgstr "Feedback-Board aktivieren"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:116
-#: src/shell/focusDomains.ts:493
+#: src/shell/focusDomains.ts:494
 msgid "Feedback Board"
 msgstr "Feedback-Board"
 
@@ -12457,7 +12460,7 @@ msgstr "Live"
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/live-streams/LiveStreamsAddonView.ts:79
 #: src/addons/live-streams/LiveStreamsAddonView.ts:89
-#: src/shell/focusDomains.ts:343
+#: src/shell/focusDomains.ts:344
 msgid "Live Streams"
 msgstr "Live Streams"
 
@@ -12609,16 +12612,16 @@ msgstr "Untere Fläche"
 msgid "Top panel"
 msgstr "Obere Fläche"
 
-#: src/shell/focusDomains.ts:556
+#: src/shell/focusDomains.ts:557
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
 #: src/components/views/TimelineView.ts:154
-#: src/shell/focusDomains.ts:213
+#: src/shell/focusDomains.ts:214
 msgid "Social Media"
 msgstr "Social Media"
 
-#: src/shell/focusDomains.ts:538
+#: src/shell/focusDomains.ts:539
 msgid "Bulk Delete"
 msgstr "Massenlöschung"
 
@@ -12639,8 +12642,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:2083
-#: src/shell/focusStage.ts:2103
+#: src/shell/focusStage.ts:2109
+#: src/shell/focusStage.ts:2129
 msgid "Distribute circles evenly"
 msgstr "Kreise gleichmäßig verteilen"
 
@@ -12665,20 +12668,20 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:2100
+#: src/shell/focusStage.ts:2126
 msgid "Move all circles"
 msgstr "Alle Kreise verschieben"
 
-#: src/shell/focusStage.ts:2079
+#: src/shell/focusStage.ts:2105
 msgid "Move all circles to the left column"
 msgstr "Alle Kreise in die linke Spalte verschieben"
 
-#: src/shell/focusStage.ts:2078
+#: src/shell/focusStage.ts:2104
 msgid "Move all circles to the right column"
 msgstr "Alle Kreise in die rechte Spalte verschieben"
 
-#: src/shell/focusStage.ts:1056
-#: src/shell/focusStage.ts:875
+#: src/shell/focusStage.ts:1080
+#: src/shell/focusStage.ts:899
 msgid "Reorder"
 msgstr "Neu anordnen"
 
@@ -12755,8 +12758,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:1898
-#: src/shell/focusStage.ts:1905
+#: src/shell/focusStage.ts:1924
+#: src/shell/focusStage.ts:1931
 msgid "Move widget"
 msgstr "Widget verschieben"
 
@@ -12781,7 +12784,7 @@ msgstr "Live Streams in der Timeline aktivieren"
 msgid "Search notes, users and hashtags…"
 msgstr "Notizen, Nutzer und Hashtags suchen…"
 
-#: src/shell/focusStage.ts:878
+#: src/shell/focusStage.ts:902
 msgid "Hide"
 msgstr "Ausblenden"
 
@@ -12789,19 +12792,19 @@ msgstr "Ausblenden"
 msgid "Hidden Features"
 msgstr "Versteckte Features"
 
-#: src/shell/hiddenFeaturesPanel.ts:73
+#: src/shell/hiddenFeaturesPanel.ts:74
 msgid "Nothing hidden yet"
 msgstr "Noch nichts versteckt"
 
-#: src/shell/hiddenFeaturesPanel.ts:85
+#: src/shell/hiddenFeaturesPanel.ts:86
 msgid "Unhide"
 msgstr "Wieder einblenden"
 
-#: src/shell/hiddenFeaturesPanel.ts:66
+#: src/shell/hiddenFeaturesPanel.ts:67
 msgid "Unhide all"
 msgstr ""
 
-#: src/shell/focusStage.ts:1058
+#: src/shell/focusStage.ts:1082
 msgid ""
 "Hide feature — it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12813,13 +12816,17 @@ msgstr ""
 msgid "Open edge drawer"
 msgstr ""
 
-#: src/shell/focusStage.ts:280
-#: src/shell/focusStage.ts:290
+#: src/shell/focusStage.ts:284
+#: src/shell/focusStage.ts:294
 msgid "Load Resource Monitor"
 msgstr ""
 
 #: src/shell/focusShell.ts:235
 msgid "Switch to v1"
+msgstr ""
+
+#: src/shell/focusLogPanel.ts:43
+msgid "Logs are stored in files on this device — use the export button."
 msgstr ""
 
 #: src/helpers/datePickerModal.ts:183

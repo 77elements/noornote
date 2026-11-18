@@ -70,8 +70,6 @@ class EdgeDrawer {
   private onClosedCb: (() => void) | null = null;
   /** Fired on every transition to open (FocusSettingsDrawer contract). */
   private onOpenedCb: (() => void) | null = null;
-  /** Tab-open veto (see setOpenGuard) — programmatic opens bypass it. */
-  private openGuard: (() => boolean) | null = null;
 
   constructor(
     private readonly id: EdgeDrawerId,
@@ -166,19 +164,11 @@ class EdgeDrawer {
     this.activePointer = null;
     this.root.classList.remove('is-dragging');
     if (!this.hasMoved) {
-      // Plain click toggles — but a vetoed tab-open (SV-only drawer
-      // content, e.g. Hidden Features) keeps the drawer closed.
-      if (!this.isOpen && this.openGuard && !this.openGuard()) return;
-      this.setOpen(!this.isOpen);
+      this.setOpen(!this.isOpen); // plain click toggles
       return;
     }
     // Drag: snap to the nearer end state.
-    const open = this.lastOffset < this.panelHeight / 2;
-    if (open && !this.isOpen && this.openGuard && !this.openGuard()) {
-      this.snapToState(); // vetoed: snap back to the closed state
-      return;
-    }
-    this.setOpen(open);
+    this.setOpen(this.lastOffset < this.panelHeight / 2);
   };
 
   private onPointerCancel = (e: PointerEvent): void => {
@@ -224,10 +214,6 @@ class EdgeDrawer {
 
   setOnOpened(cb: (() => void) | null): void {
     this.onOpenedCb = cb;
-  }
-
-  setOpenGuard(cb: (() => boolean) | null): void {
-    this.openGuard = cb;
   }
 }
 
