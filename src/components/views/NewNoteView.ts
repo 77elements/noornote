@@ -29,6 +29,7 @@ import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { AddonLoader } from '../../addons/AddonLoader';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
+import { isFocusDomainHidden } from '../../helpers/focusUiSetting';
 import { type TabMode } from '../modals/ModalEventHandlerManager';
 import { AppState } from '../../services/AppState';
 import { EditorStateManager } from '../post/EditorStateManager';
@@ -366,14 +367,15 @@ export class NewNoteView extends View {
       onPollToggle: () => this.handlePollToggle(),
       onScheduleClick: () => this.handleScheduleClick(),
       textareaSelector: `${SCOPE} [data-textarea]`,
-      // v2 on-demand addons: the schedule icon is always visible; the
-      // Scheduled Posts code loads only when the icon is used
-      // (handleScheduleClick) and unloads again when the work is done.
-      showSchedule: true,
       // v2 on-demand: the custom emojis runtime is loaded with the
       // composer session — the picker uses its pack regardless of the
-      // stored preference (preference keeps gating v1).
-      onDemandCustomEmojis: true,
+      // stored preference (preference keeps gating v1). Hidden object =
+      // the pack never loads (dependency graph).
+      onDemandCustomEmojis: !isFocusDomainHidden('custom-emojis'),
+      // The schedule icon is on-demand too (code loads on use) — visible
+      // whenever the Scheduled Posts object isn't hidden, regardless of
+      // the stored preference.
+      showSchedule: !isFocusDomainHidden('scheduled-posts'),
     });
 
     // Highlight mode: comment is optional, only require relays.
@@ -528,10 +530,13 @@ export class NewNoteView extends View {
     // Custom emoji shortcode autocomplete — v2 on-demand: the addon loads
     // with the composer session (autocomplete + picker pack), independent
     // of the stored preference; released again when the composer closes
-    // (releaseOnDemandAddons).
-    void AddonLoader.getInstance()
-      .ensureLoaded('custom-emojis')
-      .then(() => this.initCustomEmojiAutocomplete());
+    // (releaseOnDemandAddons). Hidden Custom Emojis object = no session
+    // load and no autocomplete (dependency graph).
+    if (!isFocusDomainHidden('custom-emojis')) {
+      void AddonLoader.getInstance()
+        .ensureLoaded('custom-emojis')
+        .then(() => this.initCustomEmojiAutocomplete());
+    }
 
     this.controls.eventHandlerManager = createComposerEventHandlers({
       modalSelector: `${SCOPE} .post-note-composer`,

@@ -18,6 +18,7 @@ import { AddonLoader } from '../../addons/AddonLoader';
 import { GifPicker } from '../gif/GifPicker';
 import type { GifItem } from '../../services/GifSearchService';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
+import { isFocusDomainHidden } from '../../helpers/focusUiSetting';
 
 export interface PostEditorToolbarConfig {
   onMediaUploaded: (url: string) => void;
@@ -293,10 +294,15 @@ export class PostEditorToolbar {
     }
 
     // Custom emojis (NIP-30) — loaded when the addon is enabled (v1) or
-    // when the on-demand runtime is active (v2 composer session)
+    // when the on-demand runtime is active (v2 composer session). A
+    // hidden Custom Emojis object suppresses BOTH paths (dependency
+    // graph — the pack never loads).
     let customEmojis: CustomEmojiEntry[] | undefined;
     const onDemandEmojis = this.config.onDemandCustomEmojis === true;
-    if (onDemandEmojis || isCustomEmojisEnabled()) {
+    const emojiGate = onDemandEmojis
+      ? !isFocusDomainHidden('custom-emojis')
+      : isCustomEmojisEnabled();
+    if (emojiGate) {
       try {
         if (onDemandEmojis) {
           await AddonLoader.getInstance().ensureLoaded('custom-emojis');

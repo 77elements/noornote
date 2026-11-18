@@ -23,6 +23,8 @@ import { mountFocusShell, unmountFocusShell } from '../shell/focusShell';
 import { isDomainHidden } from '../shell/hiddenObjectsStore';
 import { isBookmarksEnabled } from '../addons/bookmarks/index';
 import { isTribesEnabled } from '../addons/tribes/index';
+import { isCustomEmojisEnabled } from '../addons/custom-emojis/index';
+import { isScheduledPostsEnabled } from '../addons/scheduled-posts/index';
 
 /**
  * Stored preference + session override in one read:
@@ -85,6 +87,27 @@ export function isBookmarksUiActive(): boolean {
  */
 export function isTribesUiActive(): boolean {
   return isTribesEnabled() && !isFocusDomainHidden('tribes');
+}
+
+/**
+ * Custom-emojis affordances outside the object's own surface (the
+ * composer's picker pack + `:shortcode:` autocomplete): the addon flag
+ * AND the v2 hidden-objects state. NOTE the composer's ON-DEMAND paths
+ * are flag-independent by design (session load while the stored
+ * preference is OFF) — those gate on the hidden probe alone.
+ */
+export function isCustomEmojisUiActive(): boolean {
+  return isCustomEmojisEnabled() && !isFocusDomainHidden('custom-emojis');
+}
+
+/**
+ * Scheduled-posts affordances outside the object's own surface (the
+ * composer's schedule icon): the addon flag AND the v2 hidden-objects
+ * state. The v2 on-demand icon visibility is flag-independent by design
+ * — there the hidden probe alone is the gate.
+ */
+export function isScheduledPostsUiActive(): boolean {
+  return isScheduledPostsEnabled() && !isFocusDomainHidden('scheduled-posts');
 }
 
 export function setFocusUiEnabled(enabled: boolean): void {
