@@ -22,6 +22,7 @@ import { TypedEventBus } from '../core/TypedEventBus';
 import { mountFocusShell, unmountFocusShell } from '../shell/focusShell';
 import { isDomainHidden } from '../shell/hiddenObjectsStore';
 import { isBookmarksEnabled } from '../addons/bookmarks/index';
+import { isTribesEnabled } from '../addons/tribes/index';
 
 /**
  * Stored preference + session override in one read:
@@ -73,6 +74,17 @@ export function isFocusDomainHidden(domainId: string): boolean {
  */
 export function isBookmarksUiActive(): boolean {
   return isBookmarksEnabled() && !isFocusDomainHidden('bookmarks');
+}
+
+/**
+ * Tribes affordances that live inside OTHER surfaces (the timeline's
+ * tribe tabs + "Edit tribes" link, the note-menu tribe item): the addon
+ * flag AND the v2 hidden-objects state — a hidden Tribes object makes
+ * the feature unreachable, so its affordances vanish there too (and the
+ * `lists/tribes` module must not even load — RAM principle).
+ */
+export function isTribesUiActive(): boolean {
+  return isTribesEnabled() && !isFocusDomainHidden('tribes');
 }
 
 export function setFocusUiEnabled(enabled: boolean): void {

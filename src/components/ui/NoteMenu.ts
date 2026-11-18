@@ -29,8 +29,10 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { capRelayHints } from '../../helpers/capRelayHints';
 import { getTag } from '../../helpers/tagUtils';
 import { ModalService } from '../../services/ModalService';
-import { isBookmarksUiActive } from '../../helpers/focusUiSetting';
-import { isTribesEnabled } from '../../addons/tribes/index';
+import {
+  isBookmarksUiActive,
+  isTribesUiActive,
+} from '../../helpers/focusUiSetting';
 
 export interface NoteMenuOptions {
   eventId: string;
@@ -234,7 +236,7 @@ export class NoteMenu {
       ${pinButton}
 
       ${
-        !isOwnNote && isTribesEnabled()
+        !isOwnNote && isTribesUiActive()
           ? `
         <button class="note-menu-item" data-action="add-author-to-tribe">
           ${ICONS.tribe}
