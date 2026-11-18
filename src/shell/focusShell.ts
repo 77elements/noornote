@@ -247,7 +247,7 @@ export function mountFocusShell(): void {
     },
   });
   const tempSwitchWrap = document.createElement('div');
-  tempSwitchWrap.className = 'sv-top-bar__switch';
+  tempSwitchWrap.className = 'top-bar__switch';
   tempSwitchWrap.innerHTML = switchBack.render();
   switchBack.setupEventListeners(tempSwitchWrap);
 

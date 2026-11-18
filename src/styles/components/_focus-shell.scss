@@ -376,7 +376,7 @@ html.ui--focus {
 }
 
 // Hover lift on all 30px round action buttons: the icon goes to the
-// brightest text color (the .sv-top-bar__loadmon pattern, applied to the
+// brightest text color (the .top-bar__loadmon pattern, applied to the
 // whole family).
 .focus-object__move:hover,
 .focus-object__hide:hover,
@@ -681,7 +681,7 @@ html:not(.ui--focus) .focus-view-header__action {
 // switch vertically, left-aligned.
 // SV top bar — permanent header row above the start grid (right-aligned
 // controls; more to come later).
-.sv-top-bar {
+.top-bar {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -689,12 +689,12 @@ html:not(.ui--focus) .focus-view-header__action {
   width: 100%;
   margin-bottom: $gap;
 
-  .sv-top-bar__switch {
+  .top-bar__switch {
     display: flex;
     align-items: center;
   }
 
-  .sv-top-bar__loadmon {
+  .top-bar__loadmon {
     display: grid;
     place-items: center;
     width: 30px;

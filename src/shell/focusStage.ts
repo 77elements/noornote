@@ -58,6 +58,12 @@ import {
   type FocusSettingsView,
 } from './focusDomains';
 import { loadHiddenObjectIds, hideObject } from './hiddenObjectsStore';
+import { NnDropdown } from '../components/ui/NnDropdown';
+import {
+  FOCUS_OBJECT_SETS,
+  applyObjectSet,
+  matchingObjectSet,
+} from './focusObjectSets';
 import { canHideObject } from './focusDependencyGraph';
 import { reportDependencyError } from './dependencyError';
 import {
@@ -210,6 +216,9 @@ export class FocusStage {
   /** Hidden Features panel (tab-open ED-b) — mount/destroy contract. */
   private hiddenPanelView: HiddenFeaturesPanel | null = null;
   private hiddenPanelHost: HTMLElement | null = null;
+  /** Top-bar object-set selector (destroy contract: NnDropdown portals
+   * its menu to <body> — must be torn down with the stage). */
+  private setDropdown: NnDropdown | null = null;
   /** Flattened system-log panel (tab-open ED-b in a FV) — same contract. */
   private logPanelView: FocusLogPanel | null = null;
   private logPanelHost: HTMLElement | null = null;
@@ -278,14 +287,37 @@ export class FocusStage {
     // shell into the slot — it used to live in the ED-t panel, whose tab
     // covered the top circles) and the load-resource-monitor button.
     const topBar = document.createElement('div');
-    topBar.className = 'sv-top-bar';
+    topBar.className = 'top-bar';
     topBar.innerHTML = `
-      <div class="sv-top-bar__switch" data-sv-v1-switch-slot></div>
-      <button type="button" class="sv-top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
+      <div class="top-bar__switch" data-sv-v1-switch-slot></div>
+      <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
         <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
       </button>
     `;
+    // Object-set selector: named bundles of visible objects, applied in
+    // one step (everything not in the set is hidden — the same save →
+    // event → shutdown-diff path as the per-object hide button). The
+    // trigger label shows the active set; a custom mixed state shows the
+    // neutral placeholder.
+    const setOptions = [
+      { value: '', label: _('Workspace') },
+      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
+    ];
+    this.setDropdown = new NnDropdown({
+      options: setOptions,
+      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
+      onChange: value => {
+        if (!value) {
+          this.syncObjectSetDropdown();
+          return;
+        }
+        applyObjectSet(value);
+      },
+      className: 'top-bar__set',
+    });
+    const setDropdownEl = this.setDropdown.getElement();
     const loadmonBtn = topBar.querySelector('[data-sv-loadmon]') as HTMLElement;
+    topBar.insertBefore(setDropdownEl, loadmonBtn);
     loadmonBtn.addEventListener('click', () => {
       // Same boot-path discipline as the typed trigger: dynamic import.
       void import('./loadHud').then(m => m.openLoadHud());
@@ -460,6 +492,7 @@ export class FocusStage {
     // OFF entirely (runtime destroyed), unhidden ones re-enabled — same
     // code path as the classic settings toggle.
     applyDomainShutdown(previous, hidden);
+    this.syncObjectSetDropdown();
     let membershipChanged = false;
 
     for (const id of hidden) {
@@ -486,15 +519,23 @@ export class FocusStage {
       if (!def) continue;
       const circle = this.createObject(def);
       this.objects.set(id, circle);
-      // Insert before the first later mounted sibling — the stored order
-      // position (reparentSideStacks redistributes in the focused state).
+      // Insert at the stored order position — but only against anchors
+      // that are live grid children: in the FOCUSED layout the mounted
+      // circles live inside the side stacks (reparentSideStacks), so a
+      // blind insertBefore threw NotFoundError on the first mass-apply
+      // from the top bar. The post-loop applyOrderToGrid / stack rebuild
+      // normalizes the order either way.
       const index = this.order.indexOf(id);
       let anchor: HTMLElement | null = null;
       for (const laterId of this.order.slice(index + 1)) {
-        anchor = this.objects.get(laterId) ?? null;
-        if (anchor) break;
+        const laterEl = this.objects.get(laterId) ?? null;
+        if (laterEl && laterEl.parentElement === this.grid) {
+          anchor = laterEl;
+          break;
+        }
       }
-      this.grid.insertBefore(circle, anchor);
+      if (anchor) this.grid.insertBefore(circle, anchor);
+      else this.grid.appendChild(circle);
       membershipChanged = true;
     }
 
@@ -527,6 +568,16 @@ export class FocusStage {
     for (const mgr of this.badgeManagers) mgr.destroy();
     this.badgeManagers = [];
     this.setupBadgeManagers();
+  }
+
+  /**
+   * Re-derive the object-set trigger label from the live hidden set: the
+   * active set's name while the state matches it exactly, the neutral
+   * placeholder for any custom state (per-object hides, unhide-all).
+   */
+  private syncObjectSetDropdown(): void {
+    if (!this.setDropdown) return;
+    this.setDropdown.setValue(matchingObjectSet(this.hiddenIds)?.id ?? '');
   }
 
   /**
@@ -640,6 +691,8 @@ export class FocusStage {
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    this.setDropdown?.destroy();
+    this.setDropdown = null;
     if (this.widgetToggleSubId) {
       TypedEventBus.getInstance().off(this.widgetToggleSubId);
       this.widgetToggleSubId = null;

@@ -30,6 +30,7 @@ import { AddonLoader } from '../../addons/AddonLoader';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isFocusDomainHidden } from '../../helpers/focusUiSetting';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { type TabMode } from '../modals/ModalEventHandlerManager';
 import { AppState } from '../../services/AppState';
 import { EditorStateManager } from '../post/EditorStateManager';
@@ -123,6 +124,12 @@ export class NewNoteView extends View {
     'new-note-media-strip'
   );
   private highlightSource: HighlightSource | null = null;
+  /** Hidden-objects gate states at last render/init — the
+   * focus:objects-hidden-changed handler reacts to flips live (a
+   * workspace switch while the composer is open). */
+  private scheduleGateAtRender = false;
+  private emojiGateAtInit = false;
+  private hiddenSubId: string | null = null;
   /** Set when the view is closing unconditionally (post success / answered
    *  save-draft dialog) so confirmBack no longer vetoes the back. */
   private closing = false;
@@ -162,6 +169,12 @@ export class NewNoteView extends View {
       this.scheduleAutoGrow();
       window.addEventListener('resize', this.onWindowResize);
     }, 0);
+
+    // Live gate reaction for the open composer (see onHiddenChanged).
+    this.hiddenSubId = TypedEventBus.getInstance().on(
+      'focus:objects-hidden-changed',
+      () => this.onHiddenChanged()
+    );
   }
 
   getElement(): HTMLElement {
@@ -359,6 +372,10 @@ export class NewNoteView extends View {
    * Render action buttons
    */
   private renderActions(): string {
+    // Gate states at render time — the hidden-changed handler compares
+    // against these to react live (workspace switch while composing).
+    const scheduleActive = !isFocusDomainHidden('scheduled-posts');
+    this.scheduleGateAtRender = scheduleActive;
     // Create toolbar component
     this.controls.toolbar = createComposerToolbar({
       onMediaUploaded: url => this.handleMediaUploaded(url),
@@ -375,7 +392,7 @@ export class NewNoteView extends View {
       // The schedule icon is on-demand too (code loads on use) — visible
       // whenever the Scheduled Posts object isn't hidden, regardless of
       // the stored preference.
-      showSchedule: !isFocusDomainHidden('scheduled-posts'),
+      showSchedule: scheduleActive,
     });
 
     // Highlight mode: comment is optional, only require relays.
@@ -532,10 +549,9 @@ export class NewNoteView extends View {
     // of the stored preference; released again when the composer closes
     // (releaseOnDemandAddons). Hidden Custom Emojis object = no session
     // load and no autocomplete (dependency graph).
-    if (!isFocusDomainHidden('custom-emojis')) {
-      void AddonLoader.getInstance()
-        .ensureLoaded('custom-emojis')
-        .then(() => this.initCustomEmojiAutocomplete());
+    this.emojiGateAtInit = !isFocusDomainHidden('custom-emojis');
+    if (this.emojiGateAtInit) {
+      void this.ensureCustomEmojiSession();
     }
 
     this.controls.eventHandlerManager = createComposerEventHandlers({
@@ -950,6 +966,10 @@ export class NewNoteView extends View {
    * Cleanup sub-components
    */
   private cleanup(): void {
+    if (this.hiddenSubId) {
+      TypedEventBus.getInstance().off(this.hiddenSubId);
+      this.hiddenSubId = null;
+    }
     this.controls.destroy();
     this.poll.destroy();
 
@@ -958,6 +978,42 @@ export class NewNoteView extends View {
 
     this.scheduledAt = null;
     this.highlightSource = null;
+  }
+
+  /**
+   * On-demand session load: the addon runtime loads with the composer
+   * session, then the autocomplete attaches. Used by the boot path and
+   * the live unhide path (workspace switch while composing).
+   */
+  private ensureCustomEmojiSession(): void {
+    void AddonLoader.getInstance()
+      .ensureLoaded('custom-emojis')
+      .then(() => this.initCustomEmojiAutocomplete());
+  }
+
+  /**
+   * focus:objects-hidden-changed — live gate reaction while the composer
+   * is open (the toolbar config and autocomplete were built at open
+   * time): the schedule icon appears/disappears, the emoji autocomplete
+   * attaches/detaches.
+   */
+  private onHiddenChanged(): void {
+    const scheduleActive = !isFocusDomainHidden('scheduled-posts');
+    if (scheduleActive !== this.scheduleGateAtRender) {
+      this.scheduleGateAtRender = scheduleActive;
+      this.controls.toolbar?.setScheduleVisible(scheduleActive);
+    }
+    const emojiActive = !isFocusDomainHidden('custom-emojis');
+    if (emojiActive !== this.emojiGateAtInit) {
+      this.emojiGateAtInit = emojiActive;
+      if (emojiActive) {
+        void this.ensureCustomEmojiSession();
+      } else {
+        this.controls.customEmojiAutocomplete?.destroy();
+        this.controls.customEmojiAutocomplete = null;
+        this.controls.customEmojiService = null;
+      }
+    }
   }
 
   /**

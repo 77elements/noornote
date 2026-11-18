@@ -433,7 +433,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Curated public follow lists you subscribe to."
 
-#: src/components/views/TimelineView.ts:222
+#: src/components/views/TimelineView.ts:228
 msgid "Edit tribes"
 msgstr "Edit tribes"
 
@@ -466,7 +466,7 @@ msgstr "Follows"
 msgid "Key Signer"
 msgstr "Key Signer"
 
-#: src/components/views/TimelineView.ts:293
+#: src/components/views/TimelineView.ts:299
 msgid "Last notes per follow"
 msgstr "Last notes per follow"
 
@@ -498,7 +498,7 @@ msgstr "No notifications yet"
 msgid "Notification Priorities"
 msgstr "Notification Priorities"
 
-#: src/components/views/TimelineView.ts:139
+#: src/components/views/TimelineView.ts:144
 msgid "Please login to view timeline"
 msgstr "Please login to view timeline"
 
@@ -516,8 +516,8 @@ msgstr "Saved notes, sorted into folders."
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1091
-#: src/shell/focusStage.ts:932
+#: src/shell/focusStage.ts:1136
+#: src/shell/focusStage.ts:977
 msgid "Settings"
 msgstr "Settings"
 
@@ -530,7 +530,7 @@ msgid "The accounts you follow, with outbox relays."
 msgstr "The accounts you follow, with outbox relays."
 
 #: src/components/layout/MainLayout.ts:2169
-#: src/components/views/TimelineView.ts:285
+#: src/components/views/TimelineView.ts:291
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -1451,7 +1451,7 @@ msgstr "Duration must be at most 1 year."
 msgid "Failed to load messages"
 msgstr "Failed to load messages"
 
-#: src/components/ui/NoteMenu.ts:679
+#: src/components/ui/NoteMenu.ts:681
 #: src/components/views/ConversationView.ts:1168
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
@@ -1526,24 +1526,24 @@ msgstr "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 y
 msgid "Minutes"
 msgstr "Minutes"
 
-#: src/components/ui/NoteMenu.ts:217
+#: src/components/ui/NoteMenu.ts:219
 #: src/components/views/ConversationView.ts:1117
 msgid "Mute user"
 msgstr "Mute user"
 
-#: src/components/ui/NoteMenu.ts:207
+#: src/components/ui/NoteMenu.ts:209
 #: src/components/views/ConversationView.ts:1115
 msgid "Mute user privately"
 msgstr "Mute user privately"
 
-#: src/components/ui/NoteMenu.ts:211
+#: src/components/ui/NoteMenu.ts:213
 #: src/components/views/ConversationView.ts:1117
 msgid "Mute user publicly"
 msgstr "Mute user publicly"
 
 #: src/components/post/PostNoteModal.ts:674
 #: src/components/views/ConversationView.ts:968
-#: src/components/views/NewNoteView.ts:800
+#: src/components/views/NewNoteView.ts:805
 msgid "No"
 msgstr "No"
 
@@ -1675,7 +1675,7 @@ msgstr "Weeks"
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:673
 #: src/components/views/ConversationView.ts:967
-#: src/components/views/NewNoteView.ts:799
+#: src/components/views/NewNoteView.ts:804
 msgid "Yes"
 msgstr "Yes"
 
@@ -1694,8 +1694,8 @@ msgstr "auto-generated, change only if you know what you're doing"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1088
-#: src/shell/focusStage.ts:920
+#: src/shell/focusStage.ts:1133
+#: src/shell/focusStage.ts:965
 msgid "Back"
 msgstr "Back"
 
@@ -2186,17 +2186,17 @@ msgstr "Write anything you want to remember about this user…"
 msgid "Zap this user"
 msgstr "Zap this user"
 
-#: src/components/ui/NoteMenu.ts:241
-#: src/components/ui/NoteMenu.ts:838
+#: src/components/ui/NoteMenu.ts:243
+#: src/components/ui/NoteMenu.ts:840
 msgid "Add author to Tribe"
 msgstr "Add author to Tribe"
 
 #: src/components/ui/InteractionStatusLine.ts:526
-#: src/components/ui/NoteMenu.ts:797
+#: src/components/ui/NoteMenu.ts:799
 msgid "Added to bookmarks"
 msgstr "Added to bookmarks"
 
-#: src/components/ui/NoteMenu.ts:797
+#: src/components/ui/NoteMenu.ts:799
 msgid "Added to private bookmarks"
 msgstr "Added to private bookmarks"
 
@@ -2210,44 +2210,44 @@ msgstr "Added to private bookmarks"
 msgid "Analytics"
 msgstr "Analytics"
 
-#: src/components/ui/NoteMenu.ts:737
+#: src/components/ui/NoteMenu.ts:739
 msgid "Article notifications disabled"
 msgstr "Article notifications disabled"
 
 #: src/components/ui/InteractionStatusLine.ts:295
-#: src/components/ui/NoteMenu.ts:166
+#: src/components/ui/NoteMenu.ts:168
 #: src/lists/bookmarks.ts:4535
 msgid "Bookmark"
 msgstr "Bookmark"
 
 #: src/components/ui/ImageViewer.ts:221
-#: src/components/ui/NoteMenu.ts:551
+#: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1087
-#: src/shell/focusStage.ts:915
+#: src/shell/focusStage.ts:1132
+#: src/shell/focusStage.ts:960
 msgid "Close"
 msgstr "Close"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:313
-#: src/components/ui/NoteMenu.ts:224
+#: src/components/ui/NoteMenu.ts:226
 msgid "Copy event ID"
 msgstr "Copy event ID"
 
 #: src/addons/calendar/BookingManager.ts:338
-#: src/components/ui/NoteMenu.ts:544
+#: src/components/ui/NoteMenu.ts:546
 msgid "Copy link"
 msgstr "Copy link"
 
-#: src/components/ui/NoteMenu.ts:229
+#: src/components/ui/NoteMenu.ts:231
 msgid "Copy user ID"
 msgstr "Copy user ID"
 
-#: src/components/ui/NoteMenu.ts:266
+#: src/components/ui/NoteMenu.ts:268
 msgid "Delete note"
 msgstr "Delete note"
 
-#: src/components/ui/NoteMenu.ts:890
+#: src/components/ui/NoteMenu.ts:892
 msgid "Failed to add author to tribe"
 msgstr "Failed to add author to tribe"
 
@@ -2257,12 +2257,12 @@ msgstr "Failed to open editor"
 
 #: src/addons/marketplace/ListingView.ts:318
 #: src/components/ui/InteractionStatusLine.ts:533
-#: src/components/ui/NoteMenu.ts:807
+#: src/components/ui/NoteMenu.ts:809
 #: src/lists/bookmarks.ts:4902
 msgid "Failed to update bookmark"
 msgstr "Failed to update bookmark"
 
-#: src/components/ui/NoteMenu.ts:713
+#: src/components/ui/NoteMenu.ts:715
 msgid "Failed to update thread mute"
 msgstr "Failed to update thread mute"
 
@@ -2274,15 +2274,15 @@ msgstr "Invalid event"
 msgid "Like"
 msgstr "Like"
 
-#: src/components/ui/NoteMenu.ts:577
+#: src/components/ui/NoteMenu.ts:579
 msgid "Link"
 msgstr "Link"
 
-#: src/components/ui/NoteMenu.ts:284
+#: src/components/ui/NoteMenu.ts:286
 msgid "Mute thread"
 msgstr "Mute thread"
 
-#: src/components/ui/NoteMenu.ts:824
+#: src/components/ui/NoteMenu.ts:826
 msgid "No tribes found. Create a tribe first."
 msgstr "No tribes found. Create a tribe first."
 
@@ -2296,19 +2296,19 @@ msgstr "No write relays configured"
 msgid "Note not found"
 msgstr "Note not found"
 
-#: src/components/ui/NoteMenu.ts:87
+#: src/components/ui/NoteMenu.ts:89
 msgid "Note options"
 msgstr "Note options"
 
-#: src/components/ui/NoteMenu.ts:291
+#: src/components/ui/NoteMenu.ts:293
 msgid "Notify on new articles"
 msgstr "Notify on new articles"
 
-#: src/components/ui/NoteMenu.ts:160
+#: src/components/ui/NoteMenu.ts:162
 msgid "Private Bookmark"
 msgstr "Private Bookmark"
 
-#: src/components/ui/NoteMenu.ts:156
+#: src/components/ui/NoteMenu.ts:158
 msgid "Public Bookmark"
 msgstr "Public Bookmark"
 
@@ -2316,28 +2316,28 @@ msgstr "Public Bookmark"
 msgid "Quoted Repost"
 msgstr "Quoted Repost"
 
-#: src/components/ui/NoteMenu.ts:592
+#: src/components/ui/NoteMenu.ts:594
 msgid "Raw event data not available"
 msgstr "Raw event data not available"
 
-#: src/components/ui/NoteMenu.ts:166
+#: src/components/ui/NoteMenu.ts:168
 msgid "Remove Bookmark"
 msgstr "Remove Bookmark"
 
-#: src/components/ui/NoteMenu.ts:160
+#: src/components/ui/NoteMenu.ts:162
 msgid "Remove Private Bookmark"
 msgstr "Remove Private Bookmark"
 
-#: src/components/ui/NoteMenu.ts:156
+#: src/components/ui/NoteMenu.ts:158
 msgid "Remove Public Bookmark"
 msgstr "Remove Public Bookmark"
 
 #: src/components/ui/InteractionStatusLine.ts:523
-#: src/components/ui/NoteMenu.ts:790
+#: src/components/ui/NoteMenu.ts:792
 msgid "Removed from bookmarks"
 msgstr "Removed from bookmarks"
 
-#: src/components/ui/NoteMenu.ts:789
+#: src/components/ui/NoteMenu.ts:791
 msgid "Removed from private bookmarks"
 msgstr "Removed from private bookmarks"
 
@@ -2355,7 +2355,7 @@ msgstr "Removed from private bookmarks"
 msgid "Reply"
 msgstr "Reply"
 
-#: src/components/ui/NoteMenu.ts:275
+#: src/components/ui/NoteMenu.ts:277
 msgid "Report"
 msgstr "Report"
 
@@ -2368,21 +2368,21 @@ msgstr "Report"
 msgid "Repost"
 msgstr "Repost"
 
-#: src/components/ui/NoteMenu.ts:841
+#: src/components/ui/NoteMenu.ts:843
 msgid "Select a tribe to add this author to:"
 msgstr "Select a tribe to add this author to:"
 
-#: src/components/ui/NoteMenu.ts:256
-#: src/components/ui/NoteMenu.ts:530
+#: src/components/ui/NoteMenu.ts:258
+#: src/components/ui/NoteMenu.ts:532
 msgid "Share article"
 msgstr "Share article"
 
-#: src/components/ui/NoteMenu.ts:256
-#: src/components/ui/NoteMenu.ts:530
+#: src/components/ui/NoteMenu.ts:258
+#: src/components/ui/NoteMenu.ts:532
 msgid "Share Note"
 msgstr "Share Note"
 
-#: src/components/ui/NoteMenu.ts:291
+#: src/components/ui/NoteMenu.ts:293
 msgid "Stop article notifications"
 msgstr "Stop article notifications"
 
@@ -2391,29 +2391,29 @@ msgstr "Stop article notifications"
 msgid "This user has no Lightning wallet configured"
 msgstr "This user has no Lightning wallet configured"
 
-#: src/components/ui/NoteMenu.ts:705
+#: src/components/ui/NoteMenu.ts:707
 msgid "Thread muted"
 msgstr "Thread muted"
 
-#: src/components/ui/NoteMenu.ts:702
+#: src/components/ui/NoteMenu.ts:704
 #: src/lists/mutes.ts:1710
 #: src/lists/mutes.ts:2214
 msgid "Thread unmuted"
 msgstr "Thread unmuted"
 
-#: src/components/ui/NoteMenu.ts:284
+#: src/components/ui/NoteMenu.ts:286
 msgid "Unmute thread"
 msgstr "Unmute thread"
 
-#: src/components/ui/NoteMenu.ts:660
+#: src/components/ui/NoteMenu.ts:662
 msgid "User muted privately"
 msgstr "User muted privately"
 
-#: src/components/ui/NoteMenu.ts:660
+#: src/components/ui/NoteMenu.ts:662
 msgid "User muted publicly"
 msgstr "User muted publicly"
 
-#: src/components/ui/NoteMenu.ts:249
+#: src/components/ui/NoteMenu.ts:251
 msgid "View raw event"
 msgstr "View raw event"
 
@@ -2422,7 +2422,7 @@ msgstr "View raw event"
 msgid "You cannot zap your own notes"
 msgstr "You cannot zap your own notes"
 
-#: src/components/ui/NoteMenu.ts:733
+#: src/components/ui/NoteMenu.ts:735
 msgid "You will be notified about new articles"
 msgstr "You will be notified about new articles"
 
@@ -2881,7 +2881,7 @@ msgstr "Clear"
 
 #: src/components/post/composerShared.ts:93
 #: src/components/post/PostNoteModal.ts:682
-#: src/components/views/NewNoteView.ts:808
+#: src/components/views/NewNoteView.ts:813
 msgid "Draft saved"
 msgstr "Draft saved"
 
@@ -2898,7 +2898,7 @@ msgid "Italic"
 msgstr "Italic"
 
 #: src/components/post/PostNoteModal.ts:672
-#: src/components/views/NewNoteView.ts:798
+#: src/components/views/NewNoteView.ts:803
 msgid "Keep this unsent note in your drafts?"
 msgstr "Keep this unsent note in your drafts?"
 
@@ -2911,7 +2911,7 @@ msgid "New Note"
 msgstr "New Note"
 
 #: src/components/post/PostNoteModal.ts:762
-#: src/components/views/NewNoteView.ts:896
+#: src/components/views/NewNoteView.ts:901
 msgid "Note could not be published"
 msgstr "Note could not be published"
 
@@ -2929,8 +2929,8 @@ msgstr "Post"
 #: src/components/post/composerShared.ts:502
 #: src/components/post/PostNoteModal.ts:802
 #: src/components/post/PostNoteModal.ts:810
-#: src/components/views/NewNoteView.ts:927
-#: src/components/views/NewNoteView.ts:931
+#: src/components/views/NewNoteView.ts:932
+#: src/components/views/NewNoteView.ts:936
 msgid "Post Highlight"
 msgstr "Post Highlight"
 
@@ -2947,7 +2947,7 @@ msgid "Reply could not be published"
 msgstr "Reply could not be published"
 
 #: src/components/post/PostNoteModal.ts:671
-#: src/components/views/NewNoteView.ts:797
+#: src/components/views/NewNoteView.ts:802
 msgid "Save as draft?"
 msgstr "Save as draft?"
 
@@ -5402,8 +5402,8 @@ msgstr "Reload"
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1089
-#: src/shell/focusStage.ts:925
+#: src/shell/focusStage.ts:1134
+#: src/shell/focusStage.ts:970
 msgid "Scroll to top"
 msgstr "Scroll to top"
 
@@ -8664,25 +8664,25 @@ msgstr "via %s"
 msgid "Zaps (%s): %s Sats"
 msgstr "Zaps (%s): %s Sats"
 
-#: src/components/post/PostEditorToolbar.ts:78
+#: src/components/post/PostEditorToolbar.ts:79
 msgid "Add a GIF"
 msgstr "Add a GIF"
 
-#: src/components/post/PostEditorToolbar.ts:61
+#: src/components/post/PostEditorToolbar.ts:62
 msgid "Create poll"
 msgstr "Create poll"
 
-#: src/components/post/PostEditorToolbar.ts:75
+#: src/components/post/PostEditorToolbar.ts:76
 #: src/components/views/ConversationView.ts:286
 #: src/components/views/ConversationView.ts:287
 msgid "Insert emoji"
 msgstr "Insert emoji"
 
-#: src/components/post/PostEditorToolbar.ts:64
+#: src/components/post/PostEditorToolbar.ts:65
 msgid "Schedule post"
 msgstr "Schedule post"
 
-#: src/components/post/PostEditorToolbar.ts:72
+#: src/components/post/PostEditorToolbar.ts:73
 msgid "Upload media"
 msgstr "Upload media"
 
@@ -10769,7 +10769,7 @@ msgstr "Main navigation"
 msgid "Mark as Seen"
 msgstr "Mark as Seen"
 
-#: src/components/post/PostEditorToolbar.ts:175
+#: src/components/post/PostEditorToolbar.ts:176
 msgid "Media module is not available. Please try again later."
 msgstr "Media module is not available. Please try again later."
 
@@ -10950,7 +10950,7 @@ msgstr "Share as Quote"
 msgid "Show this folder inline on your Profile View"
 msgstr "Show this folder inline on your Profile View"
 
-#: src/components/post/PostEditorToolbar.ts:227
+#: src/components/post/PostEditorToolbar.ts:228
 msgid "Some Uploads Failed"
 msgstr "Some Uploads Failed"
 
@@ -10989,7 +10989,7 @@ msgstr "Timeline not ready. Please try again."
 msgid "Unexpected error during bunker connection"
 msgstr "Unexpected error during bunker connection"
 
-#: src/components/post/PostEditorToolbar.ts:201
+#: src/components/post/PostEditorToolbar.ts:202
 msgid "Unknown error occurred"
 msgstr "Unknown error occurred"
 
@@ -11001,13 +11001,13 @@ msgstr ""
 "Unlike regular notes, polls are not widely supported and may not display on "
 "other clients."
 
-#: src/components/post/PostEditorToolbar.ts:174
-#: src/components/post/PostEditorToolbar.ts:200
-#: src/components/post/PostEditorToolbar.ts:240
+#: src/components/post/PostEditorToolbar.ts:175
+#: src/components/post/PostEditorToolbar.ts:201
+#: src/components/post/PostEditorToolbar.ts:241
 msgid "Upload Failed"
 msgstr "Upload Failed"
 
-#: src/components/post/PostEditorToolbar.ts:241
+#: src/components/post/PostEditorToolbar.ts:242
 #: src/components/profile/ImageUploader.ts:179
 msgid "Upload failed. Please try again."
 msgstr "Upload failed. Please try again."
@@ -11082,7 +11082,7 @@ msgstr ""
 "You could shower this note with a thousand emojis, but you'll need an "
 "account first."
 
-#: src/components/post/PostEditorToolbar.ts:228
+#: src/components/post/PostEditorToolbar.ts:229
 msgid "1 file failed:"
 msgid_plural "%s files failed:"
 msgstr[0] "1 file failed:"
@@ -11174,7 +11174,7 @@ msgstr "\"%s\" unmounted from profile"
 msgid "An error occurred while deleting the note"
 msgstr "An error occurred while deleting the note"
 
-#: src/components/ui/NoteMenu.ts:887
+#: src/components/ui/NoteMenu.ts:889
 msgid "Author added to %s"
 msgstr "Author added to %s"
 
@@ -12251,7 +12251,7 @@ msgstr "Expiry notices shown"
 msgid "Failed to load live streams"
 msgstr "Failed to load live streams"
 
-#: src/components/ui/NoteMenu.ts:631
+#: src/components/ui/NoteMenu.ts:633
 msgid "Failed to update pin"
 msgstr "Failed to update pin"
 
@@ -12292,11 +12292,11 @@ msgstr "Never expires"
 msgid "No live streams found."
 msgstr "No live streams found."
 
-#: src/components/ui/NoteMenu.ts:624
+#: src/components/ui/NoteMenu.ts:626
 msgid "Note pinned to profile"
 msgstr "Note pinned to profile"
 
-#: src/components/ui/NoteMenu.ts:627
+#: src/components/ui/NoteMenu.ts:629
 msgid "Note unpinned from profile"
 msgstr "Note unpinned from profile"
 
@@ -12304,7 +12304,7 @@ msgstr "Note unpinned from profile"
 msgid "Pause"
 msgstr "Pause"
 
-#: src/components/ui/NoteMenu.ts:183
+#: src/components/ui/NoteMenu.ts:185
 msgid "Pin to profile"
 msgstr "Pin to profile"
 
@@ -12367,7 +12367,7 @@ msgstr "Stream not found on your relays."
 msgid "Supported NIPs"
 msgstr "Supported NIPs"
 
-#: src/components/ui/NoteMenu.ts:183
+#: src/components/ui/NoteMenu.ts:185
 msgid "Unpin from profile"
 msgstr "Unpin from profile"
 
@@ -12427,7 +12427,7 @@ msgstr "Top panel"
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
-#: src/components/views/TimelineView.ts:154
+#: src/components/views/TimelineView.ts:159
 #: src/shell/focusDomains.ts:214
 msgid "Social Media"
 msgstr "Social Media"
@@ -12453,8 +12453,8 @@ msgstr "Tablet Mode"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
-#: src/shell/focusStage.ts:2109
-#: src/shell/focusStage.ts:2129
+#: src/shell/focusStage.ts:2154
+#: src/shell/focusStage.ts:2174
 msgid "Distribute circles evenly"
 msgstr "Distribute circles evenly"
 
@@ -12477,20 +12477,20 @@ msgstr "Hides reposts of users' own notes from your timeline."
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
 
-#: src/shell/focusStage.ts:2126
+#: src/shell/focusStage.ts:2171
 msgid "Move all circles"
 msgstr "Move all circles"
 
-#: src/shell/focusStage.ts:2105
+#: src/shell/focusStage.ts:2150
 msgid "Move all circles to the left column"
 msgstr "Move all circles to the left column"
 
-#: src/shell/focusStage.ts:2104
+#: src/shell/focusStage.ts:2149
 msgid "Move all circles to the right column"
 msgstr "Move all circles to the right column"
 
-#: src/shell/focusStage.ts:1080
-#: src/shell/focusStage.ts:899
+#: src/shell/focusStage.ts:1125
+#: src/shell/focusStage.ts:944
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -12516,11 +12516,11 @@ msgstr ""
 "Whose articles appear in the main article feed — higher degrees broaden the "
 "feed but take longer to build."
 
-#: src/components/views/TimelineView.ts:156
+#: src/components/views/TimelineView.ts:161
 msgid "Write Note"
 msgstr "Write Note"
 
-#: src/components/views/NewNoteView.ts:286
+#: src/components/views/NewNoteView.ts:287
 msgid "Write new note"
 msgstr "Write new note"
 
@@ -12567,8 +12567,8 @@ msgstr "Post Media"
 msgid "Post Listing"
 msgstr "Post Listing"
 
-#: src/shell/focusStage.ts:1924
-#: src/shell/focusStage.ts:1931
+#: src/shell/focusStage.ts:1969
+#: src/shell/focusStage.ts:1976
 msgid "Move widget"
 msgstr "Move widget"
 
@@ -12633,7 +12633,7 @@ msgstr "Enable Live Streams in Timeline"
 msgid "Search notes, users and hashtags…"
 msgstr "Search notes, users and hashtags…"
 
-#: src/shell/focusStage.ts:902
+#: src/shell/focusStage.ts:947
 msgid "Hide"
 msgstr "Hide"
 
@@ -12653,7 +12653,7 @@ msgstr "Unhide"
 msgid "Unhide all"
 msgstr "Unhide all"
 
-#: src/shell/focusStage.ts:1082
+#: src/shell/focusStage.ts:1127
 msgid ""
 "Hide feature — it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12668,8 +12668,8 @@ msgstr ""
 msgid "Open edge drawer"
 msgstr "Open edge drawer"
 
-#: src/shell/focusStage.ts:284
-#: src/shell/focusStage.ts:294
+#: src/shell/focusStage.ts:293
+#: src/shell/focusStage.ts:326
 msgid "Load Resource Monitor"
 msgstr "Load Resource Monitor"
 
@@ -12680,6 +12680,18 @@ msgstr "Switch to v1"
 #: src/shell/focusLogPanel.ts:43
 msgid "Logs are stored in files on this device — use the export button."
 msgstr "Logs are stored in files on this device — use the export button."
+
+#: src/shell/focusObjectSets.ts:27
+msgid "Social Media (minimal)"
+msgstr "Social Media (minimal)"
+
+#: src/shell/focusStage.ts:303
+msgid "Workspace"
+msgstr "Workspace"
+
+#: src/shell/focusObjectSets.ts:32
+msgid "Everything"
+msgstr "Everything"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

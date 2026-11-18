@@ -62,9 +62,7 @@ export class PostEditorToolbar {
       ? `<button class="btn-icon" data-action="poll" title="${_('Create poll')}">POLL</button>`
       : '';
     const scheduleButtonHtml = this.config.showSchedule
-      ? `<button class="btn-icon" data-action="schedule" title="${_('Schedule post')}">
-          <svg width="20" height="20"><use href="#icon-calendar"/></svg>
-        </button>`
+      ? this.scheduleButtonHtml()
       : '';
 
     return `
@@ -81,6 +79,43 @@ export class PostEditorToolbar {
         ${scheduleButtonHtml}
       </div>
     `;
+  }
+
+  /** The schedule button markup (render + live gate toggle share it). */
+  private scheduleButtonHtml(): string {
+    return `<button class="btn-icon" data-action="schedule" title="${_('Schedule post')}">
+          <svg width="20" height="20"><use href="#icon-calendar"/></svg>
+        </button>`;
+  }
+
+  /**
+   * Live gate reaction (v2 workspace switch while the composer is open):
+   * show/hide the schedule button without rebuilding the toolbar. The
+   * schedule action sits last in the row, so insert = append. The
+   * container IS the toolbar row (setupEventListeners receives it) —
+   * accept both shapes for robustness.
+   */
+  public setScheduleVisible(visible: boolean): void {
+    const row = this.container?.classList.contains('post-note-toolbar')
+      ? this.container
+      : this.container?.querySelector('.post-note-toolbar');
+    if (!row) return;
+    const btn = row.querySelector(
+      '[data-action="schedule"]'
+    ) as HTMLElement | null;
+    if (visible && !btn) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = this.scheduleButtonHtml();
+      const fresh = wrap.firstElementChild as HTMLElement;
+      row.appendChild(fresh);
+      if (this.config.onScheduleClick) {
+        fresh.addEventListener('click', () => {
+          this.config.onScheduleClick?.();
+        });
+      }
+    } else if (!visible && btn) {
+      btn.remove();
+    }
   }
 
   /**
