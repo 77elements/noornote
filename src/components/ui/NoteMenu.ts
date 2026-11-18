@@ -29,7 +29,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { capRelayHints } from '../../helpers/capRelayHints';
 import { getTag } from '../../helpers/tagUtils';
 import { ModalService } from '../../services/ModalService';
-import { isBookmarksEnabled } from '../../addons/bookmarks/index';
+import { isBookmarksUiActive } from '../../helpers/focusUiSetting';
 import { isTribesEnabled } from '../../addons/tribes/index';
 
 export interface NoteMenuOptions {
@@ -133,7 +133,7 @@ export class NoteMenu {
 
     // Check bookmark status (only if addon enabled)
     let bookmarkButtons = '';
-    if (isBookmarksEnabled()) {
+    if (isBookmarksUiActive()) {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
       const bookmarkOrch = BookmarkOrchestrator.getInstance();
       const privateBookmarksEnabled = bookmarkOrch.isPrivateBookmarksEnabled();

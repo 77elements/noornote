@@ -22,6 +22,7 @@
  */
 
 import { Switch } from '../components/ui/Switch';
+import { Tooltip } from '../components/ui/Tooltip';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { LayoutService } from '../services/LayoutService';
@@ -67,6 +68,10 @@ class EdgeDrawer {
   private panelHeight: number;
   /** Fired on every transition to closed (FocusSettingsDrawer contract). */
   private onClosedCb: (() => void) | null = null;
+  /** Fired on every transition to open (FocusSettingsDrawer contract). */
+  private onOpenedCb: (() => void) | null = null;
+  /** Tab-open veto (see setOpenGuard) — programmatic opens bypass it. */
+  private openGuard: (() => boolean) | null = null;
 
   constructor(
     private readonly id: EdgeDrawerId,
@@ -90,7 +95,7 @@ class EdgeDrawer {
     this.root.innerHTML = `
       <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${label}"></div>
       <button type="button" class="focus-drawer__tab" data-drawer-tab
-        aria-label="${label}" aria-expanded="false"></button>
+        aria-label="${_('Open edge drawer')}" aria-expanded="false"></button>
     `;
     if (decoratePanel) {
       const panel = this.root.querySelector(
@@ -101,6 +106,11 @@ class EdgeDrawer {
     this.tab = this.root.querySelector(
       '[data-drawer-tab]'
     ) as HTMLButtonElement;
+    // Same label for both tabs (top/bottom); the tooltip flips its side so
+    // it never opens off-screen at the screen edge.
+    Tooltip.attach(this.tab, _('Open edge drawer'), {
+      placement: this.edge === 'top' ? 'bottom' : 'top',
+    });
     this.tab.addEventListener('pointerdown', this.onPointerDown);
     this.tab.addEventListener('pointermove', this.onPointerMove);
     this.tab.addEventListener('pointerup', this.onPointerUp);
@@ -156,11 +166,19 @@ class EdgeDrawer {
     this.activePointer = null;
     this.root.classList.remove('is-dragging');
     if (!this.hasMoved) {
-      this.setOpen(!this.isOpen); // plain click toggles
+      // Plain click toggles — but a vetoed tab-open (SV-only drawer
+      // content, e.g. Hidden Features) keeps the drawer closed.
+      if (!this.isOpen && this.openGuard && !this.openGuard()) return;
+      this.setOpen(!this.isOpen);
       return;
     }
     // Drag: snap to the nearer end state.
-    this.setOpen(this.lastOffset < this.panelHeight / 2);
+    const open = this.lastOffset < this.panelHeight / 2;
+    if (open && !this.isOpen && this.openGuard && !this.openGuard()) {
+      this.snapToState(); // vetoed: snap back to the closed state
+      return;
+    }
+    this.setOpen(open);
   };
 
   private onPointerCancel = (e: PointerEvent): void => {
@@ -182,6 +200,7 @@ class EdgeDrawer {
     this.isOpen = open;
     this.snapToState();
     if (wasOpen && !open) this.onClosedCb?.();
+    if (!wasOpen && open) this.onOpenedCb?.();
   }
 
   // Public API (FocusSettingsDrawer contract): the stage opens the ED-b
@@ -202,6 +221,14 @@ class EdgeDrawer {
   setOnClosed(cb: (() => void) | null): void {
     this.onClosedCb = cb;
   }
+
+  setOnOpened(cb: (() => void) | null): void {
+    this.onOpenedCb = cb;
+  }
+
+  setOpenGuard(cb: (() => boolean) | null): void {
+    this.openGuard = cb;
+  }
 }
 
 /** Mount the Focus Shell with edge drawers; ED-t hosts the TEMP switch. */
@@ -215,10 +242,11 @@ export function mountFocusShell(): void {
   shell.id = SHELL_ID;
   shell.className = 'focus-shell';
 
-  // TEMPORARY switch — lives inside the ED-t panel until settings get
-  // their place in the shell. Toggling OFF restores the classic interface.
+  // The v1 switch — lives in the SV top bar (it used to sit in the ED-t
+  // panel, whose tab covered the top circles). Toggling OFF restores the
+  // classic interface.
   const switchBack = new Switch({
-    label: _('Focus UI (v2)'),
+    label: _('Switch to v1'),
     checked: isFocusUiEnabled(),
     onChange: checked => {
       if (!checked) {
@@ -233,7 +261,7 @@ export function mountFocusShell(): void {
     },
   });
   const tempSwitchWrap = document.createElement('div');
-  tempSwitchWrap.className = 'focus-shell__temp-switch';
+  tempSwitchWrap.className = 'sv-top-bar__switch';
   tempSwitchWrap.innerHTML = switchBack.render();
   switchBack.setupEventListeners(tempSwitchWrap);
 
@@ -297,13 +325,16 @@ export function mountFocusShell(): void {
   stage = new FocusStage(stageEl);
   stage.mount();
 
+  // Inject the v1 switch into the SV top bar slot the stage prepared.
+  stageEl
+    .querySelector('[data-sv-v1-switch-slot]')
+    ?.appendChild(tempSwitchWrap);
+
   // Edge drawers ED-b (bottom) and ED-t (top) as overlays — heights live
   // in SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
   const edB = new EdgeDrawer('ed-b', 300);
   edB.mount(shell);
-  new EdgeDrawer('ed-t', 70).mount(shell, panel => {
-    panel.appendChild(tempSwitchWrap);
-  });
+  new EdgeDrawer('ed-t', 70).mount(shell);
 
   // Object settings (gear action): the stage mounts the focused object's
   // settings panel into the ED-b panel and opens/closes the drawer.

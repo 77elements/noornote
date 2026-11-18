@@ -232,10 +232,10 @@ html.ui--focus {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: grab;
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
@@ -247,6 +247,35 @@ html.ui--focus {
     .focus-object:not(.focus-object--active):hover
     &,
   .focus-side-stack .focus-object:hover & {
+    display: grid;
+  }
+}
+
+// Hide affordance (hidden-objects): 12 o'clock on the circle, same hover
+// gating as the move handle. Removes the object from the grid AND unloads
+// its code — blocked domains (visible requirer) keep the button hidden
+// (attribute), it never appears as a disabled affordance.
+.focus-object__hide {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-4);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-4);
+  cursor: pointer;
+  z-index: $z-back-bar;
+
+  .focus-stage__grid:not(.is-focused)
+    .focus-object:not(.focus-object--active):hover
+    &:not([hidden]),
+  .focus-side-stack .focus-object:hover &:not([hidden]) {
     display: grid;
   }
 }
@@ -333,10 +362,10 @@ html.ui--focus {
   width: 100%; // fill the 30px actions column
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -344,6 +373,22 @@ html.ui--focus {
   &[hidden] {
     display: none;
   }
+}
+
+// Hover lift on all 30px round action buttons: the icon goes to the
+// brightest text color (the .sv-top-bar__loadmon pattern, applied to the
+// whole family).
+.focus-object__move:hover,
+.focus-object__hide:hover,
+.focus-object__control:hover,
+.focus-object__back:hover,
+.focus-object__scroll-top:hover,
+.focus-object__settings:hover,
+.focus-side-stack__move:hover,
+.focus-side-stack__reset:hover,
+.focus-widget-slot__move:hover,
+.focus-object-compact__unhide:hover {
+  color: var(--color-5);
 }
 
 // Settings is a toggle: active while its drawer content is mounted.
@@ -420,10 +465,10 @@ html.ui--focus {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: pointer;
   touch-action: none; // the pointer drag must not scroll the page
 
@@ -488,10 +533,10 @@ html.ui--focus {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: grab;
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
@@ -634,13 +679,37 @@ html:not(.ui--focus) .focus-view-header__action {
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in
 // the shell. Covers the ED-t panel area (not the tab) and centers the
 // switch vertically, left-aligned.
-.focus-shell__temp-switch {
-  position: absolute;
-  inset: 0;
-  padding: $gap;
-  display: grid;
-  align-content: center;
-  justify-content: start;
+// SV top bar — permanent header row above the start grid (right-aligned
+// controls; more to come later).
+.sv-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc($gap * 0.75);
+  width: 100%;
+  margin-bottom: $gap;
+
+  .sv-top-bar__switch {
+    display: flex;
+    align-items: center;
+  }
+
+  .sv-top-bar__loadmon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--color-4);
+    border-radius: 50%;
+    background: var(--color-1);
+    color: var(--color-4);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
 }
 
 // Tab geometry: visible tab height + the 1px overlap that fuses the tab
@@ -813,6 +882,95 @@ $focus-tab-overlap: 1px;
   }
 }
 
+// Hidden Features (ED-b, tab-open): the compact restorable list of
+// hidden object circles. Full width (no object-settings width cap) —
+// chips wrap in an auto-fill grid, one-liner each, rounded corners and
+// the circles' double ring at HALF width (7px inner/outer instead of
+// 15px, same $ring hues + alpha darkening).
+.focus-settings--hidden-features {
+  max-width: none; // full width — the SV's chips grid spans the drawer
+}
+
+.hidden-features {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $gap $gap calc($gap * 1.5);
+  padding-right: calc(#{$gap * 2} + 30px);
+
+  .hidden-features__head {
+    display: flex;
+    align-items: baseline;
+    gap: calc($gap * 0.75);
+  }
+
+  .hidden-features__heading {
+    margin: 0 0 $gap;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-3);
+  }
+
+  .hidden-features__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: $gap * 0.5;
+    width: 100%;
+  }
+
+  .hidden-features__empty {
+    margin: 0;
+    color: var(--color-5);
+    font-size: 0.9rem;
+  }
+}
+
+.focus-object-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap * 0.5;
+  min-width: 0;
+  padding: calc($gap * 0.5) calc($gap * 0.5) calc($gap * 0.5)
+    calc(7px + $gap * 0.5);
+  // Double ring at HALF the circle's width, pulled in like the circles
+  // (outline directly inside the border).
+  border: 7px solid $ring-inner;
+  outline: 7px solid $ring-outer;
+  outline-offset: -14px;
+  border-radius: $radius-2xl; // 30px — prominent rounded corners
+  background-color: var(--color-1);
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast;
+
+  &:hover {
+    border-color: $ring-inner-hover;
+    outline-color: $ring-outer-hover;
+  }
+
+  .focus-object-compact__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem; // standard text size — no circle-scale display type
+  }
+
+  // Unhide: the FV widget-button pattern (30px round, 2px ring).
+  .focus-object-compact__unhide {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--color-4);
+    border-radius: 50%;
+    background: var(--color-1);
+    color: var(--color-4);
+    cursor: pointer;
+  }
+}
+
 .focus-drawer__tab {
   position: absolute;
   // Centered WITHOUT transform (kept for safety; the marble lives on the
@@ -866,5 +1024,80 @@ $focus-tab-overlap: 1px;
 
   &::after {
     top: calc(50% + 2px);
+  }
+}
+
+// Load HUD ("loadmon" typed trigger): the proof widget for the hidden
+// objects promise — terminal look (black, green mono), bottom right,
+// portalled to <body> so it survives focus navigation and hide/unhide
+// re-renders. Demo-only, opt-in by the typed trigger, session-only.
+.load-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  box-sizing: border-box;
+  width: 240px;
+  max-height: 30vh; // ~30% of the monitor — room for the event feed
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid rgba(74, 222, 128, 40%);
+  border-radius: 6px;
+  background: #000;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 60%);
+  font-family: $font-family-mono;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #4ade80;
+  user-select: text;
+  z-index: $z-tooltip; // must never be occluded — it is the demo surface
+
+  .load-hud__title {
+    display: block;
+    width: 100%;
+    padding: 0 0 4px;
+    border: 0;
+    border-bottom: 1px solid rgba(74, 222, 128, 30%);
+    background: none;
+    color: #86efac;
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .load-hud__row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .load-hud__row--head {
+    margin-top: 4px;
+    font-weight: 700;
+    color: #86efac;
+  }
+
+  .load-hud__row--sub {
+    padding-left: 8px;
+    color: #4ade80;
+  }
+
+  // Narrated event feed: one block per detected change, newest first.
+  .load-hud__ev {
+    padding: 2px 0 0 8px;
+    border-top: 1px solid rgba(74, 222, 128, 15%);
+
+    .load-hud__ev-line {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #4ade80;
+    }
+
+    .load-hud__ev-line:first-child {
+      color: #86efac;
+    }
   }
 }

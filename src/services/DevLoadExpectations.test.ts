@@ -5,7 +5,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  DEV_LOAD_EXPECTATIONS,
   evaluateLoadGuard,
+  resolveExpectationsForHiddenState,
   type DevLoadExpectations,
 } from './DevLoadExpectations';
 import type { DevLoadSnapshot } from './DevLoadMonitor';
@@ -279,5 +281,78 @@ describe('evaluateLoadGuard', () => {
     expect(
       result.violations.some(v => v.includes('v1 primary content mounted'))
     ).toBe(true);
+  });
+});
+
+describe('resolveExpectationsForHiddenState (Phase 6, hidden objects)', () => {
+  it('reduces the budget per hidden always-on addon (interval caps stay upper bounds)', () => {
+    const base = DEV_LOAD_EXPECTATIONS;
+    const resolved = resolveExpectationsForHiddenState(['group-chats']);
+    expect(resolved).not.toBe(base); // pure — base untouched
+    expect(resolved.maxAddons).toBe(base.maxAddons - 1);
+    expect(resolved.hiddenAddonIds).toEqual(['group-chats']);
+    // The AddonLoader runInit cap is NOT per-addon attributable (6 timers
+    // across 12 addons) — it stays an honest upper bound.
+    expect(
+      resolved.knownIntervalOrigins.find(k => k.pattern === 'AddonLoader')?.max
+    ).toBe(
+      base.knownIntervalOrigins.find(k => k.pattern === 'AddonLoader')?.max
+    );
+  });
+
+  it('derives the budget from the live registry size (drift-free)', () => {
+    const resolved = resolveExpectationsForHiddenState(['group-chats'], 19);
+    // 19 registered − 5 on-demand − 1 widget-gated = 13 baseline, −1 hidden
+    expect(resolved.maxAddons).toBe(12);
+  });
+
+  it('keeps the boot budget for hidden on-demand addons (never in the baseline)', () => {
+    const base = DEV_LOAD_EXPECTATIONS;
+    const resolved = resolveExpectationsForHiddenState(['bulk-delete']);
+    expect(resolved.maxAddons).toBe(base.maxAddons);
+    expect(resolved.hiddenAddonIds).toEqual(['bulk-delete']);
+  });
+
+  it('zeroes the group-chats tick cap and ignores list-backed domains', () => {
+    const resolved = resolveExpectationsForHiddenState([
+      'group-chats',
+      'bookmarks',
+      'muted',
+    ]);
+    expect(
+      resolved.transientIntervalOrigins.find(
+        t => t.pattern === 'GroupChatsService.tick'
+      )?.max
+    ).toBe(0);
+    expect(resolved.hiddenAddonIds).toEqual(['group-chats']);
+  });
+
+  it('fails the guard when a hidden addon is loaded anyway', () => {
+    const s = baselineSnapshot();
+    s.addons.loaded.push('group-chats');
+    const e = resolveExpectationsForHiddenState(['group-chats']);
+    const result = evaluateLoadGuard(s, e);
+    expect(result.ok).toBe(false);
+    expect(
+      result.violations.some(v =>
+        v.includes('hidden object\'s addon "group-chats"')
+      )
+    ).toBe(true);
+  });
+
+  it('removes the live subs of hidden service-backed domains (Phase 4.5)', () => {
+    const base = DEV_LOAD_EXPECTATIONS;
+    const messages = resolveExpectationsForHiddenState(['messages']);
+    expect(messages.allowedRelaySubscriptionIds).not.toContain(
+      'dm-subscription'
+    );
+    expect(base.allowedRelaySubscriptionIds).toContain('dm-subscription'); // pure
+    const notifications = resolveExpectationsForHiddenState(['notifications']);
+    expect(notifications.allowedRelaySubscriptionIds).not.toContain(
+      'notifications-ptag'
+    );
+    expect(notifications.allowedRelaySubscriptionIds).not.toContain(
+      'notifications-etag'
+    );
   });
 });

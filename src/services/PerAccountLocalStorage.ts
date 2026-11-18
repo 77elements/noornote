@@ -115,6 +115,12 @@ export const StorageKeys = {
   // widget is activated: right stack, top. Set by drag & drop on the
   // widgets' move handles; unlisted widgets render at the default spot.
   FOCUS_UI_WIDGET_LAYOUT: 'noornote_focus_ui_widget_layout_map',
+  // Focus UI (per-account): hidden FS grid objects — array of domain ids the
+  // user hid from the SV (validated on load: unknown ids dropped, locked
+  // domains (profile) dropped, ids required by a visible object dropped).
+  // Hidden = circle gone AND code fully unloaded (RAM principle). Restore
+  // via the ED-b "Hidden Features" panel. See shell/hiddenObjects.ts.
+  FOCUS_UI_HIDDEN_OBJECTS: 'noornote_focus_ui_hidden_objects_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',

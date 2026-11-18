@@ -30,11 +30,11 @@ msgid_plural "(%s follows)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:808
+#: src/addons/bulk-delete/BulkDeleteView.ts:816
 msgid "(Article)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:804
+#: src/addons/bulk-delete/BulkDeleteView.ts:812
 msgid "(Audio)"
 msgstr ""
 
@@ -43,12 +43,12 @@ msgstr ""
 msgid "(empty)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:805
+#: src/addons/bulk-delete/BulkDeleteView.ts:813
 msgid "(Image)"
 msgstr ""
 
-#: src/components/navigation/SearchSpotlight.ts:386
-#: src/shell/focusSearchSurface.ts:103
+#: src/components/navigation/SearchSpotlight.ts:364
+#: src/shell/focusSearchSurface.ts:78
 msgid "(loading…)"
 msgstr ""
 
@@ -56,11 +56,11 @@ msgstr ""
 msgid "(no text content)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:809
+#: src/addons/bulk-delete/BulkDeleteView.ts:817
 msgid "(no text)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:785
+#: src/addons/bulk-delete/BulkDeleteView.ts:793
 msgid "(Repost)"
 msgstr ""
 
@@ -75,7 +75,7 @@ msgstr ""
 msgid "(untitled)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:802
+#: src/addons/bulk-delete/BulkDeleteView.ts:810
 msgid "(Video)"
 msgstr ""
 
@@ -144,7 +144,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
 #: src/addons/group-chats/GroupChatsSettings.ts:105
 #: src/addons/group-chats/GroupChatsSettings.ts:118
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:67
 #: src/addons/live-streams/LiveStreamsAddonView.ts:79
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:182
 #: src/addons/note-taking/NoteTakingAddonView.ts:66
@@ -177,7 +177,7 @@ msgstr[1] ""
 #: src/addons/follow-packs/FollowPacksSettings.ts:38
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/group-chats/GroupChatsSettings.ts:104
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:62
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:181
 #: src/addons/note-taking/NoteTakingAddonView.ts:65
@@ -311,8 +311,8 @@ msgstr ""
 msgid "%s people added to your follows"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1041
-#: src/addons/bulk-delete/BulkDeleteView.ts:929
+#: src/addons/bulk-delete/BulkDeleteView.ts:1049
+#: src/addons/bulk-delete/BulkDeleteView.ts:937
 msgid "%s post"
 msgid_plural "%s posts"
 msgstr[0] ""
@@ -379,7 +379,7 @@ msgstr[1] ""
 msgid "%s/%s relays healthy (%s%)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2210
+#: src/components/layout/MainLayout.ts:2284
 msgid "← Back"
 msgstr ""
 
@@ -573,11 +573,11 @@ msgstr ""
 msgid "A short bio helps others get to know you. You can always change this later."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2472
+#: src/components/layout/MainLayout.ts:2546
 msgid "A terminal window will open. There:"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2731
+#: src/components/layout/MainLayout.ts:2805
 msgid "About"
 msgstr ""
 
@@ -624,7 +624,7 @@ msgid "Add a Profile Picture"
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2492
+#: src/components/layout/MainLayout.ts:2566
 msgid "Add Account"
 msgstr ""
 
@@ -762,7 +762,7 @@ msgstr ""
 msgid "Addon order reset to default"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2838
+#: src/components/layout/MainLayout.ts:2912
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr ""
@@ -891,11 +891,11 @@ msgstr ""
 msgid "Already up to date with relays"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:176
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:187
 msgid "also %s"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:175
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:186
 msgid "Also search for \"%s\" without #"
 msgstr ""
 
@@ -933,7 +933,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:334
 #: src/components/analytics/AnalyticsModal.ts:50
 #: src/components/ui/InteractionStatusLine.ts:288
-#: src/shell/focusDomains.ts:434
+#: src/shell/focusDomains.ts:457
 msgid "Analytics"
 msgstr ""
 
@@ -950,15 +950,14 @@ msgstr ""
 #: src/addons/marketplace/ListingView.ts:444
 #: src/components/analytics/AnalyticsModal.ts:240
 #: src/components/analytics/AnalyticsModal.ts:278
-#: src/components/navigation/SearchSpotlight.ts:363
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
 #: src/components/ui/ThreadContextIndicator.ts:171
 #: src/components/ui/UserStatus.ts:104
 #: src/components/ui/UserStatus.ts:92
+#: src/components/user-search/userSearchRows.ts:17
 #: src/lists/bookmarks.ts:3178
 #: src/lists/bookmarks.ts:3357
-#: src/shell/focusSearchSurface.ts:32
 msgid "Anonymous"
 msgstr ""
 
@@ -978,7 +977,7 @@ msgstr ""
 msgid "App not found"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2279
+#: src/components/layout/MainLayout.ts:2353
 msgid "App updated."
 msgstr ""
 
@@ -999,9 +998,9 @@ msgstr ""
 msgid "Appointment title"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:421
-#: src/addons/feedback-board/FeedbackBoardView.ts:462
-#: src/addons/feedback-board/FeedbackBoardView.ts:558
+#: src/addons/feedback-board/FeedbackBoardView.ts:438
+#: src/addons/feedback-board/FeedbackBoardView.ts:479
+#: src/addons/feedback-board/FeedbackBoardView.ts:575
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -1031,7 +1030,7 @@ msgid "Armada"
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2181
+#: src/components/layout/MainLayout.ts:2255
 #: src/components/ui/ThreadContextIndicator.ts:202
 msgid "Article"
 msgstr ""
@@ -1071,16 +1070,16 @@ msgid "Article title..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:239
-#: src/components/layout/MainLayout.ts:2116
+#: src/components/layout/MainLayout.ts:2190
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:42
-#: src/components/views/ProfileView.ts:2369
+#: src/components/views/ProfileView.ts:2373
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:212
+#: src/shell/focusDomains.ts:222
 msgid "Articles"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1171
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1189
 msgid "Asr madhab"
 msgstr ""
 
@@ -1114,7 +1113,7 @@ msgstr ""
 msgid "Authentication failed. Please log in again."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 msgid "Author"
 msgstr ""
 
@@ -1122,7 +1121,7 @@ msgstr ""
 msgid "Author added to %s"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:701
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:719
 msgid "Author excluded"
 msgstr ""
 
@@ -1185,8 +1184,8 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:572
-#: src/shell/focusStage.ts:722
+#: src/shell/focusStage.ts:1064
+#: src/shell/focusStage.ts:896
 msgid "Back"
 msgstr ""
 
@@ -1209,8 +1208,8 @@ msgstr ""
 msgid "Back to root"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:3195
-#: src/components/layout/MainLayout.ts:977
+#: src/components/layout/MainLayout.ts:1007
+#: src/components/layout/MainLayout.ts:3269
 msgid "Back to timeline"
 msgstr ""
 
@@ -1263,7 +1262,7 @@ msgstr ""
 msgid "Badge created"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:243
+#: src/addons/badges/BadgesView.ts:256
 msgid "Badge deleted"
 msgstr ""
 
@@ -1272,10 +1271,10 @@ msgid "Badge revoked"
 msgstr ""
 
 #: src/addons/addonI18n.ts:44
-#: src/addons/badges/BadgesView.ts:36
-#: src/components/views/ProfileView.ts:2281
+#: src/addons/badges/BadgesView.ts:49
+#: src/components/views/ProfileView.ts:2285
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:449
+#: src/shell/focusDomains.ts:476
 msgid "Badges"
 msgstr ""
 
@@ -1428,12 +1427,12 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:18
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
-#: src/components/layout/MainLayout.ts:106
+#: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:246
+#: src/shell/focusDomains.ts:264
 msgid "Bookmarks"
 msgstr ""
 
@@ -1469,7 +1468,7 @@ msgstr ""
 msgid "Bring back the old, linear navigation."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1042
+#: src/addons/bulk-delete/BulkDeleteView.ts:1050
 msgid "Broadcasting deletion in the background…"
 msgstr ""
 
@@ -1481,6 +1480,7 @@ msgstr ""
 #: src/addons/btc-price/BtcPriceAddonView.ts:55
 #: src/addons/btc-price/BtcPriceAddonView.ts:56
 #: src/addons/btc-price/BtcPriceAddonView.ts:66
+#: src/shell/focusDomains.ts:639
 msgid "BTC Price"
 msgstr ""
 
@@ -1512,7 +1512,7 @@ msgstr ""
 msgid "bunker://..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2324
+#: src/components/views/ProfileView.ts:2328
 msgid "by"
 msgstr ""
 
@@ -1546,9 +1546,9 @@ msgstr ""
 #: src/addons/calendar/CalendarAddonView.ts:66
 #: src/addons/calendar/CalendarAddonView.ts:76
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
-#: src/components/views/ProfileView.ts:2216
+#: src/components/views/ProfileView.ts:2220
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:380
+#: src/shell/focusDomains.ts:398
 msgid "Calendar"
 msgstr ""
 
@@ -1594,10 +1594,10 @@ msgstr ""
 msgid "Can't be deleted"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:857
+#: src/addons/bulk-delete/BulkDeleteView.ts:865
 #: src/addons/calendar/BookingManager.ts:312
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
-#: src/addons/feedback-board/FeedbackBoardView.ts:634
+#: src/addons/feedback-board/FeedbackBoardView.ts:651
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:240
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -1752,7 +1752,7 @@ msgstr ""
 msgid "Circular navigation active"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1170
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1188
 msgid "City"
 msgstr ""
 
@@ -1835,8 +1835,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:551
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:567
-#: src/shell/focusStage.ts:721
+#: src/shell/focusStage.ts:1063
+#: src/shell/focusStage.ts:891
 msgid "Close"
 msgstr ""
 
@@ -1845,7 +1845,7 @@ msgstr ""
 msgid "Close (ESC)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2477
+#: src/components/layout/MainLayout.ts:2551
 msgid "Close the terminal"
 msgstr ""
 
@@ -1853,8 +1853,8 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1260
-#: src/components/layout/MainLayout.ts:2055
+#: src/components/layout/MainLayout.ts:1290
+#: src/components/layout/MainLayout.ts:2129
 msgid "Collapse sidebar"
 msgstr ""
 
@@ -1862,11 +1862,11 @@ msgstr ""
 msgid "Come back here and click the \"Open Rizful\" button below"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2478
+#: src/components/layout/MainLayout.ts:2552
 msgid "Come back here and log in with NoorSigner"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:749
+#: src/addons/feedback-board/FeedbackBoardView.ts:766
 #: src/services/PostService.ts:540
 msgid "Comment"
 msgstr ""
@@ -1883,7 +1883,7 @@ msgstr ""
 msgid "Comments (kind 1111)"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:586
 msgid "Commit"
 msgstr ""
 
@@ -2055,7 +2055,7 @@ msgstr ""
 msgid "Copy certificate hash"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:296
+#: src/addons/feedback-board/FeedbackBoardView.ts:313
 #: src/components/ui/NoteMenu.ts:224
 msgid "Copy event ID"
 msgstr ""
@@ -2118,15 +2118,15 @@ msgstr ""
 msgid "Could not export event"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1130
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1148
 msgid "Could not fetch prayer times"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1152
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1170
 msgid "Could not load city data."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1049
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1067
 msgid "Could not load districts"
 msgstr ""
 
@@ -2134,7 +2134,7 @@ msgstr ""
 msgid "Could not load older messages"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1018
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1036
 msgid "Could not load regions"
 msgstr ""
 
@@ -2159,7 +2159,7 @@ msgstr ""
 msgid "Could not publish your response"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:873
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:891
 msgid ""
 "Could not reach the Diyanet service. Check your connection and reopen this "
 "page."
@@ -2185,7 +2185,7 @@ msgstr ""
 msgid "Could not save the event calendar"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:714
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:732
 msgid "Could not update moderation"
 msgstr ""
 
@@ -2199,7 +2199,7 @@ msgstr ""
 
 #: src/addons/nostr-majlis/DhikrModal.ts:55
 #: src/addons/nostr-majlis/DhikrModal.ts:67
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 msgid "Count"
 msgstr ""
 
@@ -2207,8 +2207,8 @@ msgstr ""
 msgid "Count a follow as &quot;new&quot; for (days)"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1168
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:887
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1186
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:905
 msgid "Country"
 msgstr ""
 
@@ -2235,7 +2235,7 @@ msgid ""
 "target=\"_blank\" rel=\"noopener\">rizful.com/create-account</a>"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:42
+#: src/addons/badges/BadgesView.ts:55
 msgid "Create Badge"
 msgstr ""
 
@@ -2262,7 +2262,7 @@ msgstr ""
 
 #: src/addons/nostr-majlis/DhikrModal.ts:51
 #: src/addons/nostr-majlis/DhikrModal.ts:92
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:449
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:462
 msgid "Create new dhikr"
 msgstr ""
 
@@ -2309,8 +2309,8 @@ msgstr ""
 #: src/addons/addonI18n.ts:36
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:65
-#: src/addons/custom-emojis/CustomEmojisView.ts:36
-#: src/shell/focusDomains.ts:307
+#: src/addons/custom-emojis/CustomEmojisView.ts:37
+#: src/shell/focusDomains.ts:325
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2331,7 +2331,7 @@ msgstr ""
 msgid "Daily Ayah"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:499
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:517
 msgid "Daily Quran ayah"
 msgstr ""
 
@@ -2343,7 +2343,7 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2357
+#: src/components/layout/MainLayout.ts:2431
 msgid "Data Saver"
 msgstr ""
 
@@ -2359,7 +2359,7 @@ msgstr ""
 msgid "Data Storage"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 #: src/helpers/datePickerModal.ts:321
 #: src/helpers/datePickerModal.ts:84
 #: src/lists/follows.ts:2154
@@ -2445,23 +2445,23 @@ msgstr ""
 msgid "Degree 3 (friends of friends of friends)"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:348
-#: src/addons/bulk-delete/BulkDeleteView.ts:931
+#: src/addons/badges/BadgesView.ts:361
+#: src/addons/bulk-delete/BulkDeleteView.ts:939
 #: src/addons/calendar/CalendarCollectionsModal.ts:61
 #: src/addons/calendar/CalendarCollectionsModal.ts:93
 #: src/addons/calendar/CalendarEventEditor.ts:162
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:122
 #: src/addons/calendar/CalendarEventModal.ts:546
-#: src/addons/feedback-board/FeedbackBoardView.ts:303
-#: src/addons/feedback-board/FeedbackBoardView.ts:813
-#: src/addons/feedback-board/FeedbackBoardView.ts:896
-#: src/addons/feedback-board/FeedbackBoardView.ts:938
+#: src/addons/feedback-board/FeedbackBoardView.ts:320
+#: src/addons/feedback-board/FeedbackBoardView.ts:830
+#: src/addons/feedback-board/FeedbackBoardView.ts:913
+#: src/addons/feedback-board/FeedbackBoardView.ts:955
 #: src/addons/marketplace/MyListingsView.ts:238
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:603
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:679
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:621
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:697
 #: src/addons/note-taking/NoteEditorModal.ts:364
-#: src/components/views/ArticleView.ts:157
+#: src/components/views/ArticleView.ts:161
 #: src/components/views/MessagesView.ts:716
 #: src/components/views/MessagesView.ts:761
 #: src/lists/tribes.ts:2749
@@ -2492,11 +2492,11 @@ msgid ""
 "or you can't delete a tribe."
 msgstr ""
 
-#: src/components/views/ArticleView.ts:157
+#: src/components/views/ArticleView.ts:161
 msgid "Delete article"
 msgstr ""
 
-#: src/components/views/ArticleView.ts:268
+#: src/components/views/ArticleView.ts:273
 msgid "Delete Article"
 msgstr ""
 
@@ -2507,7 +2507,7 @@ msgstr ""
 msgid "Delete conversation"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:677
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:695
 msgid "Delete dhikr"
 msgstr ""
 
@@ -2557,14 +2557,14 @@ msgstr ""
 msgid "Delete Note"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:229
-#: src/addons/bulk-delete/BulkDeleteView.ts:911
+#: src/addons/bulk-delete/BulkDeleteView.ts:237
+#: src/addons/bulk-delete/BulkDeleteView.ts:919
 #: src/components/views/MessagesView.ts:213
 #: src/components/views/MessagesView.ts:816
 msgid "Delete selected (%s)"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:926
+#: src/addons/bulk-delete/BulkDeleteView.ts:934
 msgid "Delete selected posts"
 msgstr ""
 
@@ -2620,7 +2620,7 @@ msgstr ""
 msgid "Deleted %s items from your relays"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1041
+#: src/addons/bulk-delete/BulkDeleteView.ts:1049
 msgid "Deleting %s…"
 msgstr ""
 
@@ -2630,11 +2630,11 @@ msgid ""
 "relays. It is not a deletion request they might ignore."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1061
+#: src/addons/bulk-delete/BulkDeleteView.ts:1069
 msgid "Deletion broadcast complete."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1056
+#: src/addons/bulk-delete/BulkDeleteView.ts:1064
 msgid "Deletion broadcast sent."
 msgstr ""
 
@@ -2657,10 +2657,10 @@ msgstr[1] ""
 msgid "Describe your product..."
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:52
+#: src/addons/badges/BadgesView.ts:65
 #: src/addons/calendar/BookingManager.ts:351
 #: src/addons/calendar/CalendarEventEditor.ts:149
-#: src/addons/feedback-board/FeedbackBoardView.ts:629
+#: src/addons/feedback-board/FeedbackBoardView.ts:646
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:171
@@ -2678,7 +2678,7 @@ msgid "Description (optional)"
 msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:285
-#: src/components/layout/MainLayout.ts:2215
+#: src/components/layout/MainLayout.ts:2289
 #: src/components/views/ArticleEditorView.ts:408
 #: src/components/views/VideoEditorView.ts:183
 msgid "Details"
@@ -2691,7 +2691,7 @@ msgstr ""
 
 #: src/addons/nostr-majlis/DhikrModal.ts:53
 #: src/addons/nostr-majlis/DhikrModal.ts:65
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 msgid "Dhikr"
 msgstr ""
 
@@ -2707,7 +2707,7 @@ msgstr ""
 msgid "Dhikr created"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:683
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:701
 msgid "Dhikr hidden"
 msgstr ""
 
@@ -2787,8 +2787,8 @@ msgid "Discovery tags"
 msgstr ""
 
 #: src/addons/calendar/CalendarGridView.ts:303
-#: src/components/layout/MainLayout.ts:2073
-#: src/components/layout/MainLayout.ts:2074
+#: src/components/layout/MainLayout.ts:2147
+#: src/components/layout/MainLayout.ts:2148
 msgid "Dismiss"
 msgstr ""
 
@@ -2809,7 +2809,7 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:889
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:907
 msgid "District"
 msgstr ""
 
@@ -2835,8 +2835,8 @@ msgstr ""
 msgid "Done. Your identity is in Sidecar, now log in to NoorNote"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2142
-#: src/components/layout/MainLayout.ts:2155
+#: src/components/layout/MainLayout.ts:2216
+#: src/components/layout/MainLayout.ts:2229
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -2872,7 +2872,7 @@ msgstr ""
 
 #: src/components/post/composerShared.ts:93
 #: src/components/post/PostNoteModal.ts:682
-#: src/components/views/NewNoteView.ts:800
+#: src/components/views/NewNoteView.ts:808
 msgid "Draft saved"
 msgstr ""
 
@@ -2927,11 +2927,11 @@ msgstr ""
 msgid "e.g. Bob from work"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:49
+#: src/addons/badges/BadgesView.ts:62
 msgid "e.g. Early Supporter"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:45
+#: src/addons/badges/BadgesView.ts:58
 msgid "e.g. early-supporter"
 msgstr ""
 
@@ -2965,11 +2965,11 @@ msgstr ""
 msgid "Easy Mode: Changes are automatically synced to your local backup and relays."
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:347
+#: src/addons/badges/BadgesView.ts:360
 #: src/addons/calendar/CalendarCollectionsModal.ts:60
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/marketplace/ListingEditorView.ts:199
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:600
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:618
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:345
 #: src/lists/bookmarks.ts:3285
@@ -2984,7 +2984,7 @@ msgstr ""
 msgid "edit a dhikr"
 msgstr ""
 
-#: src/components/views/ArticleView.ts:153
+#: src/components/views/ArticleView.ts:157
 msgid "Edit article"
 msgstr ""
 
@@ -3096,7 +3096,7 @@ msgstr ""
 msgid "Enable Armada"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:82
+#: src/addons/badges/BadgesView.ts:95
 msgid "Enable Badges"
 msgstr ""
 
@@ -3132,7 +3132,7 @@ msgstr ""
 msgid "Enable Follower Notification"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:75
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:77
 msgid "Enable Hashtag Subscriptions"
 msgstr ""
 
@@ -3164,7 +3164,7 @@ msgstr ""
 msgid "Enable the Bookmarks addon in Settings → Addons."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:513
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:531
 msgid "Enable the daily ayah to see it here."
 msgstr ""
 
@@ -3246,7 +3246,7 @@ msgstr ""
 msgid "Enter folder name..."
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:122
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
 msgid "Enter hashtag (without #)"
 msgstr ""
 
@@ -3355,20 +3355,20 @@ msgstr ""
 msgid "Everything is set up! Click below to log in with your new account."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:695
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:713
 msgid "Exclude"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:691
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:709
 msgid "Exclude %s? Their dhikrs disappear and all their submissions stop counting."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:606
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:690
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:624
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:708
 msgid "Exclude author"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:569
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 msgid "excluded"
 msgstr ""
 
@@ -3378,7 +3378,7 @@ msgid ""
 "accidental deletion)."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1260
+#: src/components/layout/MainLayout.ts:1290
 msgid "Expand sidebar"
 msgstr ""
 
@@ -3394,8 +3394,8 @@ msgstr ""
 msgid "Export calendar (.ics)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1902
-#: src/components/layout/MainLayout.ts:2226
+#: src/components/layout/MainLayout.ts:1976
+#: src/components/layout/MainLayout.ts:2300
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
@@ -3587,7 +3587,7 @@ msgstr ""
 msgid "Failed to load mute list"
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:181
+#: src/components/views/SingleNoteView.ts:180
 msgid "Failed to load note"
 msgstr ""
 
@@ -3632,7 +3632,7 @@ msgstr ""
 msgid "Failed to load votes"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:604
+#: src/addons/bulk-delete/BulkDeleteView.ts:612
 msgid "Failed to load your notes"
 msgstr ""
 
@@ -3819,8 +3819,8 @@ msgstr ""
 msgid "Failed: %s"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1134
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:895
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1152
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:913
 msgid "Fetch Prayer Times"
 msgstr ""
 
@@ -3844,12 +3844,12 @@ msgstr ""
 msgid "Fetching more results from Relays..."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1097
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1115
 #: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:205
 msgid "Fetching times…"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1122
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1140
 msgid "Fetching…"
 msgstr ""
 
@@ -3979,7 +3979,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:351
+#: src/shell/focusDomains.ts:369
 msgid "Follow Packs"
 msgstr ""
 
@@ -4018,7 +4018,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:31
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:546
+#: src/shell/focusDomains.ts:584
 msgid "Follower Notification"
 msgstr ""
 
@@ -4027,11 +4027,10 @@ msgstr ""
 msgid "Followers"
 msgstr ""
 
-#: src/components/navigation/SearchSpotlight.ts:366
 #: src/components/onboarding/AccountSetupWizard.ts:2778
 #: src/components/user-search/UserSearchInput.ts:322
+#: src/components/user-search/userSearchRows.ts:20
 #: src/components/views/ProfileView.ts:682
-#: src/shell/focusSearchSurface.ts:35
 msgid "Following"
 msgstr ""
 
@@ -4062,10 +4061,10 @@ msgid "Following..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:243
-#: src/components/layout/MainLayout.ts:107
+#: src/components/layout/MainLayout.ts:109
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:266
+#: src/shell/focusDomains.ts:284
 msgid "Follows"
 msgstr ""
 
@@ -4221,7 +4220,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:35
-#: src/shell/focusDomains.ts:561
+#: src/shell/focusDomains.ts:604
 msgid "Group Chats"
 msgstr ""
 
@@ -4261,9 +4260,9 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:32
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:488
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:62
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:67
+#: src/shell/focusDomains.ts:523
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4288,7 +4287,7 @@ msgid ""
 "profile pic (or tap on it) to follow a user. Find more under Addons → "
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:569
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 msgid "hidden"
 msgstr ""
 
@@ -4308,7 +4307,7 @@ msgstr ""
 msgid "Hide self-reposts"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:678
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:696
 msgid "Hide this dhikr from everyone? You can un-hide it later."
 msgstr ""
 
@@ -4383,7 +4382,7 @@ msgstr ""
 msgid "Holidays"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:752
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:770
 msgid "Holidays %s"
 msgstr ""
 
@@ -4496,11 +4495,11 @@ msgstr ""
 msgid "Image Tags"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:121
+#: src/addons/badges/BadgesView.ts:134
 msgid "Image uploaded"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:56
+#: src/addons/badges/BadgesView.ts:69
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:133
 msgid "Image URL"
 msgstr ""
@@ -4725,7 +4724,7 @@ msgstr ""
 msgid "Just now"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:932
+#: src/addons/bulk-delete/BulkDeleteView.ts:940
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:132
 #: src/components/views/ProfileBookingView.ts:321
 msgid "Keep"
@@ -4752,7 +4751,7 @@ msgid "Keep relay"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:672
-#: src/components/views/NewNoteView.ts:790
+#: src/components/views/NewNoteView.ts:798
 msgid "Keep this unsent note in your drafts?"
 msgstr ""
 
@@ -4964,7 +4963,7 @@ msgstr ""
 msgid "List sync: %s enabled"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:111
+#: src/components/layout/MainLayout.ts:113
 msgid "List: %s"
 msgstr ""
 
@@ -5036,7 +5035,7 @@ msgstr ""
 msgid "Loading articles..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2370
+#: src/components/views/ProfileView.ts:2374
 msgid "Loading articles…"
 msgstr ""
 
@@ -5126,7 +5125,7 @@ msgstr ""
 msgid "Loading more listings..."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:677
+#: src/addons/bulk-delete/BulkDeleteView.ts:685
 #: src/components/onboarding/PublicTimelineComponent.ts:78
 #: src/components/relay-browser/RelayBrowser.ts:56
 #: src/components/timeline/Timeline.ts:170
@@ -5155,7 +5154,7 @@ msgstr ""
 msgid "Loading mute list..."
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:156
+#: src/components/views/SingleNoteView.ts:155
 msgid "Loading note..."
 msgstr ""
 
@@ -5213,7 +5212,7 @@ msgstr ""
 msgid "Loading slots…"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:517
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:535
 #: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:108
 #: src/addons/nostr-majlis/NostrMajlisQuranWidget.ts:122
 msgid "Loading the daily ayah…"
@@ -5227,11 +5226,11 @@ msgstr ""
 msgid "Loading tribes..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2388
+#: src/components/views/ProfileView.ts:2392
 msgid "Loading videos…"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2406
+#: src/components/views/ProfileView.ts:2410
 msgid "Loading websites…"
 msgstr ""
 
@@ -5239,7 +5238,7 @@ msgstr ""
 msgid "Loading your listings..."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:728
+#: src/addons/bulk-delete/BulkDeleteView.ts:736
 msgid "Loading your notes..."
 msgstr ""
 
@@ -5260,10 +5259,10 @@ msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:279
 #: src/addons/analytics/AnalyticsAddonView.ts:415
-#: src/addons/badges/BadgesView.ts:344
-#: src/addons/badges/BadgesView.ts:70
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1146
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:866
+#: src/addons/badges/BadgesView.ts:357
+#: src/addons/badges/BadgesView.ts:83
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1164
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:884
 #: src/components/settings/RelaySettingsSection.ts:368
 #: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
 msgid "Loading…"
@@ -5397,7 +5396,7 @@ msgstr ""
 msgid "Look for new notes"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:550
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
 msgid "Looking for existing dhikrs…"
 msgstr ""
 
@@ -5476,7 +5475,7 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:340
+#: src/shell/focusDomains.ts:358
 #: src/shell/focusMarketplaceSurface.ts:38
 msgid "Marketplace"
 msgstr ""
@@ -5524,9 +5523,9 @@ msgstr ""
 msgid "maybe"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1840
+#: src/components/layout/MainLayout.ts:1914
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:221
+#: src/shell/focusDomains.ts:231
 #: src/shell/focusMediaSurface.ts:43
 msgid "Media"
 msgstr "Médias"
@@ -5616,11 +5615,11 @@ msgstr ""
 msgid "Message sent"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2123
+#: src/components/layout/MainLayout.ts:2197
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:238
+#: src/shell/focusDomains.ts:256
 msgid "Messages"
 msgstr ""
 
@@ -5648,7 +5647,7 @@ msgstr ""
 msgid "Minutes"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1309
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1327
 msgid "Minutes before"
 msgstr ""
 
@@ -5664,7 +5663,7 @@ msgstr ""
 msgid "Moderate (every 30 min)"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 msgid "Moderation"
 msgstr ""
 
@@ -5708,7 +5707,7 @@ msgstr ""
 msgid "Move notification type"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:725
+#: src/addons/feedback-board/FeedbackBoardView.ts:742
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr ""
@@ -5764,10 +5763,10 @@ msgstr ""
 msgid "Mute user publicly"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:108
+#: src/components/layout/MainLayout.ts:110
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:277
+#: src/shell/focusDomains.ts:295
 #: src/shell/focusMutesSurface.ts:36
 msgid "Muted"
 msgstr ""
@@ -5821,7 +5820,7 @@ msgstr ""
 msgid "My Listings"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:48
+#: src/addons/badges/BadgesView.ts:61
 msgid "Name"
 msgstr ""
 
@@ -5829,7 +5828,7 @@ msgstr ""
 msgid "Navigate with ← / → or click the page edges"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2042
+#: src/components/layout/MainLayout.ts:2116
 msgid "Navigation"
 msgstr ""
 
@@ -5912,7 +5911,7 @@ msgstr ""
 msgid "New Note"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2171
+#: src/components/layout/MainLayout.ts:2245
 msgid "New Post"
 msgstr ""
 
@@ -5924,7 +5923,7 @@ msgstr ""
 msgid "New-follower window: %s"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1839
+#: src/components/layout/MainLayout.ts:1913
 msgid "Newest Articles"
 msgstr ""
 
@@ -5970,7 +5969,7 @@ msgstr ""
 
 #: src/components/post/PostNoteModal.ts:674
 #: src/components/views/ConversationView.ts:968
-#: src/components/views/NewNoteView.ts:792
+#: src/components/views/NewNoteView.ts:800
 msgid "No"
 msgstr ""
 
@@ -5990,7 +5989,7 @@ msgstr ""
 msgid "No articles from your follows yet."
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:199
+#: src/addons/badges/BadgesView.ts:212
 msgid "No badges created yet."
 msgstr ""
 
@@ -6030,7 +6029,7 @@ msgstr ""
 msgid "No data collection"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:549
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:567
 msgid "No dhikr actions yet. Create the first one."
 msgstr ""
 
@@ -6074,7 +6073,7 @@ msgstr ""
 msgid "No follows yet"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:164
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:175
 msgid "No hashtag subscriptions yet"
 msgstr ""
 
@@ -6168,15 +6167,15 @@ msgstr ""
 msgid "No own posts found yet."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:738
+#: src/addons/bulk-delete/BulkDeleteView.ts:746
 msgid "No posts found in this range."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:739
+#: src/addons/bulk-delete/BulkDeleteView.ts:747
 msgid "No posts found."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:736
+#: src/addons/bulk-delete/BulkDeleteView.ts:744
 msgid "No posts match your search."
 msgstr ""
 
@@ -6188,7 +6187,7 @@ msgstr ""
 msgid "No recent notes from this pack"
 msgstr ""
 
-#: src/components/navigation/SearchSpotlight.ts:534
+#: src/components/navigation/SearchSpotlight.ts:512
 msgid "No recent URLs"
 msgstr ""
 
@@ -6196,7 +6195,7 @@ msgstr ""
 msgid "No recipes from your follows yet."
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:273
+#: src/addons/badges/BadgesView.ts:286
 msgid "No recipients yet"
 msgstr ""
 
@@ -6235,7 +6234,7 @@ msgstr ""
 msgid "No slots published yet. Save the config to generate them."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1108
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1126
 msgid "no times cached, tap “Fetch Prayer Times”"
 msgstr ""
 
@@ -6463,7 +6462,7 @@ msgid "Not reached: %s"
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2177
+#: src/components/layout/MainLayout.ts:2251
 #: src/lists/bookmarks.ts:3258
 msgid "Note"
 msgstr ""
@@ -6473,7 +6472,7 @@ msgid "Note can't be rendered"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:762
-#: src/components/views/NewNoteView.ts:888
+#: src/components/views/NewNoteView.ts:896
 msgid "Note could not be published"
 msgstr ""
 
@@ -6491,7 +6490,7 @@ msgstr ""
 
 #: src/components/ui/interaction-managers/RepostManager.ts:135
 #: src/components/ui/interaction-managers/RepostManager.ts:249
-#: src/components/views/SingleNoteView.ts:174
+#: src/components/views/SingleNoteView.ts:173
 msgid "Note not found"
 msgstr ""
 
@@ -6515,7 +6514,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:65
 #: src/addons/note-taking/NoteTakingAddonView.ts:66
 #: src/addons/note-taking/NoteTakingAddonView.ts:76
-#: src/shell/focusDomains.ts:401
+#: src/shell/focusDomains.ts:419
 msgid "Note taking"
 msgstr ""
 
@@ -6558,9 +6557,9 @@ msgstr ""
 msgid "Notification priorities saved"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2109
+#: src/components/layout/MainLayout.ts:2183
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:230
+#: src/shell/focusDomains.ts:248
 msgid "Notifications"
 msgstr ""
 
@@ -6582,7 +6581,7 @@ msgstr ""
 msgid "Notify me about my own posts"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:436
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:449
 msgid "Notify on activity"
 msgstr ""
 
@@ -6594,7 +6593,7 @@ msgstr ""
 msgid "Now (on publish)"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:218
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:229
 msgid "Now also searching for \"%s\" without #"
 msgstr ""
 
@@ -6634,7 +6633,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2480
+#: src/components/layout/MainLayout.ts:2554
 msgid "OK, got it"
 msgstr ""
 
@@ -6647,7 +6646,7 @@ msgstr ""
 msgid "Only applies to people you follow (not everyone you see)"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:219
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:230
 msgid "Only searching for #%s"
 msgstr ""
 
@@ -6685,7 +6684,7 @@ msgstr ""
 msgid "Open in Armada"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2035
+#: src/components/layout/MainLayout.ts:2109
 msgid "Open menu"
 msgstr ""
 
@@ -6833,7 +6832,7 @@ msgstr ""
 msgid "Paste the armada.buzz invite link (must contain /invite/)."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2475
+#: src/components/layout/MainLayout.ts:2549
 msgid "Paste the nsec of the new account"
 msgstr ""
 
@@ -6898,7 +6897,7 @@ msgstr ""
 msgid "Pick a date"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1114
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1132
 msgid "Pick a district first"
 msgstr ""
 
@@ -7039,7 +7038,7 @@ msgstr ""
 msgid "Please select a report reason"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:113
+#: src/addons/badges/BadgesView.ts:126
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:277
 #: src/components/profile/ImageUploader.ts:135
 msgid "Please select an image file"
@@ -7108,8 +7107,8 @@ msgstr ""
 #: src/components/post/composerShared.ts:502
 #: src/components/post/PostNoteModal.ts:802
 #: src/components/post/PostNoteModal.ts:810
-#: src/components/views/NewNoteView.ts:919
-#: src/components/views/NewNoteView.ts:923
+#: src/components/views/NewNoteView.ts:927
+#: src/components/views/NewNoteView.ts:931
 msgid "Post Highlight"
 msgstr ""
 
@@ -7143,7 +7142,7 @@ msgstr ""
 msgid "Posts live on decentralized relays"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:921
+#: src/addons/bulk-delete/BulkDeleteView.ts:929
 msgid "Posts module not ready"
 msgstr ""
 
@@ -7155,7 +7154,7 @@ msgstr ""
 msgid "Posts will be signed without client tag"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1307
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1325
 msgid "Prayer reminders"
 msgstr ""
 
@@ -7163,7 +7162,7 @@ msgstr ""
 msgid "Prayer times not set"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1128
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1146
 msgid "Prayer times updated"
 msgstr ""
 
@@ -7286,7 +7285,7 @@ msgstr ""
 msgid "Private Petnames"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2189
+#: src/components/layout/MainLayout.ts:2263
 msgid "Product"
 msgstr ""
 
@@ -7308,8 +7307,8 @@ msgid "Products carousel hidden on profiles"
 msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:2102
-#: src/shell/focusDomains.ts:286
+#: src/components/layout/MainLayout.ts:2176
+#: src/shell/focusDomains.ts:304
 msgid "Profile"
 msgstr ""
 
@@ -7352,7 +7351,7 @@ msgstr ""
 msgid "Profile updated successfully!"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:970
+#: src/components/layout/MainLayout.ts:1000
 msgid "Profile: %s"
 msgstr ""
 
@@ -7360,7 +7359,7 @@ msgstr ""
 msgid "Profiles"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
 msgid "Progress"
 msgstr ""
 
@@ -7556,7 +7555,7 @@ msgstr ""
 msgid "Quotes"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:529
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:547
 msgid "Quran"
 msgstr ""
 
@@ -7584,7 +7583,7 @@ msgstr ""
 msgid "Raw event data not available"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:605
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:623
 msgid "Re-include"
 msgstr ""
 
@@ -7624,7 +7623,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-#: src/components/views/ArticleView.ts:439
+#: src/components/views/ArticleView.ts:444
 msgid "Read more from this author"
 msgstr ""
 
@@ -7682,8 +7681,9 @@ msgstr ""
 msgid "Recipe hint: add a %s section so recipe clients can parse it."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1841
-#: src/shell/focusDomains.ts:227
+#: src/components/layout/MainLayout.ts:1915
+#: src/shell/focusDomains.ts:239
+#: src/shell/focusRecipesSurface.ts:29
 msgid "Recipes"
 msgstr ""
 
@@ -7711,8 +7711,8 @@ msgstr ""
 msgid "Regenerate Keys"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1169
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:888
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1187
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:906
 msgid "Region"
 msgstr ""
 
@@ -7757,7 +7757,7 @@ msgstr ""
 msgid "Release Date"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2280
+#: src/components/layout/MainLayout.ts:2354
 msgid "Reload"
 msgstr ""
 
@@ -7777,7 +7777,7 @@ msgstr ""
 msgid "Reminder default updated"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1307
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1325
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:374
 msgid "Reminder Settings"
 msgstr ""
@@ -8011,7 +8011,7 @@ msgstr ""
 msgid "Request timed out. Please try again."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:712
+#: src/addons/bulk-delete/BulkDeleteView.ts:720
 #: src/addons/calendar/CalendarImportExport.ts:118
 #: src/addons/calendar/CalendarImportExport.ts:131
 #: src/components/views/ArticleEditorView.ts:493
@@ -8045,7 +8045,7 @@ msgstr ""
 msgid "Reset failed: %s"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:712
+#: src/addons/bulk-delete/BulkDeleteView.ts:720
 msgid "Reset filters"
 msgstr ""
 
@@ -8150,7 +8150,7 @@ msgstr ""
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1464
 #: src/components/views/MessagesView.ts:969
-#: src/services/ViewMountingService.ts:133
+#: src/services/ViewMountingService.ts:137
 msgid "Retry"
 msgstr ""
 
@@ -8158,7 +8158,7 @@ msgstr ""
 msgid "Reviews & Quotes (%s)"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:285
+#: src/addons/badges/BadgesView.ts:298
 msgid "Revoke"
 msgstr ""
 
@@ -8210,7 +8210,7 @@ msgid "Save & publish slots"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:671
-#: src/components/views/NewNoteView.ts:789
+#: src/components/views/NewNoteView.ts:797
 msgid "Save as draft?"
 msgstr ""
 
@@ -8245,7 +8245,7 @@ msgstr ""
 msgid "Save to"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:65
+#: src/addons/badges/BadgesView.ts:78
 msgid "Save to Badge Gallery"
 msgstr ""
 
@@ -8356,7 +8356,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:416
+#: src/shell/focusDomains.ts:439
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -8378,28 +8378,28 @@ msgstr ""
 msgid "Scheduling..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2093
-#: src/components/layout/MainLayout.ts:2096
-#: src/components/layout/MainLayout.ts:2100
-#: src/components/layout/MainLayout.ts:2103
-#: src/components/layout/MainLayout.ts:2114
-#: src/components/layout/MainLayout.ts:2117
-#: src/shell/focusStage.ts:577
-#: src/shell/focusStage.ts:723
+#: src/components/layout/MainLayout.ts:2167
+#: src/components/layout/MainLayout.ts:2170
+#: src/components/layout/MainLayout.ts:2174
+#: src/components/layout/MainLayout.ts:2177
+#: src/components/layout/MainLayout.ts:2188
+#: src/components/layout/MainLayout.ts:2191
+#: src/shell/focusStage.ts:1065
+#: src/shell/focusStage.ts:901
 msgid "Scroll to top"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:858
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
-#: src/components/layout/MainLayout.ts:2050
-#: src/components/layout/MainLayout.ts:2051
-#: src/components/layout/MainLayout.ts:2136
-#: src/shell/focusDomains.ts:297
-#: src/shell/focusSearchSurface.ts:62
+#: src/addons/bulk-delete/BulkDeleteView.ts:866
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:126
+#: src/components/layout/MainLayout.ts:2124
+#: src/components/layout/MainLayout.ts:2125
+#: src/components/layout/MainLayout.ts:2210
+#: src/shell/focusDomains.ts:315
+#: src/shell/focusSearchSurface.ts:37
 msgid "Search"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:702
+#: src/addons/bulk-delete/BulkDeleteView.ts:710
 msgid "Search “%s”"
 msgstr ""
 
@@ -8408,7 +8408,7 @@ msgstr ""
 msgid "Search by name or paste npub..."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:522
+#: src/addons/bulk-delete/BulkDeleteView.ts:530
 msgid "Search failed"
 msgstr ""
 
@@ -8420,7 +8420,7 @@ msgstr ""
 msgid "Search failed. Please try again."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:491
+#: src/addons/bulk-delete/BulkDeleteView.ts:499
 msgid "Search is not available right now"
 msgstr ""
 
@@ -8436,15 +8436,15 @@ msgstr ""
 msgid "Search only in local caches"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:806
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:824
 msgid "Search source…"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:854
+#: src/addons/bulk-delete/BulkDeleteView.ts:862
 msgid "Search terms..."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:863
+#: src/addons/bulk-delete/BulkDeleteView.ts:871
 msgid "Search your posts"
 msgstr ""
 
@@ -8452,15 +8452,15 @@ msgstr ""
 msgid "Search: (npub / nevent / username / full text)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:971
+#: src/components/layout/MainLayout.ts:1001
 msgid "Search: %s"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:942
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:960
 msgid "Search…"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:727
+#: src/addons/bulk-delete/BulkDeleteView.ts:735
 msgid "Searching your posts…"
 msgstr ""
 
@@ -8503,43 +8503,43 @@ msgstr ""
 msgid "Select a tribe to add this author to:"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:225
-#: src/addons/bulk-delete/BulkDeleteView.ts:839
+#: src/addons/bulk-delete/BulkDeleteView.ts:233
+#: src/addons/bulk-delete/BulkDeleteView.ts:847
 #: src/components/views/MessagesView.ts:211
 #: src/components/views/MessagesView.ts:828
 msgid "Select all visible"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:220
+#: src/addons/bulk-delete/BulkDeleteView.ts:228
 msgid "Select by search term"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1202
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1220
 msgid "Select city…"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1177
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:902
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1195
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:920
 msgid "Select country…"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1029
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1043
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:916
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:972
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:999
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1017
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1047
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1061
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:934
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:990
 msgid "Select district…"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:776
+#: src/addons/bulk-delete/BulkDeleteView.ts:784
 msgid "Select for deletion"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1012
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1191
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:909
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:961
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:992
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1010
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1030
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1209
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:927
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:979
 msgid "Select region…"
 msgstr ""
 
@@ -8547,11 +8547,11 @@ msgstr ""
 msgid "Select report reason"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:221
+#: src/addons/bulk-delete/BulkDeleteView.ts:229
 msgid "Select time range"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:451
+#: src/addons/bulk-delete/BulkDeleteView.ts:459
 #: src/helpers/datePickerModal.ts:162
 msgid "Select Time Range"
 msgstr ""
@@ -8560,11 +8560,11 @@ msgstr ""
 msgid "Select which cache tables to clear. This action cannot be undone."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1276
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1294
 msgid "Select your city to see prayer times."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:856
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:874
 msgid "Select your location to see prayer times."
 msgstr ""
 
@@ -8599,7 +8599,7 @@ msgstr ""
 msgid "Send"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:927
+#: src/addons/bulk-delete/BulkDeleteView.ts:935
 msgid ""
 "Send a deletion request for %s? This broadcasts a NIP-09 request to relays "
 "and cannot be undone. Relays may or may not honor it."
@@ -8622,7 +8622,7 @@ msgstr ""
 msgid "Send message"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:1048
+#: src/addons/bulk-delete/BulkDeleteView.ts:1056
 msgid "Sending request to %s (%s/%s)"
 msgstr ""
 
@@ -8664,7 +8664,7 @@ msgstr ""
 msgid "Set a custom client tag for this post"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2476
+#: src/components/layout/MainLayout.ts:2550
 msgid "Set a password for this account"
 msgstr ""
 
@@ -8721,10 +8721,10 @@ msgstr ""
 msgid "Setting up relays..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2130
+#: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:584
-#: src/shell/focusStage.ts:725
+#: src/shell/focusStage.ts:1067
+#: src/shell/focusStage.ts:908
 msgid "Settings"
 msgstr ""
 
@@ -8809,7 +8809,7 @@ msgstr ""
 msgid "Show More"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:452
+#: src/addons/bulk-delete/BulkDeleteView.ts:460
 #: src/helpers/datePickerModal.ts:163
 msgid "Show Notes"
 msgstr ""
@@ -8868,7 +8868,7 @@ msgstr ""
 msgid "Show your NIP-60 Lightning wallet balance in the sidebar."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1307
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1325
 msgid "Shows a banner before each prayer while NoorNote is open."
 msgstr ""
 
@@ -8916,11 +8916,11 @@ msgstr ""
 msgid "Sidecar will ask you to confirm"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2159
+#: src/components/layout/MainLayout.ts:2233
 msgid "Sign in"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2163
+#: src/components/layout/MainLayout.ts:2237
 msgid "Sign out"
 msgstr ""
 
@@ -9003,11 +9003,11 @@ msgstr ""
 msgid "Slot length"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:343
+#: src/addons/badges/BadgesView.ts:356
 msgid "slug"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:44
+#: src/addons/badges/BadgesView.ts:57
 msgid "Slug (unique identifier)"
 msgstr ""
 
@@ -9016,7 +9016,7 @@ msgstr ""
 msgid "Slug / Identifier"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:146
+#: src/addons/badges/BadgesView.ts:159
 msgid "Slug and Name are required"
 msgstr ""
 
@@ -9078,7 +9078,7 @@ msgstr ""
 msgid "Sorting members by recent activity…"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:792
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:810
 #: src/components/views/ZapstoreAppView.ts:301
 msgid "Source"
 msgstr ""
@@ -9168,7 +9168,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:1258
+#: src/App.ts:1272
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9223,7 +9223,7 @@ msgstr ""
 msgid "Submitting..."
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:77
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:79
 msgid ""
 "Subscribe to any hashtag or word and get notified when someone posts a note "
 "containing it."
@@ -9355,11 +9355,11 @@ msgstr ""
 msgid "Syncing follow list..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1838
+#: src/components/layout/MainLayout.ts:1912
 msgid "System Logs"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:532
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:550
 msgid "Tafsir (Al-Mukhtasar)"
 msgstr ""
 
@@ -9740,7 +9740,7 @@ msgstr ""
 msgid "Time unit"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2095
+#: src/components/layout/MainLayout.ts:2169
 #: src/components/views/TimelineView.ts:285
 msgid "Timeline"
 msgstr ""
@@ -9771,7 +9771,7 @@ msgid "Timestamps & maker blob stripping"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
-#: src/addons/feedback-board/FeedbackBoardView.ts:621
+#: src/addons/feedback-board/FeedbackBoardView.ts:638
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1374
 #: src/components/views/ArticleEditorView.ts:383
@@ -9789,7 +9789,7 @@ msgstr ""
 msgid "Title is required"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:700
+#: src/addons/bulk-delete/BulkDeleteView.ts:708
 msgid "to"
 msgstr ""
 
@@ -9805,7 +9805,7 @@ msgstr ""
 msgid "Toggle balance visibility"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:464
+#: src/addons/feedback-board/FeedbackBoardView.ts:481
 #: src/addons/marketplace/ListingEditorView.ts:287
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:410
@@ -9871,12 +9871,12 @@ msgid "tribes"
 msgstr ""
 
 #: src/addons/addonI18n.ts:20
-#: src/components/layout/MainLayout.ts:109
+#: src/components/layout/MainLayout.ts:111
 #: src/components/layout/partials/ListsMenuPartial.ts:64
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:254
+#: src/shell/focusDomains.ts:272
 msgid "Tribes"
 msgstr ""
 
@@ -9904,7 +9904,7 @@ msgstr ""
 msgid "Ultra (near-zero quality loss)"
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:602
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:620
 msgid "Un-hide"
 msgstr ""
 
@@ -10009,12 +10009,12 @@ msgstr ""
 msgid "Unsaved Changes"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:838
+#: src/addons/bulk-delete/BulkDeleteView.ts:846
 #: src/components/views/MessagesView.ts:827
 msgid "Unselect all visible"
 msgstr ""
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:190
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:201
 msgid "Unsubscribe"
 msgstr ""
 
@@ -10115,7 +10115,7 @@ msgstr ""
 msgid "Upload image"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:61
+#: src/addons/badges/BadgesView.ts:74
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:138
 msgid "Upload image…"
 msgstr ""
@@ -10226,9 +10226,9 @@ msgid "Username"
 msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:352
-#: src/components/navigation/SearchSpotlight.ts:386
+#: src/components/navigation/SearchSpotlight.ts:364
 #: src/components/user-search/UserSearchInput.ts:308
-#: src/shell/focusSearchSurface.ts:103
+#: src/shell/focusSearchSurface.ts:78
 msgid "Users"
 msgstr ""
 
@@ -10291,7 +10291,7 @@ msgstr ""
 msgid "Video published successfully!"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2387
+#: src/components/views/ProfileView.ts:2391
 #: src/components/views/ProfileView.ts:747
 msgid "Videos"
 msgstr ""
@@ -10370,7 +10370,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:576
+#: src/shell/focusDomains.ts:624
 msgid "Wallet Balance"
 msgstr ""
 
@@ -10426,7 +10426,7 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2405
+#: src/components/views/ProfileView.ts:2409
 #: src/components/views/ProfileView.ts:750
 msgid "Websites"
 msgstr ""
@@ -10443,7 +10443,7 @@ msgstr ""
 msgid "Weeks"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2085
+#: src/components/layout/MainLayout.ts:2159
 msgid "Welcome"
 msgstr ""
 
@@ -10455,7 +10455,7 @@ msgstr ""
 msgid "What is Nostr?"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:53
+#: src/addons/badges/BadgesView.ts:66
 msgid "What this badge represents…"
 msgstr ""
 
@@ -10554,7 +10554,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:32
-#: src/shell/focusDomains.ts:591
+#: src/shell/focusDomains.ts:657
 msgid "Word Filter"
 msgstr ""
 
@@ -10596,7 +10596,7 @@ msgstr ""
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:673
 #: src/components/views/ConversationView.ts:967
-#: src/components/views/NewNoteView.ts:791
+#: src/components/views/NewNoteView.ts:799
 msgid "Yes"
 msgstr ""
 
@@ -10718,7 +10718,7 @@ msgstr ""
 msgid "Your account is a key you own"
 msgstr ""
 
-#: src/addons/badges/BadgesView.ts:69
+#: src/addons/badges/BadgesView.ts:82
 msgid "Your Badge Gallery"
 msgstr ""
 
@@ -10783,7 +10783,7 @@ msgstr ""
 msgid "Your nsec will be securely stored by NoorSigner:"
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:704
+#: src/addons/bulk-delete/BulkDeleteView.ts:712
 msgid "Your posts from %s to %s"
 msgstr ""
 
@@ -10809,7 +10809,7 @@ msgid ""
 "never shared with NoorNote or our server."
 msgstr ""
 
-#: src/addons/bulk-delete/BulkDeleteView.ts:692
+#: src/addons/bulk-delete/BulkDeleteView.ts:700
 msgid "Your recent posts"
 msgstr ""
 
@@ -11053,42 +11053,42 @@ msgid ""
 "following feed experience."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:78
+#: src/addons/feedback-board/FeedbackBoardView.ts:80
 msgid ""
 "A public board between you and the developer: file wishes and bugs, follow "
 "their progress, get a DM on every update. Tickets are public Nostr events."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:682
+#: src/addons/feedback-board/FeedbackBoardView.ts:699
 msgid "A title is required."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:745
+#: src/addons/feedback-board/FeedbackBoardView.ts:762
 msgid "Add comment"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:554
+#: src/addons/feedback-board/FeedbackBoardView.ts:571
 msgid "Archive ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:555
+#: src/addons/feedback-board/FeedbackBoardView.ts:572
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:268
+#: src/addons/feedback-board/FeedbackBoardView.ts:285
 msgid "Bug"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:980
+#: src/addons/feedback-board/FeedbackBoardView.ts:997
 msgid "Comment sent"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:76
+#: src/addons/feedback-board/FeedbackBoardView.ts:78
 msgid "Enable Feedback Board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:109
-#: src/shell/focusDomains.ts:462
+#: src/addons/feedback-board/FeedbackBoardView.ts:116
+#: src/shell/focusDomains.ts:493
 msgid "Feedback Board"
 msgstr ""
 
@@ -11096,7 +11096,7 @@ msgstr ""
 msgid "In Progress"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:192
+#: src/addons/feedback-board/FeedbackBoardView.ts:209
 msgid "Loading board…"
 msgstr ""
 
@@ -11108,12 +11108,12 @@ msgstr ""
 msgid "New feedback board ticket: \"%s\""
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:251
-#: src/addons/feedback-board/FeedbackBoardView.ts:660
+#: src/addons/feedback-board/FeedbackBoardView.ts:268
+#: src/addons/feedback-board/FeedbackBoardView.ts:677
 msgid "New Ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:469
+#: src/addons/feedback-board/FeedbackBoardView.ts:486
 msgid "No archived tickets yet."
 msgstr ""
 
@@ -11121,7 +11121,7 @@ msgstr ""
 msgid "Only readable in NoorNote."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:635
+#: src/addons/feedback-board/FeedbackBoardView.ts:652
 msgid "Post Ticket"
 msgstr ""
 
@@ -11133,77 +11133,77 @@ msgstr ""
 msgid "Ticket \"%s\" was archived"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:576
+#: src/addons/feedback-board/FeedbackBoardView.ts:593
 msgid "Ticket archived"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:703
+#: src/addons/feedback-board/FeedbackBoardView.ts:720
 msgid "Ticket posted to the board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:868
+#: src/addons/feedback-board/FeedbackBoardView.ts:885
 msgid "Ticket updated"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:625
+#: src/addons/feedback-board/FeedbackBoardView.ts:642
 msgid "Type"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:267
+#: src/addons/feedback-board/FeedbackBoardView.ts:284
 msgid "Wish"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:736
+#: src/addons/feedback-board/FeedbackBoardView.ts:753
 msgid "Withdraw Ticket"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardService.ts:632
-#: src/addons/feedback-board/FeedbackBoardView.ts:417
-#: src/addons/feedback-board/FeedbackBoardView.ts:439
+#: src/addons/feedback-board/FeedbackBoardView.ts:434
+#: src/addons/feedback-board/FeedbackBoardView.ts:456
 msgid "Withdrawn"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:420
+#: src/addons/feedback-board/FeedbackBoardView.ts:437
 msgid "%s comment"
 msgid_plural "%s comments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:242
+#: src/addons/feedback-board/FeedbackBoardView.ts:259
 msgid "%s ticket"
 msgid_plural "%s tickets"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:809
+#: src/addons/feedback-board/FeedbackBoardView.ts:826
 msgid "Delete ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:845
+#: src/addons/feedback-board/FeedbackBoardView.ts:862
 msgid "Ticket deleted"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:269
+#: src/addons/feedback-board/FeedbackBoardView.ts:286
 msgid "Question"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:270
+#: src/addons/feedback-board/FeedbackBoardView.ts:287
 msgid "Refinement"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:951
+#: src/addons/feedback-board/FeedbackBoardView.ts:968
 msgid "Comment deleted"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:934
+#: src/addons/feedback-board/FeedbackBoardView.ts:951
 msgid "Delete comment"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:935
+#: src/addons/feedback-board/FeedbackBoardView.ts:952
 msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:810
+#: src/addons/feedback-board/FeedbackBoardView.ts:827
 msgid ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
@@ -11278,7 +11278,7 @@ msgstr ""
 msgid "New message from an unknown sender"
 msgstr "Nouveau message d'un expéditeur inconnu"
 
-#: src/services/ViewMountingService.ts:129
+#: src/services/ViewMountingService.ts:133
 msgid "This view failed to load. Please reload the page."
 msgstr "Cette vue n'a pas pu être chargée. Veuillez recharger la page."
 
@@ -11345,7 +11345,7 @@ msgstr ""
 msgid "Booking page disabled, published slots removed"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:409
+#: src/addons/feedback-board/FeedbackBoardView.ts:426
 msgid "Card options"
 msgstr ""
 
@@ -11367,7 +11367,7 @@ msgstr ""
 msgid "Connection not ready yet, try again in a moment."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:292
+#: src/addons/feedback-board/FeedbackBoardView.ts:309
 msgid "Copy Permalink"
 msgstr ""
 
@@ -11468,10 +11468,11 @@ msgid ""
 msgstr ""
 
 #: src/components/timeline/Timeline.ts:432
+#: src/components/views/ProfileView.ts:2148
 msgid "Nothing published here yet, or not available on your relays."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:322
+#: src/addons/feedback-board/FeedbackBoardView.ts:339
 msgid "Permalink"
 msgstr ""
 
@@ -11491,18 +11492,18 @@ msgstr ""
 msgid "Private, encrypted"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:566
-#: src/addons/feedback-board/FeedbackBoardView.ts:570
-#: src/addons/feedback-board/FeedbackBoardView.ts:692
-#: src/addons/feedback-board/FeedbackBoardView.ts:696
-#: src/addons/feedback-board/FeedbackBoardView.ts:832
-#: src/addons/feedback-board/FeedbackBoardView.ts:836
-#: src/addons/feedback-board/FeedbackBoardView.ts:862
-#: src/addons/feedback-board/FeedbackBoardView.ts:865
-#: src/addons/feedback-board/FeedbackBoardView.ts:944
-#: src/addons/feedback-board/FeedbackBoardView.ts:948
-#: src/addons/feedback-board/FeedbackBoardView.ts:972
-#: src/addons/feedback-board/FeedbackBoardView.ts:977
+#: src/addons/feedback-board/FeedbackBoardView.ts:583
+#: src/addons/feedback-board/FeedbackBoardView.ts:587
+#: src/addons/feedback-board/FeedbackBoardView.ts:709
+#: src/addons/feedback-board/FeedbackBoardView.ts:713
+#: src/addons/feedback-board/FeedbackBoardView.ts:849
+#: src/addons/feedback-board/FeedbackBoardView.ts:853
+#: src/addons/feedback-board/FeedbackBoardView.ts:879
+#: src/addons/feedback-board/FeedbackBoardView.ts:882
+#: src/addons/feedback-board/FeedbackBoardView.ts:961
+#: src/addons/feedback-board/FeedbackBoardView.ts:965
+#: src/addons/feedback-board/FeedbackBoardView.ts:989
+#: src/addons/feedback-board/FeedbackBoardView.ts:994
 msgid "Publishing failed, try again."
 msgstr ""
 
@@ -11553,7 +11554,7 @@ msgid ""
 "below, as a widget in the sidebar."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:501
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:519
 msgid ""
 "Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the "
 "English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
@@ -11577,11 +11578,11 @@ msgstr ""
 msgid "Subscribed, events added to your calendar grid"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:208
+#: src/addons/feedback-board/FeedbackBoardView.ts:225
 msgid "The board could not be loaded, check your connection."
 msgstr ""
 
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:525
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:543
 msgid ""
 "The daily ayah could not be loaded. Check your connection, it will retry "
 "automatically."
@@ -11591,13 +11592,13 @@ msgstr ""
 msgid "The response could not be published, no relay accepted it"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:631
+#: src/addons/feedback-board/FeedbackBoardView.ts:648
 msgid ""
 "Tickets are public Nostr events, visible in every Nostr client "
 "(kanbanstr-compatible), not only in NoorNote. Do not include private data."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:253
+#: src/addons/feedback-board/FeedbackBoardView.ts:270
 msgid ""
 "Tickets are public, visible in every Nostr client (kanbanstr-compatible), "
 "not only in NoorNote."
@@ -11611,7 +11612,7 @@ msgid ""
 "fixed window, as far as relay retention allows."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:416
+#: src/addons/feedback-board/FeedbackBoardView.ts:433
 msgid "Zap the developer"
 msgstr "Envoyer un zap au développeur"
 
@@ -11793,7 +11794,7 @@ msgstr ""
 msgid "(Author)"
 msgstr ""
 
-#: src/shell/focusShell.ts:226
+#: src/shell/focusShell.ts:245
 msgid "Classic interface active"
 msgstr ""
 
@@ -11835,7 +11836,6 @@ msgid "Failed to update pin"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:153
-#: src/shell/focusShell.ts:216
 msgid "Focus UI (v2)"
 msgstr ""
 
@@ -11852,7 +11852,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/live-streams/LiveStreamsAddonView.ts:79
 #: src/addons/live-streams/LiveStreamsAddonView.ts:89
-#: src/shell/focusDomains.ts:325
+#: src/shell/focusDomains.ts:343
 msgid "Live Streams"
 msgstr ""
 
@@ -11953,7 +11953,7 @@ msgstr ""
 msgid "What's New"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2067
+#: src/components/layout/MainLayout.ts:2141
 msgid "What's new in v%s"
 msgstr ""
 
@@ -11983,24 +11983,24 @@ msgid ""
 "the box. Currently running streams are listed below."
 msgstr ""
 
-#: src/shell/focusShell.ts:88
+#: src/shell/focusShell.ts:92
 msgid "Bottom panel"
 msgstr ""
 
-#: src/shell/focusShell.ts:88
+#: src/shell/focusShell.ts:92
 msgid "Top panel"
 msgstr ""
 
-#: src/shell/focusDomains.ts:518
+#: src/shell/focusDomains.ts:556
 msgid "Nostr Majlis"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:154
-#: src/shell/focusDomains.ts:203
+#: src/shell/focusDomains.ts:213
 msgid "Social Media"
 msgstr ""
 
-#: src/shell/focusDomains.ts:503
+#: src/shell/focusDomains.ts:538
 msgid "Bulk Delete"
 msgstr ""
 
@@ -12021,8 +12021,8 @@ msgstr "Mode tablette"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Mode tablette (2 colonnes, centrées)"
 
-#: src/shell/focusStage.ts:1721
-#: src/shell/focusStage.ts:1741
+#: src/shell/focusStage.ts:2083
+#: src/shell/focusStage.ts:2103
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -12047,20 +12047,20 @@ msgstr ""
 "Les longues publications sont toujours affichées intégralement, sans "
 "boutons « Afficher plus »."
 
-#: src/shell/focusStage.ts:1738
+#: src/shell/focusStage.ts:2100
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:1717
+#: src/shell/focusStage.ts:2079
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:1716
+#: src/shell/focusStage.ts:2078
 msgid "Move all circles to the right column"
 msgstr ""
 
-#: src/shell/focusStage.ts:562
-#: src/shell/focusStage.ts:720
+#: src/shell/focusStage.ts:1056
+#: src/shell/focusStage.ts:875
 msgid "Reorder"
 msgstr ""
 
@@ -12093,7 +12093,7 @@ msgstr ""
 msgid "Write Note"
 msgstr "Écrire une note"
 
-#: src/components/views/NewNoteView.ts:281
+#: src/components/views/NewNoteView.ts:286
 msgid "Write new note"
 msgstr ""
 
@@ -12130,7 +12130,7 @@ msgstr ""
 "Petname public — stocké dans ta liste de contacts (NIP-02), visible par "
 "tout le monde. Cliquer pour modifier."
 
-#: src/components/layout/MainLayout.ts:2185
+#: src/components/layout/MainLayout.ts:2259
 #: src/components/views/VideoEditorView.ts:125
 #: src/shell/focusMediaSurface.ts:44
 msgid "Post Media"
@@ -12140,8 +12140,8 @@ msgstr "Publier un média"
 msgid "Post Listing"
 msgstr "Publier une annonce"
 
-#: src/shell/focusStage.ts:1534
-#: src/shell/focusStage.ts:1541
+#: src/shell/focusStage.ts:1898
+#: src/shell/focusStage.ts:1905
 msgid "Move widget"
 msgstr ""
 
@@ -12190,7 +12190,9 @@ msgstr ""
 msgid ""
 "Activate the <a class=\"live-stream-card__hint-link\" "
 "href=\"/live-streams\">Live Streams</a> addon to see this live stream."
-msgstr "Activez l'extension <a class=\"live-stream-card__hint-link\" href=\"/live-streams\">Live Streams</a> pour voir ce flux en direct."
+msgstr ""
+"Activez l'extension <a class=\"live-stream-card__hint-link\" "
+"href=\"/live-streams\">Live Streams</a> pour voir ce flux en direct."
 
 #: src/shell/focusBookmarksSurface.ts:47
 msgid "Enable Bookmarks in Settings."
@@ -12200,9 +12202,50 @@ msgstr "Activez les favoris dans les paramètres."
 msgid "Enable Live Streams in Timeline"
 msgstr "Activer les flux en direct dans le fil"
 
-#: src/shell/focusSearchSurface.ts:68
+#: src/shell/focusSearchSurface.ts:43
 msgid "Search notes, users and hashtags…"
 msgstr "Rechercher des notes, des utilisateurs et des hashtags…"
+
+#: src/shell/focusStage.ts:878
+msgid "Hide"
+msgstr "Masquer"
+
+#: src/shell/hiddenFeaturesPanel.ts:32
+msgid "Hidden Features"
+msgstr "Fonctions masquées"
+
+#: src/shell/hiddenFeaturesPanel.ts:73
+msgid "Nothing hidden yet"
+msgstr "Rien de masqué pour le moment"
+
+#: src/shell/hiddenFeaturesPanel.ts:85
+msgid "Unhide"
+msgstr "Réafficher"
+
+#: src/shell/hiddenFeaturesPanel.ts:66
+msgid "Unhide all"
+msgstr ""
+
+#: src/shell/focusStage.ts:1058
+msgid ""
+"Hide feature — it will be hidden and unloaded from the app memory. All "
+"background requests are stopped. You can unhide it in the Edge Drawer at "
+"the bottom."
+msgstr ""
+
+#: src/shell/focusShell.ts:109
+#: src/shell/focusShell.ts:96
+msgid "Open edge drawer"
+msgstr ""
+
+#: src/shell/focusStage.ts:280
+#: src/shell/focusStage.ts:290
+msgid "Load Resource Monitor"
+msgstr ""
+
+#: src/shell/focusShell.ts:235
+msgid "Switch to v1"
+msgstr ""
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

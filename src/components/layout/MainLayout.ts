@@ -59,6 +59,8 @@ import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
 import {
   applyFocusUi,
+  isFocusUiActive,
+  isFocusDomainHidden,
   isFocusUiEnabled,
   registerFocusUiTypedTrigger,
 } from '../../helpers/focusUiSetting';
@@ -324,8 +326,20 @@ export class MainLayout {
     // Initialize DMToastNotifier — toasts on incoming DMs (unknown senders
     // land in the Unknown tab; known senders only bump the sidebar diode).
     // Singleton with reset(); instance lives for the lifetime of this MainLayout.
+    // Hidden objects (v2): with the Messages object hidden under the Focus
+    // UI, DMs are shut down entirely — the notifier stays down until the
+    // object is restored (live via focus:objects-hidden-changed).
     DMToastNotifier.reset();
-    DMToastNotifier.getInstance();
+    if (!isFocusDomainHidden('messages')) {
+      DMToastNotifier.getInstance();
+    }
+    this.eventBus.on('focus:objects-hidden-changed', data => {
+      if (isFocusUiActive() && !!data?.hidden?.includes('messages')) {
+        DMToastNotifier.reset();
+      } else {
+        DMToastNotifier.getInstance();
+      }
+    });
 
     // Initialize HamburgerBadgeManager (phone mode notification dot)
     const hamburgerBadgeElement = this.element.querySelector(

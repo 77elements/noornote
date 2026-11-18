@@ -13,7 +13,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { isBookmarksEnabled } from '../../addons/bookmarks/index';
+import { isBookmarksUiActive } from '../../helpers/focusUiSetting';
 import { formatCount } from '../../helpers/formatCount';
 import { PlatformService } from '../../services/PlatformService';
 import { NnDropdown } from './NnDropdown';
@@ -115,7 +115,7 @@ export class InteractionStatusLine {
 
     // Bookmark state (addon-gated): reflect the current public-bookmark status
     // on the icon and keep it in sync when toggled elsewhere (e.g. the note menu).
-    if (isBookmarksEnabled()) {
+    if (isBookmarksUiActive()) {
       void this.checkBookmarkState();
       this.bookmarkSubId = TypedEventBus.getInstance().on(
         'bookmark:updated',
@@ -291,7 +291,7 @@ export class InteractionStatusLine {
       : '';
 
     // Public bookmark toggle (addon-gated). Private bookmarks stay in the note menu.
-    const bookmarkHtml = isBookmarksEnabled()
+    const bookmarkHtml = isBookmarksUiActive()
       ? `<button class="isl-action isl-bookmark" type="button" data-action="bookmark" title="${_('Bookmark')}">
            <span class="isl-icon"><svg width="18" height="18"><use href="#icon-bookmark-24"/></svg></span>
          </button>`

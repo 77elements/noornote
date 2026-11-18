@@ -474,6 +474,8 @@ export interface AppEvents {
   'settings:back-bar-changed': BackBarChangedPayload;
   /** Focus-UI switch flipped — payload: { enabled: boolean }. */
   'settings:focus-ui-changed': { enabled: boolean };
+  /** Hidden FS objects changed — payload: { hidden: string[] } (domain ids). */
+  'focus:objects-hidden-changed': { hidden: string[] };
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;
