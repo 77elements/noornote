@@ -232,7 +232,7 @@ export class TimelineView extends View {
 
     // Tabs wrapper for horizontal scroll
     const tabsWrapper = document.createElement('div');
-    tabsWrapper.className = 'tabs tabs--scrollable';
+    tabsWrapper.className = 'tabs';
 
     // Create all tabs
     this.tabs.forEach(tab => {

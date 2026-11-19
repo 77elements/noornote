@@ -537,10 +537,10 @@ export class MainLayout {
     // Initialize ViewTabManager
     this.viewTabManager = ViewTabManager.getInstance();
 
-    // Apply scrollable class to sidebar tabs + let the mouse wheel cycle the active tab
+    // Wheel-to-cycle for the sidebar view tabs (the Tabs component owns
+    // the overflow behavior — no scrollable class anymore)
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
-      sidebarTabs.classList.add('tabs--scrollable');
       this.sidebarTabsWheelCleanup = this.setupTabWheelSwitch(
         sidebarTabs as HTMLElement
       );
@@ -636,11 +636,7 @@ export class MainLayout {
     // content active; restore the default so returning to right-pane isn't blank.
     this.activateSccDefault(getSccDefaultTab());
 
-    // Remove scrollable class + detach the wheel handler
-    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
-    if (sidebarTabs) {
-      sidebarTabs.classList.remove('tabs--scrollable');
-    }
+    // Detach the wheel handler
     this.sidebarTabsWheelCleanup?.();
     this.sidebarTabsWheelCleanup = null;
 
@@ -661,11 +657,7 @@ export class MainLayout {
     this.viewTabEventSubscriptions.forEach(subId => this.eventBus.off(subId));
     this.viewTabEventSubscriptions = [];
 
-    // Remove scrollable class + detach the wheel handler
-    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
-    if (sidebarTabs) {
-      sidebarTabs.classList.remove('tabs--scrollable');
-    }
+    // Detach the wheel handler
     this.sidebarTabsWheelCleanup?.();
     this.sidebarTabsWheelCleanup = null;
   }

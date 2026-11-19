@@ -111,7 +111,7 @@ export class NotificationsView extends View {
       <div class="notifications-view__header">
         <h1>${_('Notifications')}</h1>
       </div>
-      <div id="notifications-tabs" class="tabs tabs--scrollable">
+      <div id="notifications-tabs" class="tabs">
         <button class="tab tab--active" data-tab="all">${_('All')}</button>
         <button class="tab" data-tab="mentions">${_('Mentions')}</button>
         <button class="tab" data-tab="reactions">${_('Reactions')}</button>

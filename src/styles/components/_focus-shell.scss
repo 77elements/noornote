@@ -1400,17 +1400,24 @@ $focus-tab-overlap: 1px;
 .hidden-features {
   box-sizing: border-box;
   width: 100%;
-  padding: $gap $gap calc($gap * 1.5);
-  padding-right: calc(#{$gap * 2} + 30px);
+  // No own padding — the .focus-settings host provides the drawer padding
+  // already (duplicated here once, shrinking the content box to ~159px on
+  // phones: the 220px chip tracks then overflowed the drawer).
 
   .hidden-features__head {
     display: flex;
     align-items: baseline;
     gap: calc($gap * 0.75);
+    // Full width: without it the head shrinks to content and the heading
+    // + unhide-all link wrap needlessly.
+    width: 100%;
   }
 
   .hidden-features__heading {
     margin: 0 0 $gap;
+    // h3 in the outline (the sidebar's h2 sections stand above it in the
+    // document) at the h4 optical size — level and size are decoupled.
+    @extend %h4;
     color: var(--color-3);
   }
 

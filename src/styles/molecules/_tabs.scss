@@ -14,23 +14,34 @@
   display: flex;
   gap: calc($gap / 2);
 
-  // Scrollable variant for many tabs
-  &--scrollable {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-behavior: smooth;
-    // `pan-x` tells the browser the whole strip is for horizontal panning, so a
-    // touch-drag scrolls the tabs even when it starts ON a tab button (not just in
-    // the gaps between them). A clean tap still selects the tab. Same fix as the
-    // scroll-carousel. Without this, a drag on a button is read as a tap attempt
-    // and the strip never scrolls on mobile.
-    touch-action: pan-x;
-    @include custom-scrollbar;
+  .tab {
+    // Tabs never wrap internally — the Tabs component collapses the row
+    // into a dropdown when it doesn't fit (no horizontal scrollbar).
+    white-space: nowrap;
+  }
 
-    .tab {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
+  // Overflow fallback (Tabs component): when the row doesn't fit its
+  // container, the buttons hide and an NnDropdown (same design language)
+  // takes over — no horizontal scrollbar anywhere.
+  &--collapsed > .tab {
+    display: none;
+  }
+
+  &__dropdown {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  // Off-flow measurement clone (Tabs component): while collapsed, the row's
+  // natural button width is measured here — hidden, never interactive.
+  &--measure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
   }
 }
 
