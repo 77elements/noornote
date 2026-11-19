@@ -14,10 +14,25 @@
   display: flex;
   gap: calc($gap / 2);
 
+  // Never blow out the parent: as a flex/grid item the row's min-width:auto
+  // lets its nowrap content stretch the box beyond the container — the Tabs
+  // component could then never detect overflow (scrollWidth would equal
+  // clientWidth on the stretched box). Cap to the container instead; the
+  // component collapses the row into a dropdown when content no longer fits.
+  min-width: 0;
+  max-width: 100%;
+
   .tab {
     // Tabs never wrap internally — the Tabs component collapses the row
     // into a dropdown when it doesn't fit (no horizontal scrollbar).
     white-space: nowrap;
+  }
+
+  // Dropdown-only pseudo-tab (e.g. the timeline's "Edit tribes" action):
+  // never a row button — the Tabs component lists it as the LAST dropdown
+  // option while the row is collapsed.
+  &--dropdown-only {
+    display: none;
   }
 
   // Overflow fallback (Tabs component): when the row doesn't fit its

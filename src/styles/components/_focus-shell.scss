@@ -16,6 +16,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../abstracts/utilities' as *;
 
 html.ui--focus {
   // Classic chrome: fully out of the way while the shell is active.
@@ -223,15 +224,18 @@ html.ui--focus {
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
     background: none;
-    // Two-column body: the surface plus the action-button column (30px),
-    // separated by the base gap — the stage's middle grid column grows by
-    // $gap + 30px accordingly (see .focus-stage__grid). Phone/tablet: the
-    // surface flexes (the column is not wide enough for the fixed 600px);
-    // desktop >=1100 gives it the fixed 600px.
+    // Single column on phones: the action buttons float over the header
+    // row (see .focus-object__actions) — the surface gets the full width.
     display: grid;
-    grid-template-columns: 1fr 30px;
+    grid-template-columns: 1fr;
     grid-template-rows: 100%;
     gap: $gap;
+
+    @include tablet-big {
+      // Tablet/desktop: the actions return to their own narrow column
+      // next to the surface — there is room for it here.
+      grid-template-columns: 1fr 30px;
+    }
 
     @media (min-width: 1100px) {
       grid-template-columns: 600px 30px;
@@ -404,17 +408,41 @@ html.ui--focus {
 // settings, dissolves the v1 UI settings step by step).
 .focus-object__actions {
   display: none;
-  flex-direction: column;
-  gap: 10px;
-  // Explicit cell: column 2, row 1. DOM order (actions before surface)
-  // would otherwise push the surface to an auto-placed second row via the
-  // sparse packing cursor.
-  grid-column: 2;
-  grid-row: 1;
+  // Phone: horizontal glass pill floating over the title row — the active
+  // object has no actions column there, the surface gets the full width.
+  // The view's own header actions ("Write Note" & co.) render on the
+  // header's second line, below this cluster — no overlap.
+  position: absolute;
+  top: 0;
+  right: 0;
+  flex-direction: row;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-1) 82%, transparent);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   z-index: $z-back-bar;
 
   .focus-object--active & {
     display: flex;
+  }
+
+  @include tablet-big {
+    // Tablet/desktop: back in the narrow column next to the surface —
+    // there is room for it on these widths.
+    position: static;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    // Explicit cell: column 2, row 1. DOM order (actions before surface)
+    // would otherwise push the surface to an auto-placed second row via the
+    // sparse packing cursor.
+    grid-column: 2;
+    grid-row: 1;
   }
 }
 
@@ -422,12 +450,14 @@ html.ui--focus {
 .focus-object__back,
 .focus-object__scroll-top,
 .focus-object__settings {
-  width: 100%; // fill the 30px actions column
-  height: 30px;
+  // Phone: comfortable touch targets inside the floating glass pill —
+  // border-free, the pill itself carries the contrast.
+  width: 36px;
+  height: 36px;
   padding: 0;
-  border: 2px solid var(--color-4);
+  border: none;
   border-radius: 50%;
-  background: var(--color-1);
+  background: transparent;
   color: var(--color-4);
   display: grid;
   place-items: center;
@@ -435,6 +465,13 @@ html.ui--focus {
 
   &[hidden] {
     display: none;
+  }
+
+  @include tablet-big {
+    width: 100%; // fill the 30px actions column
+    height: 30px;
+    border: 2px solid var(--color-4);
+    background: var(--color-1);
   }
 }
 
@@ -1014,7 +1051,12 @@ html.ui--focus {
   // overflows the slot (addon views, marketplace, composers) — those get
   // the clearance on their flow root instead (the .back-padder rule and
   // the marketplace rule below).
-  padding-bottom: $fv-padding-bottom;
+  // Phone: no clearance — the content uses the full height.
+  padding-bottom: 0;
+
+  @include tablet-big {
+    padding-bottom: $fv-padding-bottom;
+  }
   // The classic layout scrolls the .primary-content column — the shell
   // column scrolls here instead. Views that manage their own scrolling
   // (social timeline: overflow hidden + inner scroll) fit exactly and
@@ -1065,6 +1107,40 @@ html.ui--focus {
 
   h1 {
     margin: 0;
+  }
+}
+
+// Focus UI, phone: the domain h1 steps aside — screen-reader-only (same
+// recipe classic uses). The view's own action button ("Write Note" & co.)
+// takes the row's left side, the floating action pill hovers right; the
+// surface gets the full width. Document outline keeps the h1.
+// Tablet/desktop: the heading is back (actions return to their column).
+.ui--focus .focus-view-header h1,
+.ui--focus .focus-object__content > h1 {
+  @extend %visually-hidden;
+
+  @include tablet-big {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 $gap 0;
+    padding: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+// ...and the header's own action button takes the title's left spot:
+// the split row pins it right via margin-left:auto — with the h1 out of
+// flow that would park it at the right edge under the action pill.
+// (Extra head selector: molecules/layouts loads after this file and would
+// otherwise win the equal-specificity tie.)
+.ui--focus .focus-view-header .focus-view-header__action {
+  margin-left: 0;
+
+  @include tablet-big {
+    margin-left: auto; // restore the .l-row--split pin
   }
 }
 
@@ -1269,7 +1345,6 @@ $focus-tab-overlap: 1px;
   max-width: none;
   margin: 0 auto;
   padding: $gap $gap calc($gap * 1.5);
-  padding-right: calc(#{$gap * 2} + 30px);
 
   @media (min-width: 1100px) {
     max-width: calc(600px + #{$gap * 3} + 30px);

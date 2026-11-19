@@ -250,15 +250,27 @@ export class TimelineView extends View {
       editLink.className =
         'timeline-view__edit-link btn btn--mini btn--passive';
       editLink.textContent = _('Edit tribes');
-      editLink.addEventListener('click', () => {
+      const openTribes = (): void => {
         // Focus UI: the Tribes object owns the 'tribes' view type — the
         // stage switches to it (same as clicking the circle). Classic:
         // the list tab as before.
         if (!delegateToFocusUi('tribes')) {
           this.eventBus.emit('list:open', { listType: 'tribes' });
         }
-      });
+      };
+      editLink.addEventListener('click', openTribes);
       tabsContainer.appendChild(editLink);
+
+      // Phone: the button is hidden (the Latest filter takes its spot) and
+      // its action rides as the LAST option of the tabs dropdown — a
+      // dropdown-only .tab, the Tabs component lists it after the real
+      // tabs. Present at every breakpoint (hidden in expanded rows), so
+      // the option survives tab-row rebuilds no matter when they run.
+      const editTab = document.createElement('button');
+      editTab.className = 'tab tab--dropdown-only';
+      editTab.textContent = _('Edit tribes');
+      editTab.addEventListener('click', openTribes);
+      tabsWrapper.appendChild(editTab);
     }
 
     header.appendChild(tabsContainer);

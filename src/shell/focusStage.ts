@@ -965,20 +965,6 @@ export class FocusStage {
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-eye-closed"/></svg>
       </button>
       <div class="focus-object__actions">
-        <button type="button" class="focus-object__control" data-focus-action="close"
-          aria-label="${_('Close')}">
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
-        </button>
-        <button type="button" class="focus-object__back" data-focus-action="back"
-          hidden
-          aria-label="${_('Back')}">
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
-        </button>
-        <button type="button" class="focus-object__scroll-top" data-focus-action="scroll-top"
-          hidden
-          aria-label="${_('Scroll to top')}">
-          <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
-        </button>
         ${
           def.createSettings
             ? `
@@ -988,6 +974,20 @@ export class FocusStage {
         </button>`
             : ''
         }
+        <button type="button" class="focus-object__scroll-top" data-focus-action="scroll-top"
+          hidden
+          aria-label="${_('Scroll to top')}">
+          <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
+        </button>
+        <button type="button" class="focus-object__back" data-focus-action="back"
+          hidden
+          aria-label="${_('Back')}">
+          <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
+        </button>
+        <button type="button" class="focus-object__control" data-focus-action="close"
+          aria-label="${_('Close')}">
+          <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
+        </button>
       </div>
       ${DIODES[def.id] ?? ''}
       <div class="focus-object__content focus-object__content--${def.id}" data-focus-slot></div>

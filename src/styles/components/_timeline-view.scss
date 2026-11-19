@@ -38,7 +38,10 @@
   gap: calc($gap / 2);
 }
 
-.timeline-view__edit-link {
+// Phone: hidden — its action rides as the last option of the tabs
+// dropdown (tab--dropdown-only), the Latest filter takes its spot.
+// Double class beats the later-imported .btn display rule.
+.timeline-view__edit-link.btn {
   background: none;
   border: none;
   color: var(--color-4);
@@ -49,6 +52,12 @@
   transition: $transition-colors;
   white-space: nowrap;
   flex-shrink: 0;
+
+  display: none;
+
+  @include tablet-big {
+    display: inline-flex; // .btn base
+  }
 
   &:hover {
     background: var(--bg-accent);
