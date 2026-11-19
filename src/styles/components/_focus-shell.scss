@@ -171,8 +171,8 @@ html.ui--focus {
   }
 }
 
-// A primary domain object: a full circle with a double ring (15px inner +
-// 15px outer, no gap — the outer ring is an outline pulled INSIDE the box,
+// A primary domain object: a full circle with a double ring (8px inner +
+// 8px outer, no gap — the outer ring is an outline pulled INSIDE the box,
 // hugging the border, so the whole circle fits its grid cell exactly),
 // centered label. Mobile-first: phone circles flex with their 2-per-row
 // grid cell; tablet/desktop fix at 230px (the auto-fill column unit).
@@ -186,9 +186,9 @@ html.ui--focus {
   align-self: center;
   // Double ring in one hue, darkened purely via alpha (see $ring-* in
   // _variables.scss): inner ring 60%, outer ring 40%.
-  border: 15px solid $ring-inner;
-  outline: 15px solid $ring-outer;
-  outline-offset: -30px; // pull the outline in: directly inside the border
+  border: 8px solid $ring-inner;
+  outline: 8px solid $ring-outer;
+  outline-offset: -16px; // pull the outline in: directly inside the border
   border-radius: 50%;
   // Soft radial glow in the object hue, centered toward the top right,
   // slightly lighter in the middle — gives the circle a lit, dome-like feel.
@@ -260,8 +260,8 @@ html.ui--focus {
 }
 
 .focus-object__icon {
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   fill: var(--color-3);
   opacity: 0.9;
   filter: url(#nn-engrave-icon);
@@ -367,8 +367,8 @@ html.ui--focus {
 // 20px pill would otherwise win the cascade).
 .focus-object .focus-object__diode {
   position: absolute;
-  bottom: 10px;
-  right: 0;
+  bottom: 5px;
+  right: -5px;
   min-width: 30px;
   height: 30px;
   padding: 0;
