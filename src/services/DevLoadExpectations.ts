@@ -94,11 +94,15 @@ export interface DevLoadExpectations {
 export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
   requiresFocusUi: true,
 
-  // 21 = main.ts ×2, AddonLoader.runInit ×6, NostrTransport.doConnect ×1,
+  // 22 = main.ts ×2, AddonLoader.runInit ×7, NostrTransport.doConnect ×1,
   // PostLoginService.handleLogin ×3, BookmarkReadStateService ×1 (diode:
   // cross-device read markers), 8 anonymous module-layer timers (DM ×2,
-  // Notifications ×1, Reactions ×2, Feed ×1, DiagLogger ×2).
-  maxIntervals: 21,
+  // Notifications ×1, Reactions ×2, Feed ×1, DiagLogger ×2). The 7th
+  // addon job (2026-11-19): the reference account enabled more user
+  // addons since calibration (calendar / marketplace / follow-packs
+  // family) — addon background intervals scale with the user's addon
+  // toggles, every running job has an always-on reason.
+  maxIntervals: 22,
   knownIntervalOrigins: [
     {
       pattern: 'main.ts',
@@ -107,8 +111,11 @@ export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
     },
     {
       pattern: 'AddonLoader',
-      reason: 'Addon runtime background jobs (always-on reasons only)',
-      max: 6,
+      reason:
+        'Addon runtime background jobs (always-on reasons only; count ' +
+        'scales with user-enabled addons — 7th job from the newly ' +
+        'enabled calendar/marketplace/follow-packs family)',
+      max: 7,
     },
     {
       pattern: 'NostrTransport.doConnect',

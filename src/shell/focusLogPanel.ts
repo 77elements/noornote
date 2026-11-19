@@ -40,7 +40,7 @@ export class FocusLogPanel {
     );
     if (logger.isInMemorySuppressed()) {
       // Capacitor: no in-memory collection — logs live in files only.
-      this.listEl.innerHTML = `<p class="focus-log-panel__empty">${_('Logs are stored in files on this device — use the export button.')}</p>`;
+      this.listEl.innerHTML = `<p class="focus-log-panel__empty">${_('Logs are stored in files on this device, use the export button.')}</p>`;
       return;
     }
     this.render();

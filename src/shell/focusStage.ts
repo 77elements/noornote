@@ -59,6 +59,7 @@ import {
   type FocusSettingsView,
 } from './focusDomains';
 import { loadHiddenObjectIds, hideObject } from './hiddenObjectsStore';
+import { diagLog } from '../services/DiagnosticLogger';
 import { NnDropdown } from '../components/ui/NnDropdown';
 import {
   FOCUS_OBJECT_SETS,
@@ -345,6 +346,7 @@ export class FocusStage {
           checked
         );
         this.applyArrangeGate();
+        diagLog('system', 'focus_arrange_positions_toggled', { on: checked });
       },
     });
     const arrangeWrap = topBar.querySelector(
@@ -1174,7 +1176,7 @@ export class FocusStage {
       [_('Reorder'), moveBtn],
       [
         _(
-          'Hide feature — it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom.'
+          'Hide feature, it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom.'
         ),
         hideBtn,
       ],
@@ -2231,6 +2233,9 @@ export class FocusStage {
       this.stackCompact
     );
     this.applyStackCompact();
+    diagLog('system', 'focus_stack_compact_toggled', {
+      on: this.stackCompact,
+    });
   }
 
   /** Apply the compact state to every live circle. The ACTIVE circle is

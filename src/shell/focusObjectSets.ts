@@ -13,6 +13,7 @@
 import { FOCUS_DOMAINS } from './focusDomains';
 import { loadHiddenObjectIds, saveHiddenObjectIds } from './hiddenObjectsStore';
 import { _ } from '../i18n';
+import { diagLog } from '../services/DiagnosticLogger';
 
 export interface FocusObjectSet {
   id: string;
@@ -58,5 +59,10 @@ export function matchingObjectSet(
 export function applyObjectSet(setId: string): string[] {
   const set = FOCUS_OBJECT_SETS.find(s => s.id === setId);
   if (!set) return loadHiddenObjectIds();
-  return saveHiddenObjectIds(hiddenIdsForSet(set));
+  const hidden = saveHiddenObjectIds(hiddenIdsForSet(set));
+  diagLog('system', 'focus_object_set_applied', {
+    setId,
+    hiddenCount: hidden.length,
+  });
+  return hidden;
 }

@@ -367,8 +367,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1026
-#: src/shell/focusStage.ts:1185
+#: src/shell/focusStage.ts:1028
+#: src/shell/focusStage.ts:1187
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -1498,8 +1498,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1014
-#: src/shell/focusStage.ts:1182
+#: src/shell/focusStage.ts:1016
+#: src/shell/focusStage.ts:1184
 msgid "Back"
 msgstr "Zurück"
 
@@ -1928,8 +1928,8 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1009
-#: src/shell/focusStage.ts:1181
+#: src/shell/focusStage.ts:1011
+#: src/shell/focusStage.ts:1183
 msgid "Close"
 msgstr "Schließen"
 
@@ -4977,8 +4977,8 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1019
-#: src/shell/focusStage.ts:1183
+#: src/shell/focusStage.ts:1021
+#: src/shell/focusStage.ts:1185
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
@@ -12642,8 +12642,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:2210
-#: src/shell/focusStage.ts:2275
+#: src/shell/focusStage.ts:2212
+#: src/shell/focusStage.ts:2280
 msgid "Distribute circles evenly"
 msgstr "Kreise gleichmäßig verteilen"
 
@@ -12668,20 +12668,20 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:2272
+#: src/shell/focusStage.ts:2277
 msgid "Move all circles"
 msgstr "Alle Kreise verschieben"
 
-#: src/shell/focusStage.ts:2206
+#: src/shell/focusStage.ts:2208
 msgid "Move all circles to the left column"
 msgstr "Alle Kreise in die linke Spalte verschieben"
 
-#: src/shell/focusStage.ts:2205
+#: src/shell/focusStage.ts:2207
 msgid "Move all circles to the right column"
 msgstr "Alle Kreise in die rechte Spalte verschieben"
 
-#: src/shell/focusStage.ts:1174
-#: src/shell/focusStage.ts:993
+#: src/shell/focusStage.ts:1176
+#: src/shell/focusStage.ts:995
 msgid "Reorder"
 msgstr "Neu anordnen"
 
@@ -12758,8 +12758,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:2018
-#: src/shell/focusStage.ts:2025
+#: src/shell/focusStage.ts:2020
+#: src/shell/focusStage.ts:2027
 msgid "Move widget"
 msgstr "Widget verschieben"
 
@@ -12784,7 +12784,7 @@ msgstr "Live Streams in der Timeline aktivieren"
 msgid "Search notes, users and hashtags…"
 msgstr "Notizen, Nutzer und Hashtags suchen…"
 
-#: src/shell/focusStage.ts:996
+#: src/shell/focusStage.ts:998
 msgid "Hide"
 msgstr "Ausblenden"
 
@@ -12802,53 +12802,58 @@ msgstr "Wieder einblenden"
 
 #: src/shell/hiddenFeaturesPanel.ts:67
 msgid "Unhide all"
-msgstr ""
-
-#: src/shell/focusStage.ts:1176
-msgid ""
-"Hide feature — it will be hidden and unloaded from the app memory. All "
-"background requests are stopped. You can unhide it in the Edge Drawer at "
-"the bottom."
-msgstr ""
+msgstr "Alle einblenden"
 
 #: src/shell/focusShell.ts:109
 #: src/shell/focusShell.ts:96
 msgid "Open edge drawer"
-msgstr ""
+msgstr "Edge-Drawer öffnen"
 
-#: src/shell/focusStage.ts:304
-#: src/shell/focusStage.ts:362
+#: src/shell/focusStage.ts:305
+#: src/shell/focusStage.ts:364
 msgid "Load Resource Monitor"
-msgstr ""
+msgstr "Ressourcen-Monitor öffnen"
 
 #: src/shell/focusShell.ts:235
 msgid "Switch to v1"
-msgstr ""
+msgstr "Zu v1 wechseln"
 
-#: src/shell/focusLogPanel.ts:43
-msgid "Logs are stored in files on this device — use the export button."
-msgstr ""
-
-#: src/shell/focusObjectSets.ts:27
+#: src/shell/focusObjectSets.ts:28
 msgid "Social Media (minimal)"
-msgstr ""
+msgstr "Social Media (minimal)"
 
-#: src/shell/focusStage.ts:314
+#: src/shell/focusStage.ts:315
 msgid "Workspace"
-msgstr ""
+msgstr "Workspace"
 
-#: src/shell/focusObjectSets.ts:32
+#: src/shell/focusObjectSets.ts:33
 msgid "Everything"
-msgstr ""
+msgstr "Alles"
 
-#: src/shell/focusStage.ts:2200
-#: src/shell/focusStage.ts:2268
+#: src/shell/focusStage.ts:2202
+#: src/shell/focusStage.ts:2273
 msgid "Compact circles"
 msgstr "Kreise kompakt darstellen"
 
-#: src/shell/focusStage.ts:339
+#: src/shell/focusStage.ts:340
 msgid "Arrange positions"
 msgstr "Positionen anordnen"
+
+#: src/shell/focusStage.ts:1178
+msgid ""
+"Hide feature, it will be hidden and unloaded from the app memory. All "
+"background requests are stopped. You can unhide it in the Edge Drawer at "
+"the bottom."
+msgstr ""
+"Funktion ausblenden, sie wird ausgeblendet und aus dem App-Speicher "
+"entladen. Alle Hintergrund-Anfragen werden gestoppt. Im Edge-Drawer unten "
+"kannst du sie wieder einblenden."
+
+#: src/shell/focusLogPanel.ts:43
+msgid "Logs are stored in files on this device, use the export button."
+msgstr ""
+"Logs werden in Dateien auf diesem Gerät gespeichert, über den Export-Button "
+"herunterladen."
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
