@@ -1184,8 +1184,8 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1150
-#: src/shell/focusStage.ts:982
+#: src/shell/focusStage.ts:1014
+#: src/shell/focusStage.ts:1182
 msgid "Back"
 msgstr ""
 
@@ -1835,8 +1835,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1149
-#: src/shell/focusStage.ts:977
+#: src/shell/focusStage.ts:1009
+#: src/shell/focusStage.ts:1181
 msgid "Close"
 msgstr ""
 
@@ -8386,8 +8386,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1151
-#: src/shell/focusStage.ts:987
+#: src/shell/focusStage.ts:1019
+#: src/shell/focusStage.ts:1183
 msgid "Scroll to top"
 msgstr ""
 
@@ -8725,8 +8725,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1153
-#: src/shell/focusStage.ts:994
+#: src/shell/focusStage.ts:1026
+#: src/shell/focusStage.ts:1185
 msgid "Settings"
 msgstr ""
 
@@ -12024,8 +12024,8 @@ msgstr "Mode tablette"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Mode tablette (2 colonnes, centrées)"
 
-#: src/shell/focusStage.ts:2178
-#: src/shell/focusStage.ts:2227
+#: src/shell/focusStage.ts:2210
+#: src/shell/focusStage.ts:2275
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -12050,20 +12050,20 @@ msgstr ""
 "Les longues publications sont toujours affichées intégralement, sans "
 "boutons « Afficher plus »."
 
-#: src/shell/focusStage.ts:2224
+#: src/shell/focusStage.ts:2272
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2174
+#: src/shell/focusStage.ts:2206
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2173
+#: src/shell/focusStage.ts:2205
 msgid "Move all circles to the right column"
 msgstr ""
 
-#: src/shell/focusStage.ts:1142
-#: src/shell/focusStage.ts:961
+#: src/shell/focusStage.ts:1174
+#: src/shell/focusStage.ts:993
 msgid "Reorder"
 msgstr ""
 
@@ -12143,8 +12143,8 @@ msgstr "Publier un média"
 msgid "Post Listing"
 msgstr "Publier une annonce"
 
-#: src/shell/focusStage.ts:1986
-#: src/shell/focusStage.ts:1993
+#: src/shell/focusStage.ts:2018
+#: src/shell/focusStage.ts:2025
 msgid "Move widget"
 msgstr ""
 
@@ -12209,7 +12209,7 @@ msgstr "Activer les flux en direct dans le fil"
 msgid "Search notes, users and hashtags…"
 msgstr "Rechercher des notes, des utilisateurs et des hashtags…"
 
-#: src/shell/focusStage.ts:964
+#: src/shell/focusStage.ts:996
 msgid "Hide"
 msgstr "Masquer"
 
@@ -12229,7 +12229,7 @@ msgstr "Réafficher"
 msgid "Unhide all"
 msgstr ""
 
-#: src/shell/focusStage.ts:1144
+#: src/shell/focusStage.ts:1176
 msgid ""
 "Hide feature — it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12241,8 +12241,8 @@ msgstr ""
 msgid "Open edge drawer"
 msgstr ""
 
-#: src/shell/focusStage.ts:297
-#: src/shell/focusStage.ts:330
+#: src/shell/focusStage.ts:304
+#: src/shell/focusStage.ts:362
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -12258,7 +12258,7 @@ msgstr ""
 msgid "Social Media (minimal)"
 msgstr ""
 
-#: src/shell/focusStage.ts:307
+#: src/shell/focusStage.ts:314
 msgid "Workspace"
 msgstr ""
 
@@ -12266,10 +12266,14 @@ msgstr ""
 msgid "Everything"
 msgstr ""
 
-#: src/shell/focusStage.ts:2168
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2200
+#: src/shell/focusStage.ts:2268
 msgid "Compact circles"
 msgstr "Compacter les cercles"
+
+#: src/shell/focusStage.ts:339
+msgid "Arrange positions"
+msgstr "Organiser les positions"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

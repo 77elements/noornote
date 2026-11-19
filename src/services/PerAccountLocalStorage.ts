@@ -124,6 +124,10 @@ export const StorageKeys = {
   // FV side stacks rendered as compact chips instead of full circles
   // (the top-bar tools' compact toggle). Per-account view preference.
   FOCUS_UI_STACK_COMPACT: 'noornote_focus_ui_stack_compact_map',
+  // Top-bar "Arrange positions" switch: while OFF (default) the layout
+  // satellites (circle move/hide, stack tools, widget move) render
+  // hidden. Per-account view preference.
+  FOCUS_UI_ARRANGE_POSITIONS: 'noornote_focus_ui_arrange_positions_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',

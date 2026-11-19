@@ -367,8 +367,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1153
-#: src/shell/focusStage.ts:994
+#: src/shell/focusStage.ts:1026
+#: src/shell/focusStage.ts:1185
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -1498,8 +1498,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1150
-#: src/shell/focusStage.ts:982
+#: src/shell/focusStage.ts:1014
+#: src/shell/focusStage.ts:1182
 msgid "Back"
 msgstr "Zurück"
 
@@ -1928,8 +1928,8 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1149
-#: src/shell/focusStage.ts:977
+#: src/shell/focusStage.ts:1009
+#: src/shell/focusStage.ts:1181
 msgid "Close"
 msgstr "Schließen"
 
@@ -4977,8 +4977,8 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1151
-#: src/shell/focusStage.ts:987
+#: src/shell/focusStage.ts:1019
+#: src/shell/focusStage.ts:1183
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
@@ -12642,8 +12642,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:2178
-#: src/shell/focusStage.ts:2227
+#: src/shell/focusStage.ts:2210
+#: src/shell/focusStage.ts:2275
 msgid "Distribute circles evenly"
 msgstr "Kreise gleichmäßig verteilen"
 
@@ -12668,20 +12668,20 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:2224
+#: src/shell/focusStage.ts:2272
 msgid "Move all circles"
 msgstr "Alle Kreise verschieben"
 
-#: src/shell/focusStage.ts:2174
+#: src/shell/focusStage.ts:2206
 msgid "Move all circles to the left column"
 msgstr "Alle Kreise in die linke Spalte verschieben"
 
-#: src/shell/focusStage.ts:2173
+#: src/shell/focusStage.ts:2205
 msgid "Move all circles to the right column"
 msgstr "Alle Kreise in die rechte Spalte verschieben"
 
-#: src/shell/focusStage.ts:1142
-#: src/shell/focusStage.ts:961
+#: src/shell/focusStage.ts:1174
+#: src/shell/focusStage.ts:993
 msgid "Reorder"
 msgstr "Neu anordnen"
 
@@ -12758,8 +12758,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:1986
-#: src/shell/focusStage.ts:1993
+#: src/shell/focusStage.ts:2018
+#: src/shell/focusStage.ts:2025
 msgid "Move widget"
 msgstr "Widget verschieben"
 
@@ -12784,7 +12784,7 @@ msgstr "Live Streams in der Timeline aktivieren"
 msgid "Search notes, users and hashtags…"
 msgstr "Notizen, Nutzer und Hashtags suchen…"
 
-#: src/shell/focusStage.ts:964
+#: src/shell/focusStage.ts:996
 msgid "Hide"
 msgstr "Ausblenden"
 
@@ -12804,7 +12804,7 @@ msgstr "Wieder einblenden"
 msgid "Unhide all"
 msgstr ""
 
-#: src/shell/focusStage.ts:1144
+#: src/shell/focusStage.ts:1176
 msgid ""
 "Hide feature — it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12816,8 +12816,8 @@ msgstr ""
 msgid "Open edge drawer"
 msgstr ""
 
-#: src/shell/focusStage.ts:297
-#: src/shell/focusStage.ts:330
+#: src/shell/focusStage.ts:304
+#: src/shell/focusStage.ts:362
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -12833,7 +12833,7 @@ msgstr ""
 msgid "Social Media (minimal)"
 msgstr ""
 
-#: src/shell/focusStage.ts:307
+#: src/shell/focusStage.ts:314
 msgid "Workspace"
 msgstr ""
 
@@ -12841,10 +12841,14 @@ msgstr ""
 msgid "Everything"
 msgstr ""
 
-#: src/shell/focusStage.ts:2168
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2200
+#: src/shell/focusStage.ts:2268
 msgid "Compact circles"
 msgstr "Kreise kompakt darstellen"
+
+#: src/shell/focusStage.ts:339
+msgid "Arrange positions"
+msgstr "Positionen anordnen"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

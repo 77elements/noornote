@@ -404,6 +404,24 @@ html.ui--focus {
   transform: rotate(90deg);
 }
 
+// Arrange-positions gate (top-bar switch, default OFF): the layout
+// satellites — circle move/hide handles, the side-stack tool buttons,
+// the widget move handle — render only while the switch is ON. Diodes
+// (unread counters) and the active column's .focus-object__actions are
+// exempt: they are not layout tools. Visibility (not display) keeps the
+// sticky tools band at its height — no layout jump when toggling.
+.focus-stage:not(.is-arrange-on) {
+  .focus-object__move,
+  .focus-object__hide,
+  .focus-side-stack__move,
+  .focus-side-stack__reset,
+  .focus-side-stack__compact,
+  .focus-widget-slot__move {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 // Side stacks: while a domain is focused, the non-active circles are
 // re-parented into these two columns (focusStage.ts). Compact 230px
 // circles pinned to the row top. Focused state: the stage is viewport-
@@ -795,7 +813,8 @@ html:not(.ui--focus) .focus-view-header__action {
   width: 100%;
   margin-bottom: $gap;
 
-  .top-bar__switch {
+  .top-bar__switch,
+  .top-bar__arrange {
     display: flex;
     align-items: center;
   }

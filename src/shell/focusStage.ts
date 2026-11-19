@@ -26,6 +26,7 @@
 
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
+import { Switch } from '../components/ui/Switch';
 import { Router } from '../services/Router';
 import { NavigationDispatcher } from '../services/NavigationDispatcher';
 import { AddonLoader, type AddonRuntime } from '../addons/AddonLoader';
@@ -182,6 +183,11 @@ export class FocusStage {
    * compact toggle). Per-account view preference; the active circle and
    * the home grid always render round. */
   private stackCompact = false;
+  /** Top-bar "Arrange positions" gate (default OFF): while OFF the layout
+   * satellites (circle move/hide, stack tools, widget move) render hidden
+   * — the shell stays calm for users who never rearrange. Diodes and the
+   * active column's actions are exempt (not layout tools). */
+  private arrangeOn = false;
   /** focus:objects-hidden-changed subscription (mount → destroy contract). */
   private hiddenSubId: string | null = null;
   /** live-streams:widget-toggle subscription (mount → destroy contract). */
@@ -294,6 +300,7 @@ export class FocusStage {
     topBar.className = 'top-bar';
     topBar.innerHTML = `
       <div class="top-bar__switch" data-sv-v1-switch-slot></div>
+      <div class="top-bar__arrange" data-sv-arrange-slot></div>
       <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
         <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
       </button>
@@ -320,6 +327,31 @@ export class FocusStage {
       className: 'top-bar__set',
     });
     const setDropdownEl = this.setDropdown.getElement();
+    // Arrange-positions gate: the layout satellites render only while the
+    // switch is ON (persisted per account, default OFF).
+    this.arrangeOn =
+      PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+        false
+      ) === true;
+    this.applyArrangeGate();
+    const arrangeSwitch = new Switch({
+      label: _('Arrange positions'),
+      checked: this.arrangeOn,
+      onChange: checked => {
+        this.arrangeOn = checked;
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+          checked
+        );
+        this.applyArrangeGate();
+      },
+    });
+    const arrangeWrap = topBar.querySelector(
+      '[data-sv-arrange-slot]'
+    ) as HTMLElement;
+    arrangeWrap.innerHTML = arrangeSwitch.render();
+    arrangeSwitch.setupEventListeners(arrangeWrap);
     const loadmonBtn = topBar.querySelector('[data-sv-loadmon]') as HTMLElement;
     topBar.insertBefore(setDropdownEl, loadmonBtn);
     loadmonBtn.addEventListener('click', () => {
@@ -2218,6 +2250,13 @@ export class FocusStage {
         .querySelector('[data-focus-stack-compact]')
         ?.classList.toggle('is-active', this.stackCompact);
     }
+  }
+
+  /** Apply the arrange gate: the root class keys the CSS that hides the
+   * layout satellites while OFF (visibility, not display — the sticky
+   * tools band keeps its height, no layout jump on toggle). */
+  private applyArrangeGate(): void {
+    this.root.classList.toggle('is-arrange-on', this.arrangeOn);
   }
 
   /** The stack's top tools: compact toggle (leftmost), move handle (drag
