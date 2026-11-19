@@ -521,7 +521,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   },
   {
     id: 'hashtag-subscriptions',
-    label: _('Hashtag Subscriptions'),
+    label: _('Hashtag Alerts'),
     icon: 'icon-tag',
     addon: true,
     route: '/hashtag-subscriptions',
@@ -582,7 +582,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   },
   {
     id: 'follower-notification',
-    label: _('Follower Notification'),
+    label: _('Follower Alerts'),
     icon: 'icon-bell',
     addon: true,
     route: '/follower-notification',

@@ -272,6 +272,14 @@ html.ui--focus {
 
   text-align: center;
   overflow-wrap: break-word;
+  // Long labels must never poke out of the ring: cap the line width to the
+  // inner circle's inscribed square (diameter / √2 ≈ 70.71%) — the widest
+  // box that always fits, whatever line count the text ends up as. Longer
+  // labels wrap onto several lines ("Custom Emojis" → "Custom"/"Emojis");
+  // a single long word hyphenates (html lang is set by i18n).
+  max-width: 70.71%;
+  hyphens: auto;
+  text-wrap: balance;
 }
 
 // Move handle (drag & drop reorder): sits at ~2 o'clock of the circle,

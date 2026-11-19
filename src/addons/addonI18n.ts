@@ -27,9 +27,9 @@ export function translateAddonName(id: string): string {
     case 'follow-packs':
       return _('Follow Packs');
     case 'follower-notification':
-      return _('Follower Notification');
+      return _('Follower Alerts');
     case 'hashtag-subscriptions':
-      return _('Hashtag Subscriptions');
+      return _('Hashtag Alerts');
     case 'list-settings':
       return _('List Sync Mode');
     case 'custom-emojis':

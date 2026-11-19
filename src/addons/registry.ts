@@ -83,14 +83,14 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   },
   {
     id: 'follower-notification',
-    name: 'Follower Notification',
+    name: 'Follower Alerts',
     route: '/addons/follower-notification',
     viewId: 'addon-follower-notification',
     description: 'Get notified when someone follows or unfollows you.',
   },
   {
     id: 'hashtag-subscriptions',
-    name: 'Hashtag Subscriptions',
+    name: 'Hashtag Alerts',
     route: '/addons/hashtag-subscriptions',
     viewId: 'addon-hashtag-subscriptions',
     description: 'Periodically fetch new notes for hashtags you follow.',

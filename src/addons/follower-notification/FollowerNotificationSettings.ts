@@ -54,7 +54,7 @@ export class FollowerNotificationSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">${_('Enable Follower Notification')}</span>
+        <span class="setting__label">${_('Enable Follower Alerts')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
         <p class="setting__desc">${_('Get notified when someone new follows you. Checks every 3 hours in the background; each new follower is verified against their own contact list, so there are no false alarms.')}</p>
       </div>
@@ -103,8 +103,8 @@ export class FollowerNotificationSettings extends SettingsSection {
     });
     ToastService.show(
       checked
-        ? _('%s enabled', _('Follower Notification'))
-        : _('%s disabled', _('Follower Notification')),
+        ? _('%s enabled', _('Follower Alerts'))
+        : _('%s disabled', _('Follower Alerts')),
       'success'
     );
     this.renderPanel(checked);
