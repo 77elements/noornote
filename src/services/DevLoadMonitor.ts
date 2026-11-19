@@ -93,18 +93,38 @@ export function registerDevLoadSection(
   sections.set(id, provider);
 }
 
-/** File:line of the first stack frame outside this module (skip Error line
- *  + the timer wrappers themselves, which always occupy the first frames). */
+/**
+ * File:line of the first stack frame outside this module (skip Error line
+ *  + the timer wrappers themselves, which always occupy the first frames).
+ *
+ * Attribution strategy (deterministic, no function names for app frames):
+ * 1. First `.ts` frame whose tail matches the file:line shape → `File.ts:NN`.
+ *    Walking outward matters: dev URLs with HMR query params (`?t=…`) break
+ *    the tail regex on the innermost frame — the NEXT app frame still parses.
+ * 2. No parseable `.ts` frame (pure-library stack, e.g. NDK internals) → raw
+ *    deepest frame, function name intact — that is what file-name patterns
+ *    like `ndk-cache-dexie` match against.
+ * 3. `.ts` frame exists but none parses (extremely odd format) → raw innermost
+ *    `.ts` frame, last resort.
+ *
+ * Never fall back to a raw frame when a parseable `.ts` frame exists: raw
+ * frames carry function names, and substring patterns could then match
+ * CALLER context (e.g. a whitelisted diode timer started from a v1 chain
+ * flagged as forbidden `loadListManagers`) — false positives.
+ */
 function captureOrigin(): string {
   const frames = new Error().stack?.split('\n') ?? [];
-  const caller =
-    frames.find(
-      frame => frame.includes('.ts:') && !frame.includes('DevLoadMonitor')
-    ) ??
-    frames[frames.length - 1] ??
-    'unknown';
-  const match = caller.match(/([^/(\s]+\.ts):(\d+):\d+\)?$/);
-  return match ? `${match[1]}:${match[2]}` : caller.trim();
+  const tsFrames = frames.filter(
+    frame => /\.ts[:?]/.test(frame) && !frame.includes('DevLoadMonitor')
+  );
+  for (const frame of tsFrames) {
+    // Tolerates Vite dev/HMR query params between the extension and the
+    // line: `…/main.ts?t=123:117:13)` must parse as `main.ts:117`, not
+    // fall back to a raw frame (which carries function names).
+    const match = frame.match(/([^/(\s]+\.ts)(?:\?[^\s)]*)?:(\d+):\d+\)?$/);
+    if (match) return `${match[1]}:${match[2]}`;
+  }
+  return tsFrames[0]?.trim() ?? frames[frames.length - 1] ?? 'unknown';
 }
 
 /**

@@ -180,6 +180,29 @@ describe('evaluateLoadGuard', () => {
     ).toBe(true);
   });
 
+  it('known (whitelisted) origins win over forbidden patterns (precedence)', () => {
+    // Regression: origin attribution can layer caller context into one
+    // string — an explicitly whitelisted diode timer must never be flagged
+    // by a forbidden pattern that matches that layered context.
+    const s = baselineSnapshot();
+    const e = tightExpectations();
+    e.forbiddenIntervalOrigins.push({
+      pattern: 'BookmarkReadStateService',
+      reason: 'synthetic overlap — the whitelisted diode must win',
+    });
+    const result = evaluateLoadGuard(s, e);
+    expect(result.ok, `violations: ${result.violations.join('; ')}`).toBe(true);
+    expect(result.violations).toEqual([]);
+  });
+
+  it('does not forbid the loadListManagers chain (its only interval is the whitelisted bookmark diode)', () => {
+    expect(
+      DEV_LOAD_EXPECTATIONS.forbiddenIntervalOrigins.some(f =>
+        f.pattern.includes('loadListManagers')
+      )
+    ).toBe(false);
+  });
+
   it('excludes transient content-scoped origins from the interval budget', () => {
     const s = baselineSnapshot();
     // Content-scoped timers that appear with a restored profile route —
@@ -313,15 +336,19 @@ describe('resolveExpectationsForHiddenState (Phase 6, hidden objects)', () => {
     expect(resolved.hiddenAddonIds).toEqual(['bulk-delete']);
   });
 
-  it('zeroes the group-chats tick cap and ignores list-backed domains', () => {
+  it('zeroes the group-chats caps and ignores list-backed domains', () => {
     const resolved = resolveExpectationsForHiddenState([
       'group-chats',
       'bookmarks',
       'muted',
     ]);
     expect(
-      resolved.transientIntervalOrigins.find(
-        t => t.pattern === 'GroupChatsService.tick'
+      resolved.knownIntervalOrigins.find(k => k.pattern === 'GroupChatsService')
+        ?.max
+    ).toBe(0);
+    expect(
+      resolved.knownIntervalOrigins.find(
+        k => k.pattern === 'GroupChatsGroupClient'
       )?.max
     ).toBe(0);
     expect(resolved.hiddenAddonIds).toEqual(['group-chats']);

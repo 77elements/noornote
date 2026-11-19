@@ -344,6 +344,14 @@ export class NostrTransport {
       }
     );
 
+    // Interface-switch relay sweep (v1↔v2, instant — no reload): shed the
+    // other interface's fetch-scoped relay connections + their NDK monitor
+    // intervals (see sweepTransientRelays). Boot emissions are no-ops (the
+    // pool only holds core relays there).
+    this.eventBus.on('settings:focus-ui-changed', () => {
+      this.sweepTransientRelays();
+    });
+
     this.systemLogger.info('NostrTransport', 'Transport ready');
 
     // Socket-recovery lifecycle (see recoverConnections): browsers keep
@@ -513,43 +521,79 @@ export class NostrTransport {
   private pruneRelayPool(): void {
     try {
       const pool = this.ndk.pool;
-      const relays = pool.relays;
-      if (relays.size <= MAX_POOL_RELAYS) return;
-
-      const norm = (u: string) => u.replace(/\/+$/, '').toLowerCase();
-      const keep = new Set<string>();
-      [
-        ...this.relayConfig.getReadRelays(),
-        ...this.relayConfig.getAggregatorRelays(),
-      ].forEach(u => keep.add(norm(u)));
-      // Never prune a relay an active subscription is using.
-      this.subscriptions.forEach(sub =>
-        sub.relays.forEach(u => keep.add(norm(u)))
+      if (pool.relays.size <= MAX_POOL_RELAYS) return;
+      const closed = this.closeNonCoreRelays(
+        pool.relays.size - MAX_POOL_RELAYS
       );
-
-      const prunable = [...relays.keys()].filter(url => !keep.has(norm(url)));
-      let toClose = relays.size - MAX_POOL_RELAYS;
-      let closed = 0;
-      for (const url of prunable) {
-        if (toClose <= 0) break;
-        const relay = relays.get(url);
-        // disconnect() leaves a pending reconnect timer running, so an evicted
-        // relay keeps reconnecting forever. Clear it first.
-        relay?.connectivity?.resetReconnectionState?.();
-        relay?.disconnect();
-        pool.removeRelay(url);
-        toClose--;
-        closed++;
-      }
       if (closed > 0) {
         diagLog('relays', 'Pruned outbound relays from pool', {
           closed,
-          poolSize: relays.size,
+          poolSize: pool.relays.size,
         });
       }
     } catch {
       // best-effort
     }
+  }
+
+  /**
+   * Interface-switch relay sweep (v1↔v2, instant — no reload): the previous
+   * interface's fetches connect per-author/outbox relays the other interface
+   * never touches on a clean boot. Each such connection carries two NDK
+   * monitor intervals (wsStateMonitor + sleepDetector) that linger as switch
+   * relics — the pool stays under MAX_POOL_RELAYS, so the periodic prune
+   * never fires for them. Close every non-core relay on a switch; each
+   * interface reconnects what it actually needs. A delayed second pass
+   * catches fetches still in flight at switch time.
+   */
+  private sweepTransientRelays(): void {
+    const closed = this.closeNonCoreRelays();
+    if (closed > 0) {
+      diagLog('relays', 'Interface-switch relay sweep', { closed });
+    }
+    setTimeout(() => {
+      const late = this.closeNonCoreRelays();
+      if (late > 0) {
+        diagLog('relays', 'Interface-switch relay sweep (late pass)', {
+          closed: late,
+        });
+      }
+    }, 4000);
+  }
+
+  /**
+   * Disconnect + remove every pool relay outside the keep-set (core relays
+   * + relays an active subscription depends on). Closes at most `maxClose`
+   * relays when given (bounded prune); unlimited otherwise. Returns the
+   * number of closed relays.
+   */
+  private closeNonCoreRelays(maxClose: number = Infinity): number {
+    const pool = this.ndk.pool;
+    const relays = pool.relays;
+    const norm = (u: string) => u.replace(/\/+$/, '').toLowerCase();
+    const keep = new Set<string>();
+    [
+      ...this.relayConfig.getReadRelays(),
+      ...this.relayConfig.getAggregatorRelays(),
+    ].forEach(u => keep.add(norm(u)));
+    // Never prune a relay an active subscription is using.
+    this.subscriptions.forEach(sub =>
+      sub.relays.forEach(u => keep.add(norm(u)))
+    );
+
+    let closed = 0;
+    for (const url of [...relays.keys()]) {
+      if (closed >= maxClose) break;
+      if (keep.has(norm(url))) continue;
+      const relay = relays.get(url);
+      // disconnect() leaves a pending reconnect timer running, so an evicted
+      // relay keeps reconnecting forever. Clear it first.
+      relay?.connectivity?.resetReconnectionState?.();
+      relay?.disconnect();
+      pool.removeRelay(url);
+      closed++;
+    }
+    return closed;
   }
 
   /**

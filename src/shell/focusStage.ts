@@ -1491,16 +1491,36 @@ export class FocusStage {
    * order and persists it. A few pixels of dead zone keep a shaky click
    * from becoming a drag.
    */
-  private startOrderDrag(
-    e: PointerEvent,
-    dragId: string,
-    el: HTMLElement
-  ): void {
-    if (this.activeId || this.morphing) return;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
-    const startX = e.clientX;
-    const startY = e.clientY;
+  /**
+   * Shared translate-drag mechanics (SV order drag ↔ whole-stack drag):
+   * pointerdown → 6px dead zone → the element rides the cursor via
+   * transform (its grid slot stays occupied — no mid-drag reflow); the
+   * hit test drives the drop highlight; pointerup commits via `onDrop`.
+   * Listeners live on window (move/up/cancel) and are removed in cleanup.
+   */
+  private startTranslateDrag(opts: {
+    e: PointerEvent;
+    /** The translated element. */
+    el: HTMLElement;
+    /** Once when the dead zone is crossed (drag classes on). */
+    onDragStart: () => void;
+    /** Cleanup side of `onDragStart` (classes off). */
+    onDragEnd: () => void;
+    /** Drop target under the pointer, or null. */
+    hitTest: (x: number, y: number) => HTMLElement | null;
+    /** Highlight handoff: next replaces prev (also null/null at cleanup). */
+    onTargetChange?: (
+      next: HTMLElement | null,
+      prev: HTMLElement | null
+    ) => void;
+    /** Drop commit — called after cleanup with the last target. */
+    onDrop: (target: HTMLElement | null) => void;
+  }): void {
+    const el = opts.el;
+    opts.e.stopPropagation();
+    opts.e.preventDefault(); // no text selection / native drag while moving
+    const startX = opts.e.clientX;
+    const startY = opts.e.clientY;
     let dragging = false;
     let target: HTMLElement | null = null;
 
@@ -1508,17 +1528,15 @@ export class FocusStage {
       if (!dragging) {
         if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
         dragging = true;
-        // pointer-events off: the translated circle must not shadow the
+        // pointer-events off: the translated element must not shadow the
         // drop target in elementFromPoint.
-        el.classList.add('is-drag-source');
+        opts.onDragStart();
       }
       el.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
-      const next = obj && obj !== el && obj.dataset.domainId ? obj : null;
+      const next = hit ? opts.hitTest(ev.clientX, ev.clientY) : null;
       if (next !== target) {
-        target?.classList.remove('is-drop-target');
-        next?.classList.add('is-drop-target');
+        opts.onTargetChange?.(next, target);
         target = next;
       }
     };
@@ -1526,18 +1544,47 @@ export class FocusStage {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cleanup);
-      el.classList.remove('is-drag-source');
       el.style.transform = '';
-      target?.classList.remove('is-drop-target');
+      opts.onDragEnd();
+      // Clear the last target's highlight (same job the per-drag cleanup
+      // did before the helper existed).
+      opts.onTargetChange?.(null, target);
     };
     const onUp = (): void => {
-      const dropId = target?.dataset.domainId;
+      const t = target;
       cleanup();
-      if (dropId) this.swapOrder(dragId, dropId);
+      opts.onDrop(t);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', cleanup);
+  }
+
+  private startOrderDrag(
+    e: PointerEvent,
+    dragId: string,
+    el: HTMLElement
+  ): void {
+    if (this.activeId || this.morphing) return;
+    this.startTranslateDrag({
+      e,
+      el,
+      onDragStart: () => el.classList.add('is-drag-source'),
+      onDragEnd: () => el.classList.remove('is-drag-source'),
+      hitTest: (x, y) => {
+        const hit = document.elementFromPoint(x, y);
+        const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
+        return obj && obj !== el && obj.dataset.domainId ? obj : null;
+      },
+      onTargetChange: (next, prev) => {
+        prev?.classList.remove('is-drop-target');
+        next?.classList.add('is-drop-target');
+      },
+      onDrop: t => {
+        const dropId = t?.dataset.domainId;
+        if (dropId) this.swapOrder(dragId, dropId);
+      },
+    });
   }
 
   /**
@@ -1552,44 +1599,29 @@ export class FocusStage {
    */
   private startStackDrag(e: PointerEvent, side: 'left' | 'right'): void {
     if (this.morphing || !this.sideStacks) return;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
     const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
     const sourceEl = this.sideStacks[side === 'left' ? 0 : 1];
-    const startX = e.clientX;
-    const startY = e.clientY;
-    let dragging = false;
-    let over = false;
-
-    const onMove = (ev: PointerEvent): void => {
-      if (!dragging) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
-        dragging = true;
-        // pointer-events off: the translated column must not shadow the
-        // drop zone in elementFromPoint.
+    this.startTranslateDrag({
+      e,
+      el: sourceEl,
+      onDragStart: () => {
         sourceEl.classList.add('is-drag-source');
         targetEl.classList.add('is-dropzone');
-      }
-      sourceEl.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
-      const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      over = !!hit && hit.closest('[data-focus-stack]') === targetEl;
-    };
-    const cleanup = (): void => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', cleanup);
-      sourceEl.classList.remove('is-drag-source');
-      sourceEl.style.transform = '';
-      targetEl.classList.remove('is-dropzone');
-    };
-    const onUp = (): void => {
-      const drop = over;
-      cleanup();
-      if (drop) this.moveAllCircles(side === 'left' ? 'right' : 'left');
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', cleanup);
+      },
+      onDragEnd: () => {
+        sourceEl.classList.remove('is-drag-source');
+        targetEl.classList.remove('is-dropzone');
+      },
+      hitTest: (x, y) => {
+        const hit = document.elementFromPoint(x, y);
+        return hit && hit.closest('[data-focus-stack]') === targetEl
+          ? targetEl
+          : null;
+      },
+      onDrop: t => {
+        if (t) this.moveAllCircles(side === 'left' ? 'right' : 'left');
+      },
+    });
   }
 
   /**

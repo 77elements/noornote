@@ -22,35 +22,10 @@
  */
 
 import type { FocusDomainSurface } from './focusDomains';
+import { createListTabSurface } from './focusListTabSurface';
 
-export const tribesSurface = async (): Promise<FocusDomainSurface> => {
-  const { TribeManager } = await import('../lists/tribes');
-  let manager: InstanceType<typeof TribeManager> | null = null;
-  let content: HTMLElement | null = null;
-
-  return {
-    attach(slot) {
-      if (content) {
-        slot.appendChild(content);
-        return;
-      }
-      content = document.createElement('div');
-      content.className = 'tab-content tab-content--active';
-      content.dataset.tabContent = 'list-tribes';
-      slot.appendChild(content);
-      manager = new TribeManager(slot);
-      void manager.renderListTab(content);
-    },
-    detach() {
-      // Content stays cached — the manager instance is preserved.
-      content?.remove();
-    },
-    view: {
-      destroy(): void {
-        manager?.destroy();
-        manager = null;
-        content = null;
-      },
-    },
-  };
-};
+export const tribesSurface = (): Promise<FocusDomainSurface> =>
+  createListTabSurface({
+    tabId: 'list-tribes',
+    loadManager: async () => (await import('../lists/tribes')).TribeManager,
+  });

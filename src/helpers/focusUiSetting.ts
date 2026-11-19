@@ -68,47 +68,52 @@ export function isFocusDomainHidden(domainId: string): boolean {
 }
 
 /**
- * Bookmark affordances that live inside OTHER objects' surfaces (the ISL
- * bookmark action, the note-menu bookmark items): the addon flag AND the
- * v2 hidden-objects state — a hidden Bookmarks object makes the feature
- * unreachable, so its affordances vanish there too (v1: addon flag only,
- * the classic surfaces keep working).
+ * Factory for the addon-affordance gates: affordances that live inside
+ * OTHER surfaces (ISL actions, note-menu items, composer icons) are
+ * active when the addon flag is on AND the object is not hidden in v2 —
+ * a hidden object makes the feature unreachable, so its affordances
+ * vanish there too (v1: addon flag only). The per-addon wrappers below
+ * keep the call sites named and documented; the gate logic lives once.
  */
-export function isBookmarksUiActive(): boolean {
-  return isBookmarksEnabled() && !isFocusDomainHidden('bookmarks');
-}
+const addonUiGate =
+  (domainId: string, isEnabled: () => boolean) => (): boolean =>
+    isEnabled() && !isFocusDomainHidden(domainId);
+
+/**
+ * Bookmark affordances that live inside OTHER objects' surfaces (the ISL
+ * bookmark action, the note-menu bookmark items).
+ */
+export const isBookmarksUiActive = addonUiGate('bookmarks', isBookmarksEnabled);
 
 /**
  * Tribes affordances that live inside OTHER surfaces (the timeline's
- * tribe tabs + "Edit tribes" link, the note-menu tribe item): the addon
- * flag AND the v2 hidden-objects state — a hidden Tribes object makes
- * the feature unreachable, so its affordances vanish there too (and the
- * `lists/tribes` module must not even load — RAM principle).
+ * tribe tabs + "Edit tribes" link, the note-menu tribe item). The
+ * `lists/tribes` module must not even load when the object is hidden —
+ * RAM principle.
  */
-export function isTribesUiActive(): boolean {
-  return isTribesEnabled() && !isFocusDomainHidden('tribes');
-}
+export const isTribesUiActive = addonUiGate('tribes', isTribesEnabled);
 
 /**
  * Custom-emojis affordances outside the object's own surface (the
- * composer's picker pack + `:shortcode:` autocomplete): the addon flag
- * AND the v2 hidden-objects state. NOTE the composer's ON-DEMAND paths
- * are flag-independent by design (session load while the stored
- * preference is OFF) — those gate on the hidden probe alone.
+ * composer's picker pack + `:shortcode:` autocomplete). NOTE the
+ * composer's ON-DEMAND paths are flag-independent by design (session
+ * load while the stored preference is OFF) — those gate on the hidden
+ * probe alone.
  */
-export function isCustomEmojisUiActive(): boolean {
-  return isCustomEmojisEnabled() && !isFocusDomainHidden('custom-emojis');
-}
+export const isCustomEmojisUiActive = addonUiGate(
+  'custom-emojis',
+  isCustomEmojisEnabled
+);
 
 /**
  * Scheduled-posts affordances outside the object's own surface (the
- * composer's schedule icon): the addon flag AND the v2 hidden-objects
- * state. The v2 on-demand icon visibility is flag-independent by design
- * — there the hidden probe alone is the gate.
+ * composer's schedule icon). The v2 on-demand icon visibility is
+ * flag-independent by design — there the hidden probe alone is the gate.
  */
-export function isScheduledPostsUiActive(): boolean {
-  return isScheduledPostsEnabled() && !isFocusDomainHidden('scheduled-posts');
-}
+export const isScheduledPostsUiActive = addonUiGate(
+  'scheduled-posts',
+  isScheduledPostsEnabled
+);
 
 export function setFocusUiEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.FOCUS_UI, enabled);
