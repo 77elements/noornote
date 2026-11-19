@@ -118,7 +118,12 @@ export class Tooltip {
 
     const onMouseEnter = () => show();
     const onMouseLeave = () => hide();
-    const onFocus = () => showNow();
+    // Focus goes through the same guard as mouseenter: tapping a button on
+    // touch fires focus on it after the click, and an unguarded showNow()
+    // here would plant a tooltip that nothing ever hides (the pointer
+    // sequence is already over). Keyboard tabbing still shows the tooltip —
+    // its lastTouchDownAt is far in the past.
+    const onFocus = () => show();
     const onBlur = () => hide();
 
     // Touch long-press: hold ~500ms on the element → tooltip; release,
