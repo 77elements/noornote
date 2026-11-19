@@ -12334,8 +12334,8 @@ msgstr "Ensembles d’objets"
 #: src/shell/focusStage.ts:2429
 #: src/shell/focusStage.ts:2519
 #: src/shell/focusStage.ts:2540
-msgid "Open settings"
-msgstr "Ouvrir les réglages"
+msgid "Open UI settings"
+msgstr "Ouvrir les réglages de l'interface"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

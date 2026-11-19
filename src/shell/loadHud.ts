@@ -270,7 +270,10 @@ export function openLoadHud(): void {
   hudEl.className = 'load-hud';
   hudEl.dataset.loadHud = '';
   hudEl.innerHTML = `
-    <button type="button" class="load-hud__title" data-load-hud-close>load monitor ×</button>
+    <div class="load-hud__head">
+      <span class="load-hud__title">load monitor</span>
+      <button type="button" class="load-hud__close" data-load-hud-close aria-label="close">×</button>
+    </div>
     <div class="load-hud__rows" data-load-hud-rows></div>
   `;
   hudEl

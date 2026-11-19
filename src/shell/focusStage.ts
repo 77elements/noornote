@@ -212,6 +212,10 @@ export class FocusStage {
   private walletSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
+  /** Panel gesture disposers (drag-to-close + outside-click, destroy
+   * contract) — one per slide-in sidebar, re-created on remount. */
+  private navPanelGestures: (() => void) | null = null;
+  private settingsPanelGestures: (() => void) | null = null;
   /** Side stacks while a domain is focused (see reparentSideStacks).
    * Tablet/phone single-stack mode stores the SAME element in both slots —
    * every [left, right] consumer degrades gracefully (drop targets, widget
@@ -319,6 +323,9 @@ export class FocusStage {
     this.grid = document.createElement('div');
     this.grid.className = 'focus-stage__grid';
     this.order = this.loadOrder();
+    // The settings sidebar mounted before the order existed (it is built
+    // first) — now that the order is known, gate the reset button.
+    this.syncResetOrderVisibility();
     this.hiddenIds = loadHiddenObjectIds();
     this.stackCompact =
       PerAccountLocalStorage.getInstance().get<boolean>(
@@ -2133,6 +2140,22 @@ export class FocusStage {
       this.order
     );
     this.applyOrderToGrid();
+    // Any persisted order deviates from the default by definition.
+    this.syncResetOrderVisibility();
+  }
+
+  /**
+   * "Restore default order" only earns its place while the current order
+   * actually deviates from the registry default — hidden while identical
+   * (the button would be a no-op there).
+   */
+  private syncResetOrderVisibility(): void {
+    const btn = this.settingsSidebar?.querySelector(
+      '[data-settings-reset-order]'
+    ) as HTMLElement | null;
+    if (!btn) return;
+    btn.hidden =
+      this.order.join(',') === FOCUS_DOMAINS.map(d => d.id).join(',');
   }
 
   /** Mirror the stored order into the grid DOM (grid state only). */
@@ -2351,6 +2374,15 @@ export class FocusStage {
     this.root.appendChild(root);
     this.navSidebar = root;
     this.sidebarOpen = false;
+    this.navPanelGestures?.();
+    this.navPanelGestures = this.attachSidebarDismiss(
+      root,
+      'left',
+      () => this.sidebarOpen,
+      () => {
+        if (this.sidebarOpen) this.toggleNavSidebar();
+      }
+    );
     return this.sidebarPanel();
   }
 
@@ -2375,6 +2407,8 @@ export class FocusStage {
   }
 
   private removeNavSidebar(): void {
+    this.navPanelGestures?.();
+    this.navPanelGestures = null;
     this.navSidebar?.remove();
     this.navSidebar = null;
     this.sidebarOpen = false;
@@ -2403,21 +2437,21 @@ export class FocusStage {
     root.innerHTML = `
       <div class="focus-settings-sidebar__panel" data-settings-panel role="region" aria-label="${_('Settings')}">
         <div class="focus-settings-sidebar__section">
-          <div class="focus-settings-sidebar__title">${_('Interface')}</div>
+          <h2 class="focus-settings-sidebar__title">${_('Interface')}</h2>
           <div class="focus-settings-sidebar__row" data-settings-v1-slot></div>
           <div class="focus-settings-sidebar__row" data-settings-arrange-slot></div>
           <button type="button" class="focus-settings-sidebar__row focus-settings-sidebar__action" data-settings-reset-order>${_('Restore default order')}</button>
         </div>
         <div class="focus-settings-sidebar__section" data-settings-sets-section>
-          <div class="focus-settings-sidebar__title">${_('Object sets')}</div>
+          <h2 class="focus-settings-sidebar__title">${_('Workspace')}</h2>
           <div class="focus-settings-sidebar__row" data-settings-sets-slot></div>
         </div>
         <div class="focus-settings-sidebar__section">
-          <div class="focus-settings-sidebar__title">${_('Appearance & account')}</div>
+          <h2 class="focus-settings-sidebar__title">${_('Appearance & account')}</h2>
           <div class="focus-settings-sidebar__switchbar" data-settings-switchbar-slot></div>
         </div>
         <div class="focus-settings-sidebar__section">
-          <div class="focus-settings-sidebar__title">${_('Diagnostics')}</div>
+          <h2 class="focus-settings-sidebar__title">${_('Diagnostics')}</h2>
           <div class="focus-settings-sidebar__row">
             <span class="focus-settings-sidebar__label">${_('Load Resource Monitor')}</span>
             <button type="button" class="focus-settings-sidebar__icon-action" data-settings-loadmon aria-label="${_('Load Resource Monitor')}">
@@ -2426,22 +2460,24 @@ export class FocusStage {
           </div>
         </div>
       </div>
-      <button type="button" class="focus-settings-sidebar__handle" data-settings-handle aria-label="${_('Open settings')}" aria-expanded="false">
+      <button type="button" class="focus-settings-sidebar__handle" data-settings-handle aria-label="${_('Open UI settings')}" aria-expanded="false">
         <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
       </button>`;
 
     // Object-set selector: named bundles of visible objects, applied in
     // one step (everything not in the set is hidden — the same save →
     // event → shutdown-diff path as the per-object hide button). The
-    // trigger label shows the active set; a custom mixed state shows the
-    // neutral placeholder.
-    const setOptions = [
-      { value: '', label: _('Workspace') },
-      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
-    ];
+    // trigger label shows the active set; the neutral (no-set) state
+    // shows the "Workspace" placeholder — value '' is not an option, it
+    // is the absence of one.
+    const setOptions = FOCUS_OBJECT_SETS.map(set => ({
+      value: set.id,
+      label: set.label,
+    }));
     this.setDropdown = new NnDropdown({
       options: setOptions,
       selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
+      placeholder: _('Workspace'),
       onChange: value => {
         if (!value) {
           this.syncObjectSetDropdown();
@@ -2506,6 +2542,8 @@ export class FocusStage {
       PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
       this.order = this.loadOrder();
       this.applyOrderToGrid();
+      // Default order restored — the button hides itself.
+      this.syncResetOrderVisibility();
     });
 
     const handle = root.querySelector('[data-settings-handle]') as HTMLElement;
@@ -2513,7 +2551,7 @@ export class FocusStage {
     this.tooltipDisposers.push(
       Tooltip.attach(
         handle,
-        () => (this.settingsOpen ? _('Close settings') : _('Open settings')),
+        () => (this.settingsOpen ? _('Close settings') : _('Open UI settings')),
         { placement: 'bottom' }
       )
     );
@@ -2521,6 +2559,15 @@ export class FocusStage {
     this.root.appendChild(root);
     this.settingsSidebar = root;
     this.settingsOpen = false;
+    this.settingsPanelGestures?.();
+    this.settingsPanelGestures = this.attachSidebarDismiss(
+      root,
+      'right',
+      () => this.settingsOpen,
+      () => {
+        if (this.settingsOpen) this.toggleSettingsSidebar();
+      }
+    );
     this.syncSettingsState();
   }
 
@@ -2534,14 +2581,84 @@ export class FocusStage {
     handle.setAttribute('aria-expanded', String(this.settingsOpen));
     handle.setAttribute(
       'aria-label',
-      this.settingsOpen ? _('Close settings') : _('Open settings')
+      this.settingsOpen ? _('Close settings') : _('Open UI settings')
     );
   }
 
   private removeSettingsSidebar(): void {
+    this.settingsPanelGestures?.();
+    this.settingsPanelGestures = null;
     this.settingsSidebar?.remove();
     this.settingsSidebar = null;
     this.settingsOpen = false;
+  }
+
+  /**
+   * Panel mechanics shared by both slide-in sidebars — the same pattern
+   * as the classic mobile sidebar (MainLayout.setupMobileSidebar):
+   *  1. Dismiss overlay — a full-screen backdrop under the panel eats the
+   *     outside tap/click; clicking it closes the panel (outside taps
+   *     never reach the content behind it, exactly like v1).
+   *  2. Swipe-to-close — document touchstart/touchend with the v1
+   *     thresholds (50px minimum, horizontal-dominant): a swipe toward
+   *     the panel's closed edge closes it.
+   * The overlay shows via :has() on the sibling state class, so the
+   * toggle methods need no overlay wiring. Returns the disposer — the
+   * document listeners and the overlay element outlive the sidebar
+   * otherwise (destroy contract).
+   */
+  private attachSidebarDismiss(
+    root: HTMLElement,
+    dir: 'left' | 'right',
+    isOpen: () => boolean,
+    close: () => void
+  ): () => void {
+    // Overlay as the previous sibling of the panel root — the :has()
+    // rule in the stylesheet couples its visibility to the panel state.
+    const overlay = document.createElement('div');
+    overlay.className = 'focus-sidebar-overlay';
+    root.parentElement?.insertBefore(overlay, root);
+    overlay.addEventListener('click', () => {
+      if (isOpen()) close();
+    });
+
+    // v1 swipe: threshold-based, no 1:1 follow — close-direction swipe
+    // over the panel closes it.
+    const CLOSE_SIGN = dir === 'left' ? -1 : 1;
+    const MIN_SWIPE_DISTANCE = 50;
+    let startX = 0;
+    let startY = 0;
+    const onTouchStart = (e: TouchEvent): void => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+    };
+    const onTouchEnd = (e: TouchEvent): void => {
+      if (!isOpen()) return;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const dx = (touch.clientX - startX) * CLOSE_SIGN; // > 0 = closed-ward
+      const dy = touch.clientY - startY;
+      // v1 semantics: close-direction only (the open-direction swipe is
+      // ignored — the panel is already open), horizontal-dominant, 50px.
+      if (
+        dx <= 0 ||
+        Math.abs(dx) <= Math.abs(dy) ||
+        Math.abs(dx) < MIN_SWIPE_DISTANCE
+      ) {
+        return;
+      }
+      close();
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      overlay.remove();
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
   }
 
   /** The set dropdown is grid (SV) domain — hidden while a domain is focused. */

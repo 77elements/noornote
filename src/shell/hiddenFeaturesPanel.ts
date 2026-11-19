@@ -29,7 +29,7 @@ export class HiddenFeaturesPanel implements FocusSettingsView {
     el.innerHTML = `
       <div class="hidden-features">
         <div class="hidden-features__head">
-          <h3 class="hidden-features__heading">${_('Hidden Features')}</h3>
+          <h4 class="hidden-features__heading">${_('Hidden Features')}</h4>
           <span class="hidden-features__head-link" data-unhide-all-slot></span>
         </div>
         <div class="hidden-features__grid" data-hidden-grid></div>

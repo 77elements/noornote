@@ -27,11 +27,7 @@ import { Tooltip } from '../components/ui/Tooltip';
 import { AccountSwitcher } from '../components/ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../components/ui/FontSizeSwitcher';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
-import {
-  applyFocusUi,
-  isFocusUiEnabled,
-  setFocusUiEnabled,
-} from '../helpers/focusUiSetting';
+import { applyFocusUi, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { AuthService } from '../services/AuthService';
 import { LayoutService } from '../services/LayoutService';
@@ -267,11 +263,16 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
         Router.getInstance().navigate('/login');
       },
     });
-    bar.replaceChildren(
-      themeSwitcher.getElement(),
+    // Font-size and account share one wrapping row — the account switcher
+    // starts beside the font switcher and wraps below only when the
+    // username is too long for the remaining width.
+    const row = document.createElement('div');
+    row.className = 'switch-bar__row';
+    row.replaceChildren(
       fontSizeSwitcher.getElement(),
       accountSwitcher.getElement()
     );
+    bar.replaceChildren(themeSwitcher.getElement(), row);
   };
 
   const user = AuthService.getInstance().getCurrentUser();
@@ -323,20 +324,21 @@ export function mountFocusShell(): void {
   // The v1 switch — lives in the settings sidebar's Interface section
   // (it used to sit in the SV top bar, before that was absorbed into the
   // sidebar; before THAT in the ED-t panel, whose tab covered the top
-  // circles). Toggling OFF restores the classic interface.
+  // circles). Logic: the panel exists only under the new interface, so
+  // the switch renders OFF — turning it ON switches to v1 (the shell
+  // unmounts immediately, the ON state is never seen).
   const switchBack = new Switch({
     label: _('Switch to v1'),
-    checked: isFocusUiEnabled(),
+    checked: false,
     onChange: checked => {
-      if (!checked) {
-        setFocusUiEnabled(false);
-        // Back to the classic home: navigate('/') re-mounts the timeline
-        // view (the shell may have left the URL anywhere).
-        Router.getInstance().navigate('/', true);
-        // Restore the classic layout classes immediately.
-        void LayoutService.getInstance().refresh();
-        ToastService.show(_('Classic interface active'), 'success');
-      }
+      if (!checked) return;
+      setFocusUiEnabled(false);
+      // Back to the classic home: navigate('/') re-mounts the timeline
+      // view (the shell may have left the URL anywhere).
+      Router.getInstance().navigate('/', true);
+      // Restore the classic layout classes immediately.
+      void LayoutService.getInstance().refresh();
+      ToastService.show(_('Classic interface active'), 'success');
     },
   });
   const tempSwitchWrap = document.createElement('div');

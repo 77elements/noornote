@@ -378,7 +378,7 @@ html.ui--focus {
   justify-content: center;
   align-items: center;
   line-height: 1;
-  font-size: 0.85rem;
+  @include compact;
   font-weight: 700;
   color: var(--color-5);
   text-shadow: $diode-text-shadow;
@@ -530,6 +530,30 @@ html.ui--focus {
 // vertical-only, horizontal variants are fine-tuning). Mounted by
 // focusStage; listeners die with the elements (stage destroy removes
 // the roots).
+// Dismiss backdrop (v1 mobile-sidebar pattern): sits under both slide-in
+// sidebars, above all shell content. Visibility is tied to the sibling
+// panel's state class via :has() — no JS wiring in the toggles. While
+// visible it eats the outside tap/click (click closes the panel; taps
+// never reach the content behind it).
+.focus-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: $alpha-medium;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $transition-fast;
+  z-index: calc(#{$z-fullscreen-overlay} - 1);
+
+  &:has(+ .focus-nav-sidebar.is-open),
+  &:has(+ .focus-settings-sidebar.is-open) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .focus-nav-sidebar,
 .focus-settings-sidebar {
   position: fixed;
@@ -547,12 +571,11 @@ html.ui--focus {
   &.is-open {
     transform: none;
   }
-
   &__panel {
     height: 100%;
     box-sizing: border-box;
     // Glass panel — kin to the EdgeDrawer panels.
-    padding: calc($gap * 3) $gap $gap;
+    padding: $gap;
     background: color-mix(in srgb, var(--color-1) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.2);
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
@@ -567,7 +590,8 @@ html.ui--focus {
     width: 34px;
     height: 56px;
     padding: 0;
-    border: 1px solid var(--color-3);
+    // No border: the glass tab reads by contrast alone — a solid line on
+    // the lasche looked like a stray rule on the screen edge.
     background: color-mix(in srgb, var(--color-1) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.2);
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
@@ -576,25 +600,23 @@ html.ui--focus {
   }
 }
 
-// Left twin: slides from the left edge, rim + rounding on the right.
+// Left twin: slides from the left edge, rounding on the right.
 .focus-nav-sidebar {
   left: 0;
   transform: translateX(-100%);
 
   &__panel {
-    border-right: 1px solid var(--color-3);
     border-radius: 0 $radius-xl $radius-xl 0;
     overflow: hidden;
   }
 
   &__handle {
     left: 100%;
-    border-left: none;
     border-radius: 0 $radius-xl $radius-xl 0;
   }
 }
 
-// Right twin: slides from the right edge, rim + rounding on the left.
+// Right twin: slides from the right edge, rounding on the left.
 // Content: stacked settings sections (see mountSettingsSidebar).
 .focus-settings-sidebar {
   right: 0;
@@ -604,7 +626,6 @@ html.ui--focus {
     display: flex;
     flex-direction: column;
     gap: calc($gap * 1.25);
-    border-left: 1px solid var(--color-3);
     border-radius: $radius-xl 0 0 $radius-xl;
     // Sections grow per account/setup — the panel body scrolls.
     overflow-y: auto;
@@ -618,7 +639,6 @@ html.ui--focus {
 
   &__handle {
     right: 100%;
-    border-right: none;
     border-radius: $radius-xl 0 0 $radius-xl;
   }
 
@@ -634,11 +654,19 @@ html.ui--focus {
     }
   }
 
+  // Same trap for hidden rows/buttons (e.g. the restore-order action is
+  // hidden while the order matches the default).
+  .focus-settings-sidebar__row[hidden] {
+    display: none;
+  }
+
   &__title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    // Real h2 in the outline (the focused views own the h1 level), h5
+    // optical size — the section titles are labels, not display headings.
+    @extend %h5;
+    margin: 0;
     text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--color-3);
   }
 
@@ -652,7 +680,7 @@ html.ui--focus {
 
   &__label {
     color: var(--color-5);
-    font-size: 0.95rem;
+    @include compact;
   }
 
   // Text action row (restore default order): klick-mich color.
@@ -662,7 +690,7 @@ html.ui--focus {
     border: 0;
     background: none;
     color: var(--color-4);
-    font-size: 0.95rem;
+    @include compact;
     text-align: left;
     cursor: pointer;
 
@@ -835,7 +863,7 @@ html.ui--focus {
   }
 
   .focus-object__label {
-    font-size: 1rem; // standard text size — no circle-scale display type
+    @include scaled-font-size(16px); // standard text size, no display type
     max-width: 100%;
     padding-inline: 32px;
     overflow: hidden;
@@ -1198,6 +1226,23 @@ $focus-tab-overlap: 1px;
   flex-direction: column;
   align-items: stretch;
   gap: calc($gap * 0.6);
+
+  // Font-size + account in one wrapping row: the account switcher sits
+  // beside the font switcher and wraps to a second line only when the
+  // username does not fit the remaining width.
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc($gap * 0.6);
+
+    // The account-switcher label truncates at 120px (100px mobile) for
+    // the classic layouts — this shell loads later, so the override wins
+    // the cascade and long usernames claim the width they need.
+    .account-switcher .nn-dropdown__label {
+      max-width: none;
+    }
+  }
 }
 
 // Object settings (ED-b content, mounted by focusStage): simple block
@@ -1281,8 +1326,6 @@ $focus-tab-overlap: 1px;
 
   .focus-log-panel__heading {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 700;
     color: var(--color-3);
   }
 
@@ -1292,7 +1335,7 @@ $focus-tab-overlap: 1px;
     border-radius: $radius-full;
     background: var(--color-1);
     color: var(--color-4);
-    font-size: 0.85rem;
+    @include compact;
     cursor: pointer;
 
     &:hover {
@@ -1315,8 +1358,8 @@ $focus-tab-overlap: 1px;
     // never stretch the table beyond the 600px column.
     table-layout: fixed;
     border-collapse: collapse;
-    font-size: 0.78rem;
-    line-height: 1.35;
+    @include small;
+    line-height: 1.5;
   }
 
   .focus-log-panel__time {
@@ -1343,13 +1386,13 @@ $focus-tab-overlap: 1px;
   .focus-log-panel__count {
     margin-left: calc($gap * 0.4);
     color: var(--color-3);
-    font-size: 0.7rem;
+    @include tiny;
   }
 
   .focus-log-panel__older,
   .focus-log-panel__empty {
     color: var(--color-3);
-    font-size: 0.8rem;
+    @include small;
     padding: calc($gap * 0.5) 0;
   }
 }
@@ -1368,8 +1411,6 @@ $focus-tab-overlap: 1px;
 
   .hidden-features__heading {
     margin: 0 0 $gap;
-    font-size: 1rem;
-    font-weight: 700;
     color: var(--color-3);
   }
 
@@ -1383,7 +1424,7 @@ $focus-tab-overlap: 1px;
   .hidden-features__empty {
     margin: 0;
     color: var(--color-5);
-    font-size: 0.9rem;
+    @include compact;
   }
 }
 
@@ -1415,7 +1456,7 @@ $focus-tab-overlap: 1px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1rem; // standard text size — no circle-scale display type
+    @include scaled-font-size(16px); // standard text size, no display type
   }
 
   // Unhide: the FV widget-button pattern (30px round, 2px ring).
@@ -1502,25 +1543,43 @@ $focus-tab-overlap: 1px;
   background: #000;
   box-shadow: 0 4px 16px rgb(0 0 0 / 60%);
   font-family: $font-family-mono;
-  font-size: 11px;
+  @include tiny;
   line-height: 1.5;
   color: #4ade80;
   user-select: text;
   z-index: $z-tooltip; // must never be occluded — it is the demo surface
 
-  .load-hud__title {
-    display: block;
-    width: 100%;
+  .load-hud__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     padding: 0 0 4px;
-    border: 0;
     border-bottom: 1px solid rgba(74, 222, 128, 30%);
+  }
+
+  .load-hud__title {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  // Touch-sized close button — the old "×" buried in the title text was
+  // far below any usable finger target.
+  .load-hud__close {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    margin: -6px -8px -6px 0; // cancel the hud padding around the target
+    padding: 0;
+    border: 0;
     background: none;
     color: #86efac;
     font: inherit;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-align: left;
-    text-transform: uppercase;
+    @include scaled-font-size(16px);
+    line-height: 1;
     cursor: pointer;
   }
 

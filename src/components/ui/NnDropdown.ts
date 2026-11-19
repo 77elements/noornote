@@ -43,6 +43,12 @@ export interface NnDropdownOptions {
   searchable?: boolean;
   /** Placeholder for the search box (default "Search…") */
   searchPlaceholder?: string;
+  /**
+   * Trigger label when no option matches selectedValue (e.g. a neutral
+   * "nothing picked" state). Falls back to the first option's label —
+   * the historic behavior.
+   */
+  placeholder?: string;
   /** Optional data-* attributes as key-value pairs (e.g., { "note-id": "abc123" }) */
   dataAttributes?: Record<string, string>;
   /**
@@ -140,7 +146,11 @@ export class NnDropdown {
     const selectedOption = this.options.find(
       opt => opt.value === this.selectedValue
     );
-    const selectedLabel = selectedOption?.label ?? this.options[0]?.label ?? '';
+    const selectedLabel =
+      selectedOption?.label ??
+      config.placeholder ??
+      this.options[0]?.label ??
+      '';
 
     const searchHtml = this.searchable
       ? `<li class="nn-dropdown__search"><input type="text" class="nn-dropdown__search-input" placeholder="${config.searchPlaceholder ?? 'Search…'}" /></li>`
