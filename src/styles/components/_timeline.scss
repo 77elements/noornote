@@ -71,19 +71,15 @@
 
   // "Look for new notes" link (shown when polling might be stuck) —
   // carries the header background now (the header itself is transparent),
-  // right-aligned in the controls cell.
+  // right-aligned in the controls cell. No hover effect: the accent tint
+  // read as translucency over the glass.
   .timeline-look-for-notes-link {
     color: var(--color-4);
     text-decoration: none;
     padding: calc($gap / 2) $gap;
     border-radius: $radius-xl;
     background: var(--color-1);
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: var(--bg-accent);
-      text-decoration: underline;
-    }
+    transition: none;
   }
 
   // Timeline item (legacy wrapper from TimelineUI - deprecated)

@@ -187,6 +187,8 @@ html.ui--focus {
   align-self: center;
   // Double ring in one hue, darkened purely via alpha (see $ring-* in
   // _variables.scss): inner ring 60%, outer ring 40%.
+  // Phone: slimmer rings (8px) — the circle renders smaller there; the
+  // 15px desktop ring would eat the face.
   border: 8px solid $ring-inner;
   outline: 8px solid $ring-outer;
   outline-offset: -16px; // pull the outline in: directly inside the border
@@ -200,8 +202,12 @@ html.ui--focus {
     background-color $transition-fast;
 
   @include tablet-big {
-    // Tablet/desktop: fixed circle = the grid's 230px column unit.
+    // Tablet/desktop: fixed circle = the grid's 230px column unit, with
+    // the original double-ring weight.
     width: 230px;
+    border: 15px solid $ring-inner;
+    outline: 15px solid $ring-outer;
+    outline-offset: -30px;
   }
 
   // Hover tint only on the circle state — the focused column must not
@@ -426,6 +432,21 @@ html.ui--focus {
 
   .focus-object--active & {
     display: flex;
+  }
+
+  // Phone only: mirror the DOM order (close, back, scroll-top, settings)
+  // so the X sits at the row's right end. The desktop column keeps the
+  // DOM order (X on top).
+  @include tablet-down {
+    .focus-object__settings {
+      order: -3;
+    }
+    .focus-object__scroll-top {
+      order: -2;
+    }
+    .focus-object__back {
+      order: -1;
+    }
   }
 
   @include tablet-big {
