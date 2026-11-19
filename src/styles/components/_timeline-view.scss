@@ -65,6 +65,36 @@
   }
 }
 
+// Phone: the Latest filter rides IN the tabs row, directly right of the
+// tabs dropdown (Timeline re-hangs it there below tablet-big). The row
+// spans the full container width, but both dropdowns keep their natural
+// width — no stretch: the tabs dropdown stays auto, the slack goes
+// between them (Latest sits flush right via margin-left: auto) and the
+// Latest filter never takes more than half.
+@include tablet-down {
+  .timeline-view__tabs-container .tabs {
+    flex: 1 1 auto;
+  }
+  .tabs .tabs__dropdown {
+    flex: 0 0 auto;
+  }
+}
+.tabs .timeline-view-dropdown {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50%;
+  margin-left: auto;
+}
+
+// Phone: the header selector column is empty here (the Latest filter
+// rides in the tabs row) — collapse it. Other Timeline embeds (SNV & co.)
+// keep their selector; this is scoped to this view's container.
+@include tablet-down {
+  .view-content--timeline .timeline-view-selector {
+    display: none;
+  }
+}
+
 .timeline-view__timeline {
   flex: 1;
   overflow-y: auto;

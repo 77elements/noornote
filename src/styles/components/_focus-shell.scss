@@ -653,6 +653,13 @@ html.ui--focus {
   &__panel {
     border-radius: 0 $radius-xl $radius-xl 0;
     overflow: hidden;
+
+    // Every child spans the panel's full width — the side stack otherwise
+    // shrink-wraps (justify-self: center from the base stack styles).
+    > * {
+      width: 100%;
+      justify-self: stretch;
+    }
   }
 
   &__handle {
@@ -769,6 +776,11 @@ html.ui--focus {
 .focus-side-stack--in-sidebar {
   height: 100%;
   grid-template-columns: minmax(0, 1fr);
+  // The base stack mirrors the stage grid's gap via `gap: inherit` — after
+  // the reparent into the sidebar there is no parent grid gap to inherit
+  // (the sidebar defines none), so the stack fell back to 0 and circles +
+  // widgets sat flush on each other.
+  gap: $gap;
   overflow-y: auto;
   padding-bottom: $gap;
   scrollbar-width: none;
