@@ -284,7 +284,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Kuratierte öffentliche Follower-Listen, die du abonniert hast."
 
-#: src/components/views/TimelineView.ts:228
+#: src/components/views/TimelineView.ts:252
 msgid "Edit tribes"
 msgstr "Tribes bearbeiten"
 
@@ -317,7 +317,7 @@ msgstr "Follows"
 msgid "Key Signer"
 msgstr "Key-Signer"
 
-#: src/components/views/TimelineView.ts:299
+#: src/components/views/TimelineView.ts:323
 msgid "Last notes per follow"
 msgstr "Neueste Notizen pro Follow"
 
@@ -349,7 +349,7 @@ msgstr "Noch keine Benachrichtigungen"
 msgid "Notification Priorities"
 msgstr "Benachrichtigungs-Prioritäten"
 
-#: src/components/views/TimelineView.ts:144
+#: src/components/views/TimelineView.ts:167
 msgid "Please login to view timeline"
 msgstr "Bitte melde dich an, um die Timeline zu sehen"
 
@@ -367,8 +367,8 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1136
-#: src/shell/focusStage.ts:977
+#: src/shell/focusStage.ts:1153
+#: src/shell/focusStage.ts:994
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -381,7 +381,7 @@ msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
 #: src/components/layout/MainLayout.ts:2169
-#: src/components/views/TimelineView.ts:291
+#: src/components/views/TimelineView.ts:315
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -1330,7 +1330,7 @@ msgstr "Nutzer öffentlich stummschalten"
 
 #: src/components/post/PostNoteModal.ts:674
 #: src/components/views/ConversationView.ts:968
-#: src/components/views/NewNoteView.ts:805
+#: src/components/views/NewNoteView.ts:821
 msgid "No"
 msgstr "Nein"
 
@@ -1479,7 +1479,7 @@ msgstr "Wochen"
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:673
 #: src/components/views/ConversationView.ts:967
-#: src/components/views/NewNoteView.ts:804
+#: src/components/views/NewNoteView.ts:820
 msgid "Yes"
 msgstr "Ja"
 
@@ -1498,8 +1498,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1133
-#: src/shell/focusStage.ts:965
+#: src/shell/focusStage.ts:1150
+#: src/shell/focusStage.ts:982
 msgid "Back"
 msgstr "Zurück"
 
@@ -1928,8 +1928,8 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1132
-#: src/shell/focusStage.ts:960
+#: src/shell/focusStage.ts:1149
+#: src/shell/focusStage.ts:977
 msgid "Close"
 msgstr "Schließen"
 
@@ -2579,7 +2579,7 @@ msgstr "Leeren"
 
 #: src/components/post/composerShared.ts:93
 #: src/components/post/PostNoteModal.ts:682
-#: src/components/views/NewNoteView.ts:813
+#: src/components/views/NewNoteView.ts:829
 msgid "Draft saved"
 msgstr "Entwurf gespeichert"
 
@@ -2596,7 +2596,7 @@ msgid "Italic"
 msgstr "Kursiv"
 
 #: src/components/post/PostNoteModal.ts:672
-#: src/components/views/NewNoteView.ts:803
+#: src/components/views/NewNoteView.ts:819
 msgid "Keep this unsent note in your drafts?"
 msgstr "Diese nicht gesendete Notiz in deinen Entwürfen behalten?"
 
@@ -2609,7 +2609,7 @@ msgid "New Note"
 msgstr "Neue Notiz"
 
 #: src/components/post/PostNoteModal.ts:762
-#: src/components/views/NewNoteView.ts:901
+#: src/components/views/NewNoteView.ts:917
 msgid "Note could not be published"
 msgstr "Notiz konnte nicht veröffentlicht werden"
 
@@ -2627,8 +2627,8 @@ msgstr "Veröffentlichen"
 #: src/components/post/composerShared.ts:502
 #: src/components/post/PostNoteModal.ts:802
 #: src/components/post/PostNoteModal.ts:810
-#: src/components/views/NewNoteView.ts:932
-#: src/components/views/NewNoteView.ts:936
+#: src/components/views/NewNoteView.ts:948
+#: src/components/views/NewNoteView.ts:952
 msgid "Post Highlight"
 msgstr "Highlight posten"
 
@@ -2645,7 +2645,7 @@ msgid "Reply could not be published"
 msgstr "Überschrift"
 
 #: src/components/post/PostNoteModal.ts:671
-#: src/components/views/NewNoteView.ts:802
+#: src/components/views/NewNoteView.ts:818
 msgid "Save as draft?"
 msgstr "Bild einfügen"
 
@@ -4977,8 +4977,8 @@ msgstr "Neu laden"
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1134
-#: src/shell/focusStage.ts:970
+#: src/shell/focusStage.ts:1151
+#: src/shell/focusStage.ts:987
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
@@ -5284,7 +5284,7 @@ msgstr "einer Nostrord-Gruppe"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: src/components/post/PostEditorToolbar.ts:79
+#: src/components/post/PostEditorToolbar.ts:77
 msgid "Add a GIF"
 msgstr "GIF hinzufügen"
 
@@ -6503,7 +6503,7 @@ msgstr "Kurz: Deine Notizen bleiben sicher, verschlüsselt und deine."
 msgid "inactive"
 msgstr "inaktiv"
 
-#: src/components/post/PostEditorToolbar.ts:76
+#: src/components/post/PostEditorToolbar.ts:74
 #: src/components/views/ConversationView.ts:286
 #: src/components/views/ConversationView.ts:287
 msgid "Insert emoji"
@@ -7376,7 +7376,7 @@ msgstr ""
 "gewählten Relays veröffentlicht. Keine privaten Schlüssel verlassen dein "
 "Gerät."
 
-#: src/components/post/PostEditorToolbar.ts:65
+#: src/components/post/PostEditorToolbar.ts:86
 msgid "Schedule post"
 msgstr "Beitrag planen"
 
@@ -7825,7 +7825,7 @@ msgstr "Upload fehlgeschlagen"
 msgid "Upload image…"
 msgstr "Bild hochladen …"
 
-#: src/components/post/PostEditorToolbar.ts:73
+#: src/components/post/PostEditorToolbar.ts:71
 msgid "Upload media"
 msgstr "Medien hochladen"
 
@@ -10930,7 +10930,7 @@ msgstr "Hauptnavigation"
 msgid "Mark as Seen"
 msgstr "Als gesehen markieren"
 
-#: src/components/post/PostEditorToolbar.ts:176
+#: src/components/post/PostEditorToolbar.ts:211
 msgid "Media module is not available. Please try again later."
 msgstr "Medien-Modul nicht verfügbar. Bitte später erneut versuchen."
 
@@ -11111,7 +11111,7 @@ msgstr "Als Zitat teilen"
 msgid "Show this folder inline on your Profile View"
 msgstr "Diesen Ordner inline in deiner Profilansicht anzeigen"
 
-#: src/components/post/PostEditorToolbar.ts:228
+#: src/components/post/PostEditorToolbar.ts:263
 msgid "Some Uploads Failed"
 msgstr "Einige Uploads fehlgeschlagen"
 
@@ -11150,7 +11150,7 @@ msgstr "Timeline noch nicht bereit. Bitte erneut versuchen."
 msgid "Unexpected error during bunker connection"
 msgstr "Unerwarteter Fehler bei der Bunker-Verbindung"
 
-#: src/components/post/PostEditorToolbar.ts:202
+#: src/components/post/PostEditorToolbar.ts:237
 msgid "Unknown error occurred"
 msgstr "Unbekannter Fehler"
 
@@ -11162,13 +11162,13 @@ msgstr ""
 "Anders als normale Notes werden Umfragen nicht überall unterstützt und "
 "könnten in anderen Clients nicht angezeigt werden."
 
-#: src/components/post/PostEditorToolbar.ts:175
-#: src/components/post/PostEditorToolbar.ts:201
-#: src/components/post/PostEditorToolbar.ts:241
+#: src/components/post/PostEditorToolbar.ts:210
+#: src/components/post/PostEditorToolbar.ts:236
+#: src/components/post/PostEditorToolbar.ts:276
 msgid "Upload Failed"
 msgstr "Upload fehlgeschlagen"
 
-#: src/components/post/PostEditorToolbar.ts:242
+#: src/components/post/PostEditorToolbar.ts:277
 #: src/components/profile/ImageUploader.ts:179
 msgid "Upload failed. Please try again."
 msgstr "Upload fehlgeschlagen. Bitte erneut versuchen."
@@ -11250,7 +11250,7 @@ msgstr ""
 "Du könntest diese Note mit tausend Emojis überschütten - aber zuerst "
 "brauchst du ein Konto."
 
-#: src/components/post/PostEditorToolbar.ts:229
+#: src/components/post/PostEditorToolbar.ts:264
 msgid "1 file failed:"
 msgid_plural "%s files failed:"
 msgstr[0] "1 Datei fehlgeschlagen:"
@@ -12616,7 +12616,7 @@ msgstr "Obere Fläche"
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
-#: src/components/views/TimelineView.ts:159
+#: src/components/views/TimelineView.ts:182
 #: src/shell/focusDomains.ts:214
 msgid "Social Media"
 msgstr "Social Media"
@@ -12642,8 +12642,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:2154
-#: src/shell/focusStage.ts:2174
+#: src/shell/focusStage.ts:2178
+#: src/shell/focusStage.ts:2227
 msgid "Distribute circles evenly"
 msgstr "Kreise gleichmäßig verteilen"
 
@@ -12668,20 +12668,20 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:2171
+#: src/shell/focusStage.ts:2224
 msgid "Move all circles"
 msgstr "Alle Kreise verschieben"
 
-#: src/shell/focusStage.ts:2150
+#: src/shell/focusStage.ts:2174
 msgid "Move all circles to the left column"
 msgstr "Alle Kreise in die linke Spalte verschieben"
 
-#: src/shell/focusStage.ts:2149
+#: src/shell/focusStage.ts:2173
 msgid "Move all circles to the right column"
 msgstr "Alle Kreise in die rechte Spalte verschieben"
 
-#: src/shell/focusStage.ts:1125
-#: src/shell/focusStage.ts:944
+#: src/shell/focusStage.ts:1142
+#: src/shell/focusStage.ts:961
 msgid "Reorder"
 msgstr "Neu anordnen"
 
@@ -12707,11 +12707,11 @@ msgstr ""
 "Deren Artikel im Haupt-Artikel-Feed erscheinen — höhere Grade erweitern den "
 "Feed, brauchen aber länger zum Aufbau."
 
-#: src/components/views/TimelineView.ts:161
+#: src/components/views/TimelineView.ts:184
 msgid "Write Note"
 msgstr "Notiz schreiben"
 
-#: src/components/views/NewNoteView.ts:287
+#: src/components/views/NewNoteView.ts:300
 msgid "Write new note"
 msgstr "Neue Notiz schreiben"
 
@@ -12758,8 +12758,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:1969
-#: src/shell/focusStage.ts:1976
+#: src/shell/focusStage.ts:1986
+#: src/shell/focusStage.ts:1993
 msgid "Move widget"
 msgstr "Widget verschieben"
 
@@ -12784,7 +12784,7 @@ msgstr "Live Streams in der Timeline aktivieren"
 msgid "Search notes, users and hashtags…"
 msgstr "Notizen, Nutzer und Hashtags suchen…"
 
-#: src/shell/focusStage.ts:947
+#: src/shell/focusStage.ts:964
 msgid "Hide"
 msgstr "Ausblenden"
 
@@ -12804,7 +12804,7 @@ msgstr "Wieder einblenden"
 msgid "Unhide all"
 msgstr ""
 
-#: src/shell/focusStage.ts:1127
+#: src/shell/focusStage.ts:1144
 msgid ""
 "Hide feature — it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12816,8 +12816,8 @@ msgstr ""
 msgid "Open edge drawer"
 msgstr ""
 
-#: src/shell/focusStage.ts:293
-#: src/shell/focusStage.ts:326
+#: src/shell/focusStage.ts:297
+#: src/shell/focusStage.ts:330
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -12833,13 +12833,18 @@ msgstr ""
 msgid "Social Media (minimal)"
 msgstr ""
 
-#: src/shell/focusStage.ts:303
+#: src/shell/focusStage.ts:307
 msgid "Workspace"
 msgstr ""
 
 #: src/shell/focusObjectSets.ts:32
 msgid "Everything"
 msgstr ""
+
+#: src/shell/focusStage.ts:2168
+#: src/shell/focusStage.ts:2221
+msgid "Compact circles"
+msgstr "Kreise kompakt darstellen"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

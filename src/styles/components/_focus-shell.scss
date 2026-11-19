@@ -386,6 +386,7 @@ html.ui--focus {
 .focus-object__settings:hover,
 .focus-side-stack__move:hover,
 .focus-side-stack__reset:hover,
+.focus-side-stack__compact:hover,
 .focus-widget-slot__move:hover,
 .focus-object-compact__unhide:hover {
   color: var(--color-5);
@@ -459,7 +460,8 @@ html.ui--focus {
 }
 
 .focus-side-stack__move,
-.focus-side-stack__reset {
+.focus-side-stack__reset,
+.focus-side-stack__compact {
   display: grid;
   place-items: center;
   width: 30px;
@@ -480,6 +482,110 @@ html.ui--focus {
 
 .focus-side-stack__move {
   cursor: grab;
+}
+
+// Compact toggle state flip: compacted stacks point the arrows OUTWARD
+// (click = expand back to circles). The icon is point-symmetric, so a
+// rotation would map it onto itself — instead two symbols swap: the
+// closed state pulls inward (arrows toward the line), the active state
+// pushes outward (arrows away from the line).
+.focus-side-stack__compact-icon-out {
+  display: none;
+}
+
+.focus-side-stack__compact.is-active {
+  .focus-side-stack__compact-icon-in {
+    display: none;
+  }
+
+  .focus-side-stack__compact-icon-out {
+    display: block;
+  }
+}
+
+// Compact toggle (stack tools, leftmost): morphs every stack circle into
+// the ED-b chip shape (focusStage.toggleStackCompact, persisted per
+// account) — more objects visible in the column, less vertical rhythm.
+// The morph lives on these two rules ONLY: the explicit stack height
+// gives the transition an interpolable start value (the base circle's
+// height comes from aspect-ratio, which cannot animate), and keeping the
+// geometry transition out of the base class keeps the WAAPI-driven
+// grid/focus morphs untouched. The ACTIVE circle never compacts.
+.focus-side-stack .focus-object {
+  height: 230px; // identical to the aspect-ratio result (fixed 230px column)
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast,
+    background-color $transition-fast,
+    height $transition-fast,
+    border-width $transition-fast,
+    outline-width $transition-fast,
+    outline-offset $transition-fast,
+    border-radius $transition-fast;
+}
+
+.focus-object.is-compact {
+  aspect-ratio: auto;
+  height: 48px;
+  // Double ring at HALF the circle's width, pulled in like the circles
+  // and the ED-b chips (outline directly inside the border).
+  border-width: 7px;
+  outline-width: 7px;
+  outline-offset: -14px;
+  border-radius: $radius-2xl;
+  // Flat chip: no dome glow.
+  background-image: none;
+  background-color: var(--color-1);
+
+  // Chip content: label only (no icon), centered like on the circles —
+  // the whole chip stays the click target. Inline padding keeps the text
+  // clear of the corner cluster (diode always, handles on hover).
+  .focus-object__icon {
+    display: none;
+  }
+
+  .focus-object__label {
+    font-size: 1rem; // standard text size — no circle-scale display type
+    max-width: 100%;
+    padding-inline: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Corner cluster on the top border: the unread diode sits flush right
+  // (same flush-right anchor as on the round circles), straddling the
+  // border band, always visible. Move + hide join its row on hover, to
+  // its left — opaque 30px buttons overlaying a long label's tail. Same
+  // specificity as the hover-show rules above — the later source order
+  // wins the tie.
+  .focus-object__diode {
+    bottom: auto;
+    top: -16px;
+    right: 0;
+  }
+
+  &:hover .focus-object__move,
+  &:hover .focus-object__hide:not([hidden]) {
+    display: grid;
+    top: -16px;
+  }
+
+  &:hover .focus-object__move {
+    right: 64px;
+  }
+
+  // Blocked domains have no hide button (hidden attribute) — the move
+  // handle slides into its slot instead of leaving a hover hole.
+  &:hover:has(> .focus-object__hide[hidden]) .focus-object__move {
+    right: 32px;
+  }
+
+  &:hover .focus-object__hide {
+    right: 32px;
+    left: auto;
+    transform: none;
+  }
 }
 
 // Drop zone while a stack handle is dragged: the opposite stack lights up

@@ -562,7 +562,7 @@ msgstr ""
 msgid "🔒 Private"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:229
+#: src/components/post/PostEditorToolbar.ts:264
 msgid "1 file failed:"
 msgid_plural "%s files failed:"
 msgstr[0] ""
@@ -694,7 +694,7 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:79
+#: src/components/post/PostEditorToolbar.ts:77
 msgid "Add a GIF"
 msgstr ""
 
@@ -1292,8 +1292,8 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1133
-#: src/shell/focusStage.ts:965
+#: src/shell/focusStage.ts:1150
+#: src/shell/focusStage.ts:982
 msgid "Back"
 msgstr ""
 
@@ -2027,8 +2027,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1132
-#: src/shell/focusStage.ts:960
+#: src/shell/focusStage.ts:1149
+#: src/shell/focusStage.ts:977
 msgid "Close"
 msgstr ""
 
@@ -2117,6 +2117,11 @@ msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:376
 msgid "Community removed"
+msgstr ""
+
+#: src/shell/focusStage.ts:2168
+#: src/shell/focusStage.ts:2221
+msgid "Compact circles"
 msgstr ""
 
 #: src/components/ui/UploadProgressOverlay.ts:130
@@ -3073,8 +3078,8 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2154
-#: src/shell/focusStage.ts:2174
+#: src/shell/focusStage.ts:2178
+#: src/shell/focusStage.ts:2227
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -3139,7 +3144,7 @@ msgstr ""
 
 #: src/components/post/composerShared.ts:93
 #: src/components/post/PostNoteModal.ts:682
-#: src/components/views/NewNoteView.ts:813
+#: src/components/views/NewNoteView.ts:829
 msgid "Draft saved"
 msgstr ""
 
@@ -3312,7 +3317,7 @@ msgstr ""
 msgid "Edit Profile"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:228
+#: src/components/views/TimelineView.ts:252
 msgid "Edit tribes"
 msgstr ""
 
@@ -4602,11 +4607,11 @@ msgstr ""
 msgid "Hidden Features"
 msgstr ""
 
-#: src/shell/focusStage.ts:947
+#: src/shell/focusStage.ts:964
 msgid "Hide"
 msgstr ""
 
-#: src/shell/focusStage.ts:1127
+#: src/shell/focusStage.ts:1144
 msgid "Hide feature — it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom."
 msgstr ""
 
@@ -4937,7 +4942,7 @@ msgstr ""
 msgid "Increase font size"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:76
+#: src/components/post/PostEditorToolbar.ts:74
 #: src/components/views/ConversationView.ts:286
 #: src/components/views/ConversationView.ts:287
 msgid "Insert emoji"
@@ -5087,7 +5092,7 @@ msgid "Keep relay"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:672
-#: src/components/views/NewNoteView.ts:803
+#: src/components/views/NewNoteView.ts:819
 msgid "Keep this unsent note in your drafts?"
 msgstr ""
 
@@ -5158,7 +5163,7 @@ msgstr ""
 msgid "Last checked %s."
 msgstr ""
 
-#: src/components/views/TimelineView.ts:299
+#: src/components/views/TimelineView.ts:323
 msgid "Last notes per follow"
 msgstr ""
 
@@ -5375,8 +5380,8 @@ msgstr ""
 msgid "Load older messages"
 msgstr ""
 
-#: src/shell/focusStage.ts:293
-#: src/shell/focusStage.ts:326
+#: src/shell/focusStage.ts:297
+#: src/shell/focusStage.ts:330
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -5916,7 +5921,7 @@ msgstr ""
 msgid "Media"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:176
+#: src/components/post/PostEditorToolbar.ts:211
 msgid "Media module is not available. Please try again later."
 msgstr ""
 
@@ -6085,15 +6090,15 @@ msgstr ""
 msgid "More Frequent (every 5 min)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2171
+#: src/shell/focusStage.ts:2224
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2150
+#: src/shell/focusStage.ts:2174
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2149
+#: src/shell/focusStage.ts:2173
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -6131,8 +6136,8 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
-#: src/shell/focusStage.ts:1969
-#: src/shell/focusStage.ts:1976
+#: src/shell/focusStage.ts:1986
+#: src/shell/focusStage.ts:1993
 msgid "Move widget"
 msgstr ""
 
@@ -6421,7 +6426,7 @@ msgstr ""
 
 #: src/components/post/PostNoteModal.ts:674
 #: src/components/views/ConversationView.ts:968
-#: src/components/views/NewNoteView.ts:805
+#: src/components/views/NewNoteView.ts:821
 msgid "No"
 msgstr ""
 
@@ -6964,7 +6969,7 @@ msgid "Note can't be rendered"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:762
-#: src/components/views/NewNoteView.ts:901
+#: src/components/views/NewNoteView.ts:917
 msgid "Note could not be published"
 msgstr ""
 
@@ -7567,7 +7572,7 @@ msgstr ""
 msgid "Please log in to view your mute list."
 msgstr ""
 
-#: src/components/views/TimelineView.ts:144
+#: src/components/views/TimelineView.ts:167
 msgid "Please login to view timeline"
 msgstr ""
 
@@ -7672,8 +7677,8 @@ msgstr ""
 #: src/components/post/composerShared.ts:502
 #: src/components/post/PostNoteModal.ts:802
 #: src/components/post/PostNoteModal.ts:810
-#: src/components/views/NewNoteView.ts:932
-#: src/components/views/NewNoteView.ts:936
+#: src/components/views/NewNoteView.ts:948
+#: src/components/views/NewNoteView.ts:952
 msgid "Post Highlight"
 msgstr ""
 
@@ -8516,8 +8521,8 @@ msgstr ""
 msgid "Rename Folder"
 msgstr ""
 
-#: src/shell/focusStage.ts:1125
-#: src/shell/focusStage.ts:944
+#: src/shell/focusStage.ts:1142
+#: src/shell/focusStage.ts:961
 msgid "Reorder"
 msgstr ""
 
@@ -8852,7 +8857,7 @@ msgid "Save & publish slots"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:671
-#: src/components/views/NewNoteView.ts:802
+#: src/components/views/NewNoteView.ts:818
 msgid "Save as draft?"
 msgstr ""
 
@@ -8970,7 +8975,7 @@ msgstr ""
 msgid "Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device."
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:65
+#: src/components/post/PostEditorToolbar.ts:86
 msgid "Schedule post"
 msgstr ""
 
@@ -9022,8 +9027,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2177
 #: src/components/layout/MainLayout.ts:2188
 #: src/components/layout/MainLayout.ts:2191
-#: src/shell/focusStage.ts:1134
-#: src/shell/focusStage.ts:970
+#: src/shell/focusStage.ts:1151
+#: src/shell/focusStage.ts:987
 msgid "Scroll to top"
 msgstr ""
 
@@ -9377,8 +9382,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2204
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1136
-#: src/shell/focusStage.ts:977
+#: src/shell/focusStage.ts:1153
+#: src/shell/focusStage.ts:994
 msgid "Settings"
 msgstr ""
 
@@ -9711,7 +9716,7 @@ msgstr ""
 msgid "Slug and Name are required"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:159
+#: src/components/views/TimelineView.ts:182
 #: src/shell/focusDomains.ts:214
 msgid "Social Media"
 msgstr ""
@@ -9753,7 +9758,7 @@ msgstr ""
 msgid "Solid badge - regular notifications"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:228
+#: src/components/post/PostEditorToolbar.ts:263
 msgid "Some Uploads Failed"
 msgstr ""
 
@@ -10544,7 +10549,7 @@ msgid "Time unit"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2169
-#: src/components/views/TimelineView.ts:291
+#: src/components/views/TimelineView.ts:315
 msgid "Timeline"
 msgstr ""
 
@@ -10792,7 +10797,7 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:202
+#: src/components/post/PostEditorToolbar.ts:237
 msgid "Unknown error occurred"
 msgstr ""
 
@@ -10923,13 +10928,13 @@ msgstr ""
 msgid "Upload failed"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:175
-#: src/components/post/PostEditorToolbar.ts:201
-#: src/components/post/PostEditorToolbar.ts:241
+#: src/components/post/PostEditorToolbar.ts:210
+#: src/components/post/PostEditorToolbar.ts:236
+#: src/components/post/PostEditorToolbar.ts:276
 msgid "Upload Failed"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:242
+#: src/components/post/PostEditorToolbar.ts:277
 #: src/components/profile/ImageUploader.ts:179
 msgid "Upload failed. Please try again."
 msgstr ""
@@ -10945,7 +10950,7 @@ msgstr ""
 msgid "Upload image…"
 msgstr ""
 
-#: src/components/post/PostEditorToolbar.ts:73
+#: src/components/post/PostEditorToolbar.ts:71
 msgid "Upload media"
 msgstr ""
 
@@ -11394,7 +11399,7 @@ msgstr ""
 msgid "Word Filter"
 msgstr ""
 
-#: src/shell/focusStage.ts:303
+#: src/shell/focusStage.ts:307
 msgid "Workspace"
 msgstr ""
 
@@ -11412,11 +11417,11 @@ msgstr ""
 msgid "Write Article"
 msgstr ""
 
-#: src/components/views/NewNoteView.ts:287
+#: src/components/views/NewNoteView.ts:300
 msgid "Write new note"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:161
+#: src/components/views/TimelineView.ts:184
 msgid "Write Note"
 msgstr ""
 
@@ -11444,7 +11449,7 @@ msgstr ""
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:673
 #: src/components/views/ConversationView.ts:967
-#: src/components/views/NewNoteView.ts:804
+#: src/components/views/NewNoteView.ts:820
 msgid "Yes"
 msgstr ""
 

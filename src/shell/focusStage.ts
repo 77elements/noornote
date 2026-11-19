@@ -178,6 +178,10 @@ export class FocusStage {
    * 'focus:objects-hidden-changed' subscription (live grid update).
    */
   private hiddenIds: string[] = [];
+  /** Side stacks render their circles as compact chips (the stack tools'
+   * compact toggle). Per-account view preference; the active circle and
+   * the home grid always render round. */
+  private stackCompact = false;
   /** focus:objects-hidden-changed subscription (mount → destroy contract). */
   private hiddenSubId: string | null = null;
   /** live-streams:widget-toggle subscription (mount → destroy contract). */
@@ -333,6 +337,11 @@ export class FocusStage {
     this.grid.className = 'focus-stage__grid';
     this.order = this.loadOrder();
     this.hiddenIds = loadHiddenObjectIds();
+    this.stackCompact =
+      PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.FOCUS_UI_STACK_COMPACT,
+        false
+      ) === true;
     for (const id of this.order) {
       if (this.hiddenIds.includes(id)) continue;
       const def = FOCUS_DOMAINS.find(d => d.id === id);
@@ -2129,8 +2138,8 @@ export class FocusStage {
     right.className = 'focus-side-stack';
     right.dataset.focusStack = '';
     right.style.gridColumn = '3';
-    left.innerHTML = this.stackMoveIcon('left');
-    right.innerHTML = this.stackMoveIcon('right');
+    left.innerHTML = this.stackToolsHtml('left');
+    right.innerHTML = this.stackToolsHtml('right');
     for (const [stack, side] of [
       [left, 'left'],
       [right, 'right'],
@@ -2145,6 +2154,9 @@ export class FocusStage {
       ) as HTMLElement;
       move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
       tools
+        .querySelector('[data-focus-stack-compact]')
+        ?.addEventListener('click', () => this.toggleStackCompact());
+      tools
         .querySelector('[data-focus-stack-reset]')
         ?.addEventListener('click', () => this.resetStackSide());
       // Stack tools live only while their stack exists (recreated per
@@ -2152,6 +2164,10 @@ export class FocusStage {
       // so no disposer tracking is needed here. The move tooltip states
       // the drop DIRECTION: dragging it toward the other column.
       const stackTips: Array<[string, HTMLElement]> = [
+        [
+          _('Compact circles'),
+          tools.querySelector('[data-focus-stack-compact]') as HTMLElement,
+        ],
         [
           side === 'left'
             ? _('Move all circles to the right column')
@@ -2171,11 +2187,49 @@ export class FocusStage {
     this.grid.insertBefore(left, active);
     this.grid.insertBefore(right, active.nextSibling);
     this.sideStacks = [left, right];
+    this.applyStackCompact();
   }
 
-  /** The stack's top tools: move handle (drag moves ALL circles) + reset. */
-  private stackMoveIcon(side: 'left' | 'right'): string {
+  /** Toggle the side-stack compact rendering (circles → ED-b chips) and
+   * persist the preference per account. */
+  private toggleStackCompact(): void {
+    this.stackCompact = !this.stackCompact;
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_STACK_COMPACT,
+      this.stackCompact
+    );
+    this.applyStackCompact();
+  }
+
+  /** Apply the compact state to every live circle. The ACTIVE circle is
+   * never compact — it is the focused column, not a stack item; the home
+   * grid renders round again on close (restoreSideCircles clears the
+   * class). The tools' compact buttons mirror the state (icon flips to
+   * outward arrows via .is-active). */
+  private applyStackCompact(): void {
+    for (const [id, circle] of this.objects) {
+      circle.classList.toggle(
+        'is-compact',
+        this.stackCompact && id !== this.activeId
+      );
+    }
+    for (const stack of this.sideStacks ?? []) {
+      stack
+        .querySelector('[data-focus-stack-compact]')
+        ?.classList.toggle('is-active', this.stackCompact);
+    }
+  }
+
+  /** The stack's top tools: compact toggle (leftmost), move handle (drag
+   * moves ALL circles) + reset (even distribution). */
+  private stackToolsHtml(side: 'left' | 'right'): string {
     return `<div class="focus-side-stack__tools" data-focus-stack-tools>
+      <button type="button" class="focus-side-stack__compact${
+        this.stackCompact ? ' is-active' : ''
+      }" data-focus-stack-compact aria-label="${_('Compact circles')}">
+        <svg class="focus-side-stack__compact-icon-in" width="15" height="15" aria-hidden="true"><use href="#icon-compact"/></svg>
+        <svg class="focus-side-stack__compact-icon-out" width="15" height="15" aria-hidden="true"><use href="#icon-compact-open"/></svg>
+      </button>
       <button type="button" class="focus-side-stack__move" data-stack-side="${side}" data-focus-stack-move aria-label="${_('Move all circles')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
@@ -2227,6 +2281,11 @@ export class FocusStage {
       entry.host.remove();
     }
     this.widgetHosts.clear();
+    // Back in the home grid the circles render round again — the compact
+    // preference re-applies to the stacks on the next focus.
+    for (const [, circle] of this.objects) {
+      circle.classList.remove('is-compact');
+    }
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
   }
@@ -2273,6 +2332,11 @@ export class FocusStage {
       if (el.classList.contains('focus-object--active')) {
         frames[0]!.borderRadius = '50%';
         frames[1]!.borderRadius = getComputedStyle(el).borderRadius;
+      } else if (el.classList.contains('is-compact')) {
+        // Compact chips measured as round circles (pre-reparent first
+        // rects): animate the radius down with the height instead of
+        // snapping to the chip's corner radius.
+        frames[0]!.borderRadius = '50%';
       }
       const animation = el.animate(frames, {
         duration: reduced ? 0 : MORPH_MS,
