@@ -70,6 +70,26 @@ html.ui--focus {
 
 // The free central surface area under the ED overlays — the FS grid of
 // primary domain circles lives here (docs/todos/v2-focus-ui.md).
+// FV layout mode — the JS twin reads this via getComputedStyle
+// (focusStage.stageMode(), FocusStageMode doc). CSS-as-truth: media
+// queries are the single authority, JS never measures the viewport.
+// Boundaries are the FV's OWN (3 columns need ~1186px, the legacy
+// takeover lived at ≤1099px — the global 768/1024 trio doesn't fit):
+// phone <768 / tablet 768-1099 / desktop >=1100. KEEP IN SYNC with
+// .focus-stage__grid.is-focused and .focus-object--active below.
+.focus-stage::after {
+  display: none;
+  content: 'phone';
+
+  @media (min-width: $breakpoint-tablet-big) {
+    content: 'tablet';
+  }
+
+  @media (min-width: 1100px) {
+    content: 'desktop';
+  }
+}
+
 .focus-stage {
   position: relative; // anchor for the brand watermark
   padding: $gap;
@@ -94,27 +114,35 @@ html.ui--focus {
   }
 }
 
-// FS grid: as many circles fit into a row as the width allows — the
-// content (.focus-object, 230px) drives the column count via auto-fill;
-// rows follow the document flow, starting under the ED-t strip.
+// FS grid: mobile-first — phone base carries 2 flexing circles per row
+// (weak hardware gets the lightest CSS); tablet/desktop switch to the
+// fixed 230px circle driving the column count via auto-fill (3-4 per
+// row on tablet, more on desktop). Rows follow the document flow,
+// starting under the ED-t strip.
 .focus-stage__grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, 230px);
-  justify-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $gap;
+
+  @include tablet-big {
+    // auto-fill tracks hug left by default — center the row block.
+    justify-content: center;
+    grid-template-columns: repeat(auto-fill, 230px);
+  }
 
   // Desktop breathes: wider gaps between the circles than on phone.
   @include desktop {
     gap: 2rem;
   }
 
-  // Focused state: middle column takes the active object — 600px surface
-  // + base gap + 30px actions column (the object's internal two-column
-  // layout, see .focus-object__layout). The side columns hold the
-  // re-parented side stacks (see below). One full-
-  // height row — the focused column fills the stage, its inner view
-  // scrolls (classic .timeline-view__timeline mechanics).
+  // Focused state: the active object's column takes the focus. The
+  // column template follows the FV mode (.focus-stage::after — keep in
+  // sync): phone = the object alone (the stack lives in the nav
+  // sidebar), tablet = single stack + object (stack left; .is-stack-right
+  // swaps), desktop >=1100 = stack - object - stack. One full-height row
+  // — the focused column fills the stage, its inner view scrolls
+  // (classic .timeline-view__timeline mechanics).
   &.is-focused {
     // Fill the stage's remaining height BELOW the top-bar (flex sibling,
     // see .focus-stage) — replaces height: 100%, which ignored the
@@ -124,12 +152,22 @@ html.ui--focus {
     // Clears the ED-t drawer above the focused layout (all three columns
     // start flush below it).
     margin-top: calc($gap * 3);
-    grid-template-columns: 230px calc(600px + $gap + 30px) 230px;
+    grid-template-columns: 1fr;
     grid-template-rows: 100%;
 
-    @media (max-width: 1099px) {
-      // Takeover: no morph, single full-width column.
-      grid-template-columns: 1fr;
+    @include tablet-big {
+      grid-template-columns: 230px minmax(0, 1fr);
+
+      &.is-stack-right {
+        grid-template-columns: minmax(0, 1fr) 230px;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      // Desktop: 230px stacks + 600px surface + base gap + 30px actions
+      // column (the object's internal two-column layout, see
+      // .focus-object--active).
+      grid-template-columns: 230px calc(600px + $gap + 30px) 230px;
     }
   }
 }
@@ -137,12 +175,13 @@ html.ui--focus {
 // A primary domain object: a full circle with a double ring (15px inner +
 // 15px outer, no gap — the outer ring is an outline pulled INSIDE the box,
 // hugging the border, so the whole circle fits its grid cell exactly),
-// centered label. Fixed 230px — the grid auto-fill takes it as the column
-// unit. It carries the hit area, the control satellite and the surface slot
+// centered label. Mobile-first: phone circles flex with their 2-per-row
+// grid cell; tablet/desktop fix at 230px (the auto-fill column unit).
+// It carries the hit area, the control satellite and the surface slot
 // for the focused column.
 .focus-object {
   position: relative;
-  width: 230px;
+  width: 100%;
   aspect-ratio: 1;
   justify-self: center;
   align-self: center;
@@ -159,6 +198,11 @@ html.ui--focus {
     border-color $transition-fast,
     outline-color $transition-fast,
     background-color $transition-fast;
+
+  @include tablet-big {
+    // Tablet/desktop: fixed circle = the grid's 230px column unit.
+    width: 230px;
+  }
 
   // Hover tint only on the circle state — the focused column must not
   // react to hover (its background shows above the embedded view).
@@ -180,18 +224,18 @@ html.ui--focus {
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
     background: none;
-    // Two-column body: the surface (fixed 600px) plus the action-button
-    // column (30px), separated by the base gap — the stage's middle grid
-    // column grows by $gap + 30px accordingly (see .focus-stage__grid).
-    // Takeover: the column IS the viewport, so the surface flexes instead
-    // of the fixed 600px.
+    // Two-column body: the surface plus the action-button column (30px),
+    // separated by the base gap — the stage's middle grid column grows by
+    // $gap + 30px accordingly (see .focus-stage__grid). Phone/tablet: the
+    // surface flexes (the column is not wide enough for the fixed 600px);
+    // desktop >=1100 gives it the fixed 600px.
     display: grid;
-    grid-template-columns: 600px 30px;
+    grid-template-columns: 1fr 30px;
     grid-template-rows: 100%;
     gap: $gap;
 
-    @media (max-width: 1099px) {
-      grid-template-columns: 1fr 30px;
+    @media (min-width: 1100px) {
+      grid-template-columns: 600px 30px;
     }
   }
 }
@@ -471,6 +515,77 @@ html.ui--focus {
   }
 }
 
+// Phone-era nav sidebar: the fixed slide-in panel at the LEFT screen edge
+// holding the single side stack (v1 sidebar pattern). The whole root
+// translates; the handle rides at the root's right edge — closed it pokes
+// out at the screen edge, open it sits on the panel's right rim (same
+// tab-on-a-translated-root trick as the EdgeDrawer tabs). Toggle: handle
+// click (round 1 — no drag; the EdgeDrawer marble painter is
+// vertical-only, a left-edge variant is fine-tuning).
+.focus-nav-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(320px, 86vw);
+  z-index: $z-back-bar; // overlay above shell content, below modals/toasts
+  transform: translateX(-100%);
+  transition: $transition-all;
+  will-change: transform;
+
+  &.is-open {
+    transform: none;
+  }
+
+  &__panel {
+    height: 100%;
+    box-sizing: border-box;
+    // Glass panel, right rim framed — kin to the EdgeDrawer panels.
+    padding: calc($gap * 3) $gap $gap;
+    background: color-mix(in srgb, var(--color-1) 82%, transparent);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border-right: 1px solid var(--color-3);
+    border-radius: 0 $radius-xl $radius-xl 0;
+    overflow: hidden;
+  }
+
+  &__handle {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 56px;
+    padding: 0;
+    border: 1px solid var(--color-3);
+    border-left: none;
+    border-radius: 0 $radius-xl $radius-xl 0;
+    background: color-mix(in srgb, var(--color-1) 82%, transparent);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    color: var(--color-4);
+    cursor: pointer;
+  }
+}
+
+// The single stack inside the phone sidebar: full height, internally
+// scrollable (same chromeless scroll as the focused-grid stacks), the
+// circle column flexes with the panel (phone circles are width: 100%).
+.focus-side-stack--in-sidebar {
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  overflow-y: auto;
+  padding-bottom: $gap;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 // Whole-stack move drag (FV): the column travels at the cursor tip
 // (transform set inline by focusStage.startStackDrag) — same feel as the
 // SV order drag. It must ride above the other stack's sticky tools and
@@ -524,9 +639,12 @@ html.ui--focus {
 }
 
 // Scroll-up is removed from the row at the top ([hidden] — the tools row
-// re-centers); scroll-down needs no state: at the bottom end its click
-// clamps, like the wheel.
-.focus-side-stack__scroll-up[hidden] {
+// re-centers); move/reset render hidden in single-stack mode (tablet/
+// phone — no second column to move to). scroll-down needs no state: at
+// the bottom end its click clamps, like the wheel.
+.focus-side-stack__scroll-up[hidden],
+.focus-side-stack__move[hidden],
+.focus-side-stack__reset[hidden] {
   display: none;
 }
 
@@ -558,7 +676,14 @@ html.ui--focus {
 // geometry transition out of the base class keeps the WAAPI-driven
 // grid/focus morphs untouched. The ACTIVE circle never compacts.
 .focus-side-stack .focus-object {
-  height: 230px; // identical to the aspect-ratio result (fixed 230px column)
+  // The compact morph needs an interpolable start height (the base
+  // circle's height comes from aspect-ratio, which cannot animate).
+  // Phone circles flex with their column — only the fixed 230px
+  // tablet/desktop circle gets the explicit height.
+  @include tablet-big {
+    height: 230px;
+  }
+
   transition:
     border-color $transition-fast,
     outline-color $transition-fast,
@@ -1032,13 +1157,18 @@ $focus-tab-overlap: 1px;
 // takeover (<1100px, where the surface flexes) — no per-content overrides.
 .focus-settings {
   box-sizing: border-box;
-  max-width: calc(600px + #{$gap * 3} + 30px);
+  // Phone/tablet: the object column is narrower than the 600px surface —
+  // full width, the padding frames it. Desktop >=1100: cap at the
+  // focused object's column (600px surface + $gap + 30px actions strip),
+  // so the natural auto-centering lands exactly on the surface behind
+  // the drawer — no per-content overrides.
+  max-width: none;
   margin: 0 auto;
   padding: $gap $gap calc($gap * 1.5);
   padding-right: calc(#{$gap * 2} + 30px);
 
-  @media (max-width: 1099px) {
-    max-width: none;
+  @media (min-width: 1100px) {
+    max-width: calc(600px + #{$gap * 3} + 30px);
   }
   // Composed multi-panel content (composePanels): the panels stack with
   // <hr> dividers between them — plain flow, readable width.

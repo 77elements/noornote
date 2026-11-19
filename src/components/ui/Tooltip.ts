@@ -36,12 +36,13 @@ export class Tooltip {
   private static activeTarget: HTMLElement | null = null;
 
   /**
-   * Attach a tooltip to a target element.
+   * Attach a tooltip to a target element. `content` may be a getter —
+   * re-evaluated on every show (state-dependent labels, e.g. open/close).
    * @returns a disposer that detaches all listeners and hides the popup.
    */
   static attach(
     target: HTMLElement,
-    content: string,
+    content: string | (() => string),
     options: TooltipOptions = {}
   ): () => void {
     const placement = options.placement ?? 'top';
@@ -54,7 +55,7 @@ export class Tooltip {
     const show = (): void => {
       Tooltip.activeTarget = target;
       const popup = Tooltip.ensurePopup();
-      popup.textContent = content;
+      popup.textContent = typeof content === 'function' ? content() : content;
       popup.classList.add('nn-tooltip--visible');
       Tooltip.position(target, popup, placement, align);
       window.addEventListener('scroll', onScroll, true);

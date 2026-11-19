@@ -104,7 +104,7 @@ class EdgeDrawer {
     this.root.innerHTML = `
       <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${label}"></div>
       <button type="button" class="focus-drawer__tab" data-drawer-tab
-        aria-label="${_('Open edge drawer')}" aria-expanded="false"></button>
+        aria-expanded="false"></button>
     `;
     if (decoratePanel) {
       const panel = this.root.querySelector(
@@ -115,9 +115,12 @@ class EdgeDrawer {
     this.tab = this.root.querySelector(
       '[data-drawer-tab]'
     ) as HTMLButtonElement;
+    this.tab.setAttribute('aria-label', this.tabLabel());
     // Same label for both tabs (top/bottom); the tooltip flips its side so
-    // it never opens off-screen at the screen edge.
-    Tooltip.attach(this.tab, _('Open edge drawer'), {
+    // it never opens off-screen at the screen edge. Content is a getter —
+    // it re-evaluates on every show, so the label flips with the drawer
+    // state (Open ↔ Close).
+    Tooltip.attach(this.tab, () => this.tabLabel(), {
       placement: this.edge === 'top' ? 'bottom' : 'top',
     });
     this.tab.addEventListener('pointerdown', this.onPointerDown);
@@ -194,6 +197,13 @@ class EdgeDrawer {
     this.root.style.transform = '';
     this.root.classList.toggle('is-open', this.isOpen);
     this.tab.setAttribute('aria-expanded', String(this.isOpen));
+    // The tab's label flips with the state (tooltip content is a getter,
+    // it re-evaluates on the next hover).
+    this.tab.setAttribute('aria-label', this.tabLabel());
+  }
+
+  private tabLabel(): string {
+    return this.isOpen ? _('Close edge drawer') : _('Open edge drawer');
   }
 
   private setOpen(open: boolean): void {

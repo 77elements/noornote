@@ -516,8 +516,8 @@ msgstr "Saved notes, sorted into folders."
 
 #: src/components/layout/MainLayout.ts:2257
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1042
-#: src/shell/focusStage.ts:1201
+#: src/shell/focusStage.ts:1058
+#: src/shell/focusStage.ts:1217
 msgid "Settings"
 msgstr "Settings"
 
@@ -1694,8 +1694,8 @@ msgstr "auto-generated, change only if you know what you're doing"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1030
-#: src/shell/focusStage.ts:1198
+#: src/shell/focusStage.ts:1046
+#: src/shell/focusStage.ts:1214
 msgid "Back"
 msgstr "Back"
 
@@ -2224,8 +2224,8 @@ msgstr "Bookmark"
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1025
-#: src/shell/focusStage.ts:1197
+#: src/shell/focusStage.ts:1041
+#: src/shell/focusStage.ts:1213
 msgid "Close"
 msgstr "Close"
 
@@ -5317,6 +5317,7 @@ msgid "Go Forward (Cmd+→)"
 msgstr "Go Forward (Cmd+→)"
 
 #: src/components/layout/MainLayout.ts:2169
+#: src/shell/focusStage.ts:2413
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -5394,8 +5395,8 @@ msgstr "Reload"
 #: src/components/layout/MainLayout.ts:2230
 #: src/components/layout/MainLayout.ts:2241
 #: src/components/layout/MainLayout.ts:2244
-#: src/shell/focusStage.ts:1035
-#: src/shell/focusStage.ts:1199
+#: src/shell/focusStage.ts:1051
+#: src/shell/focusStage.ts:1215
 msgid "Scroll to top"
 msgstr "Scroll to top"
 
@@ -12203,7 +12204,7 @@ msgstr "mentioned or replied to you in %s"
 msgid "(Author)"
 msgstr "(Author)"
 
-#: src/shell/focusShell.ts:332
+#: src/shell/focusShell.ts:342
 msgid "Classic interface active"
 msgstr "Classic interface active"
 
@@ -12445,8 +12446,8 @@ msgstr "Tablet Mode"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
-#: src/shell/focusStage.ts:2258
-#: src/shell/focusStage.ts:2387
+#: src/shell/focusStage.ts:2314
+#: src/shell/focusStage.ts:2537
 msgid "Distribute circles evenly"
 msgstr "Distribute circles evenly"
 
@@ -12469,20 +12470,20 @@ msgstr "Hides reposts of users' own notes from your timeline."
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
 
-#: src/shell/focusStage.ts:2384
+#: src/shell/focusStage.ts:2534
 msgid "Move all circles"
 msgstr "Move all circles"
 
-#: src/shell/focusStage.ts:2254
+#: src/shell/focusStage.ts:2311
 msgid "Move all circles to the left column"
 msgstr "Move all circles to the left column"
 
-#: src/shell/focusStage.ts:2253
+#: src/shell/focusStage.ts:2310
 msgid "Move all circles to the right column"
 msgstr "Move all circles to the right column"
 
-#: src/shell/focusStage.ts:1009
-#: src/shell/focusStage.ts:1190
+#: src/shell/focusStage.ts:1025
+#: src/shell/focusStage.ts:1206
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -12559,8 +12560,8 @@ msgstr "Post Media"
 msgid "Post Listing"
 msgstr "Post Listing"
 
-#: src/shell/focusStage.ts:2066
-#: src/shell/focusStage.ts:2073
+#: src/shell/focusStage.ts:2085
+#: src/shell/focusStage.ts:2092
 msgid "Move widget"
 msgstr "Move widget"
 
@@ -12625,7 +12626,7 @@ msgstr "Enable Live Streams in Timeline"
 msgid "Search notes, users and hashtags…"
 msgstr "Search notes, users and hashtags…"
 
-#: src/shell/focusStage.ts:1012
+#: src/shell/focusStage.ts:1028
 msgid "Hide"
 msgstr "Hide"
 
@@ -12645,17 +12646,16 @@ msgstr "Unhide"
 msgid "Unhide all"
 msgstr "Unhide all"
 
-#: src/shell/focusShell.ts:107
-#: src/shell/focusShell.ts:120
+#: src/shell/focusShell.ts:206
 msgid "Open edge drawer"
 msgstr "Open edge drawer"
 
-#: src/shell/focusStage.ts:305
-#: src/shell/focusStage.ts:365
+#: src/shell/focusStage.ts:320
+#: src/shell/focusStage.ts:380
 msgid "Load Resource Monitor"
 msgstr "Load Resource Monitor"
 
-#: src/shell/focusShell.ts:322
+#: src/shell/focusShell.ts:332
 msgid "Switch to v1"
 msgstr "Switch to v1"
 
@@ -12663,7 +12663,7 @@ msgstr "Switch to v1"
 msgid "Social Media (minimal)"
 msgstr "Social Media (minimal)"
 
-#: src/shell/focusStage.ts:316
+#: src/shell/focusStage.ts:331
 msgid "Workspace"
 msgstr "Workspace"
 
@@ -12671,16 +12671,16 @@ msgstr "Workspace"
 msgid "Everything"
 msgstr "Everything"
 
-#: src/shell/focusStage.ts:2248
-#: src/shell/focusStage.ts:2380
+#: src/shell/focusStage.ts:2303
+#: src/shell/focusStage.ts:2530
 msgid "Compact circles"
 msgstr "Compact circles"
 
-#: src/shell/focusStage.ts:341
+#: src/shell/focusStage.ts:356
 msgid "Arrange positions"
 msgstr "Arrange positions"
 
-#: src/shell/focusStage.ts:1192
+#: src/shell/focusStage.ts:1208
 msgid ""
 "Hide feature, it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12710,19 +12710,34 @@ msgstr ""
 msgid "See what's happening on NoorNote"
 msgstr "See what's happening on NoorNote"
 
-#: src/shell/focusStage.ts:308
+#: src/shell/focusStage.ts:323
 msgid "Restore default order"
 msgstr "Restore default order"
 
-#: src/shell/focusStage.ts:2262
-#: src/shell/focusStage.ts:2390
+#: src/shell/focusStage.ts:2318
+#: src/shell/focusStage.ts:2540
 msgid "Scroll down"
 msgstr "Scroll down"
 
-#: src/shell/focusStage.ts:2268
-#: src/shell/focusStage.ts:2393
+#: src/shell/focusStage.ts:2322
+#: src/shell/focusStage.ts:2543
 msgid "Scroll up"
 msgstr "Scroll up"
+
+#: src/shell/focusShell.ts:206
+msgid "Close edge drawer"
+msgstr "Close edge drawer"
+
+#: src/shell/focusStage.ts:2424
+#: src/shell/focusStage.ts:2450
+msgid "Close navigation"
+msgstr "Close navigation"
+
+#: src/shell/focusStage.ts:2414
+#: src/shell/focusStage.ts:2424
+#: src/shell/focusStage.ts:2450
+msgid "Open navigation"
+msgstr "Open navigation"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

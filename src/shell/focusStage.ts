@@ -82,12 +82,21 @@ const HOME_ROUTE = '/';
 /** Morph duration/easing — single source for open and close. */
 const MORPH_MS = 380;
 const MORPH_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
-/** Below this viewport width: column takeover instead of FLIP morph. */
-const MORPH_MIN_WIDTH = 1100;
-/** Media query mirroring the SCSS takeover breakpoint (must stay in sync). */
-const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
+
+/**
+ * FV layout mode. Source of truth is CSS: the .focus-stage::after
+ * pseudo-element (media-query-driven — the same CSS-as-truth technique as
+ * html::after/LayoutService, but with the FV's own boundaries, since the
+ * 3-column layout needs ~1186px and the legacy takeover lived at ≤1099px;
+ * the global 768/1024 trio doesn't fit the FV).
+ *  - phone (<768px): the focused object alone fills the column; the single
+ *    side stack lives in the slide-in nav sidebar.
+ *  - tablet (768-1099px): one side stack + the focused object (2 columns).
+ *  - desktop (≥1100px): stack - object - stack, unchanged.
+ */
+type FocusStageMode = 'phone' | 'tablet' | 'desktop';
 
 /**
  * Widgets mounted into the FV side stacks (v2). Only ids listed here get
@@ -203,10 +212,18 @@ export class FocusStage {
   private walletSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
-  /** Side stacks while a domain is focused (see reparentSideStacks). */
+  /** Side stacks while a domain is focused (see reparentSideStacks).
+   * Tablet/phone single-stack mode stores the SAME element in both slots —
+   * every [left, right] consumer degrades gracefully (drop targets, widget
+   * placement); dual-only affordances guard on the two slots being equal. */
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
   private morphing = false;
+  /** FV mode the stacks were built for (stageMode); re-built on change. */
+  private lastStageMode: FocusStageMode = 'desktop';
+  /** Phone-era nav sidebar (slide-in panel holding the single stack). */
+  private navSidebar: HTMLElement | null = null;
+  private sidebarOpen = false;
   /** Per-object scroll-to-top action state (button + last scroll source). */
   private scrollTopState = new Map<
     string,
@@ -253,21 +270,19 @@ export class FocusStage {
     // Height-only resizes (devtools docked bottom, window grow) must keep
     // the focused column — only WIDTH changes matter for the layout mode.
     if (!this.activeId || this.morphing) return;
+    // Mode change (CSS pseudo-element is the truth): rebuild the stack
+    // arrangement — desktop dual stacks ↔ tablet single stack ↔ phone
+    // sidebar stack — without losing the focus. restoreSideCircles also
+    // drops the nav sidebar; reparentSideStacks re-mounts for the new
+    // mode (and re-sets the columns, incl. .is-stack-right).
+    const mode = this.stageMode();
+    if (mode === this.lastStageMode) return;
     const def = FOCUS_DOMAINS.find(d => d.id === this.activeId);
-    const el = def ? this.objects.get(def.id) : undefined;
-    if (!def || !el) return;
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
-    if (takeOver) {
-      // Crossed DOWN into takeover: drop the FLIP artifacts (inline
-      // placement, side stacks) — the takeover CSS holds the column alone.
-      el.style.gridColumn = '';
-      this.restoreSideCircles();
-    } else if (!this.sideStacks) {
-      // Crossed UP into FLIP mode: re-place the column and re-parent the
-      // side stacks (takeover left the circles flat in the grid).
-      el.style.gridColumn = '2';
-      this.reparentSideStacks(def.id);
-    }
+    if (!def) return;
+    this.restoreSideCircles();
+    const el = this.objects.get(def.id) as HTMLElement;
+    el.style.gridColumn = mode === 'desktop' ? '2' : '';
+    this.reparentSideStacks(def.id);
     // Same-mode width changes: pure CSS reflow, nothing to do.
   };
 
@@ -792,6 +807,7 @@ export class FocusStage {
     this.badgeManagers = [];
     for (const dispose of this.tooltipDisposers) dispose();
     this.tooltipDisposers = [];
+    this.removeNavSidebar();
     this.grid?.remove();
   }
 
@@ -1293,7 +1309,7 @@ export class FocusStage {
 
     this.morphing = true;
     this.activeId = def.id;
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
+    const mode = this.stageMode();
 
     // Surface mounts BEFORE the morph: in document flow the column height
     // is its content height — the FLIP needs the laid-out final geometry.
@@ -1345,8 +1361,8 @@ export class FocusStage {
     }
 
     // Measure the TRUE before-geometry: the old object is still the
-    // column, the new one still a circle.
-    const first = takeOver ? null : this.measureAll();
+    // column, the new one still a circle. FLIP runs in every mode.
+    const first = this.measureAll();
 
     // Mutation phase (one task — no paint in between): swap the focus.
     if (oldId) {
@@ -1386,13 +1402,14 @@ export class FocusStage {
     surface.view?.resume?.();
     el.classList.add('focus-object--active');
     this.grid.classList.add('is-focused');
-    if (!takeOver) {
-      // The side circles re-parent into per-side stacks so their rows
-      // stay compact while the active column's content height stretches
-      // the middle row (in flow → the page scrolls the column).
-      el.style.gridColumn = '2';
-      this.reparentSideStacks(def.id);
-    }
+    // The side circles re-parent into their stacks so their rows stay
+    // compact while the active column's content height stretches (in
+    // flow → the page scrolls the column). FLIP in every mode; the mode
+    // decides the column placement (desktop = center; tablet = beside
+    // the single stack, set inside reparentSingleStack; phone = the
+    // stack lives in the nav sidebar, the object owns the only column).
+    if (mode === 'desktop') el.style.gridColumn = '2';
+    this.reparentSideStacks(def.id);
     // A reopened (cached) surface may already be scrolled — sync the
     // scroll-to-top action to the restored state.
     const st = this.scrollTopState.get(def.id);
@@ -1432,15 +1449,14 @@ export class FocusStage {
     if (!def || !el) return;
     // A detached detail (Phase 5) dies with its host column.
     this.closeDetachedDetail();
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
     // Object settings (ED-b) die with their object.
     if (this.settingsView) this.drawer?.close();
 
     // Capture the focused geometry FIRST (content still mounted): in
     // document flow the column height is its content — after the surface
     // detaches, the box collapses and the morph-back would start from a
-    // sliver.
-    const first = animate && !takeOver ? this.measureAll() : null;
+    // sliver. FLIP runs in every mode.
+    const first = animate ? this.measureAll() : null;
 
     // Detach the surface first: the view pauses, its element is kept
     // cached so reopening does not refetch everything. The surface
@@ -1474,7 +1490,7 @@ export class FocusStage {
     // grid is a state of its own — back from it returns to the object.
     pushFocusUrl(HOME_ROUTE);
     this.restoreSideCircles();
-    if (!first) return; // takeover / no-animate: plain class flip
+    if (!first) return; // no-animate: plain class flip
 
     // FLIP back: focused geometry → circle geometry.
     this.morphing = true;
@@ -1599,6 +1615,9 @@ export class FocusStage {
    */
   private startStackDrag(e: PointerEvent, side: 'left' | 'right'): void {
     if (this.morphing || !this.sideStacks) return;
+    // Single-stack mode (tablet/phone): no second column to move all
+    // circles into — the move-all handle renders hidden there anyway.
+    if (this.sideStacks[0] === this.sideStacks[1]) return;
     const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
     const sourceEl = this.sideStacks[side === 'left' ? 0 : 1];
     this.startTranslateDrag({
@@ -2208,8 +2227,17 @@ export class FocusStage {
    * would be distributed across all spanned rows (circles spread over
    * thousands of px); inside the stacks they keep their compact 230px
    * rhythm while the middle column stretches in document flow.
+   * Tablet/phone (single-stack mode): ONE stack holding all non-active
+   * circles + widgets — tablet places it left of the focused object
+   * (grid column), phone mounts it into the slide-in nav sidebar.
    */
   private reparentSideStacks(activeId: string): void {
+    const mode = this.stageMode();
+    this.lastStageMode = mode;
+    if (mode !== 'desktop') {
+      this.reparentSingleStack(activeId, mode);
+      return;
+    }
     const left = document.createElement('div');
     left.className = 'focus-side-stack';
     left.dataset.focusStack = '';
@@ -2220,74 +2248,8 @@ export class FocusStage {
     right.style.gridColumn = '3';
     left.innerHTML = this.stackToolsHtml('left');
     right.innerHTML = this.stackToolsHtml('right');
-    for (const [stack, side] of [
-      [left, 'left'],
-      [right, 'right'],
-    ] as const) {
-      // The buttons must never open an object underneath.
-      const tools = stack.querySelector(
-        '[data-focus-stack-tools]'
-      ) as HTMLElement;
-      tools.addEventListener('click', ev => ev.stopPropagation());
-      const move = tools.querySelector(
-        '[data-focus-stack-move]'
-      ) as HTMLElement;
-      move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
-      tools
-        .querySelector('[data-focus-stack-compact]')
-        ?.addEventListener('click', () => this.toggleStackCompact());
-      tools
-        .querySelector('[data-focus-stack-reset]')
-        ?.addEventListener('click', () => this.resetStackSide());
-      // Stack tools live only while their stack exists (recreated per
-      // focus, removed on close) — their listeners die with the elements,
-      // so no disposer tracking is needed here. The move tooltip states
-      // the drop DIRECTION: dragging it toward the other column.
-      const stackTips: Array<[string, HTMLElement]> = [
-        [
-          _('Compact circles'),
-          tools.querySelector('[data-focus-stack-compact]') as HTMLElement,
-        ],
-        [
-          side === 'left'
-            ? _('Move all circles to the right column')
-            : _('Move all circles to the left column'),
-          move,
-        ],
-        [
-          _('Distribute circles evenly'),
-          tools.querySelector('[data-focus-stack-reset]') as HTMLElement,
-        ],
-        [
-          _('Scroll down'),
-          tools.querySelector('[data-focus-stack-scroll-down]') as HTMLElement,
-        ],
-        [
-          _('Scroll up'),
-          tools.querySelector('[data-focus-stack-scroll-up]') as HTMLElement,
-        ],
-      ];
-      for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
-      // Stack-scoped scroll controls: PageDown/PageUp steps (one column
-      // viewport per click), smooth. Keyboard scrolling deliberately
-      // reaches only the middle column — these cover the side columns.
-      // The buttons' sync dies with the stack (listeners on the stack),
-      // same lifecycle as the other tools.
-      const scrollStep = (): number => stack.clientHeight;
-      tools
-        .querySelector('[data-focus-stack-scroll-down]')
-        ?.addEventListener('click', () =>
-          stack.scrollBy({ top: scrollStep(), behavior: 'smooth' })
-        );
-      tools
-        .querySelector('[data-focus-stack-scroll-up]')
-        ?.addEventListener('click', () =>
-          stack.scrollBy({ top: -scrollStep(), behavior: 'smooth' })
-        );
-      stack.addEventListener('scroll', () => this.syncStackScrollButtons(), {
-        passive: true,
-      });
-    }
+    this.wireStackTools(left, 'left', true);
+    this.wireStackTools(right, 'right', true);
     this.distributeSideCircles(left, right, activeId);
     this.placeWidgets(left, right);
     const active = this.objects.get(activeId) as HTMLElement;
@@ -2297,6 +2259,202 @@ export class FocusStage {
     this.applyStackCompact();
     // Initial button state (stack is in the DOM now, geometry measurable).
     this.syncStackScrollButtons();
+  }
+
+  /**
+   * Shared per-stack wiring: tools click containment, compact toggle,
+   * the stack-scoped scroll controls (PageDown/PageUp steps, smooth —
+   * keyboard scrolling deliberately reaches only the middle column) with
+   * their scroll-event sync, and the tooltips. `dualTools` adds the
+   * move-all handle + reset (dual-column affordances — meaningless with
+   * a single stack, the buttons render hidden there). Stack tools live
+   * only while their stack exists (recreated per focus, removed on
+   * close) — their listeners die with the elements, so no disposer
+   * tracking is needed here.
+   */
+  private wireStackTools(
+    stack: HTMLElement,
+    side: 'left' | 'right',
+    dualTools: boolean
+  ): void {
+    // The buttons must never open an object underneath.
+    const tools = stack.querySelector(
+      '[data-focus-stack-tools]'
+    ) as HTMLElement;
+    tools.addEventListener('click', ev => ev.stopPropagation());
+    const move = tools.querySelector('[data-focus-stack-move]') as HTMLElement;
+    const reset = tools.querySelector(
+      '[data-focus-stack-reset]'
+    ) as HTMLElement;
+    if (dualTools) {
+      move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
+      reset.addEventListener('click', () => this.resetStackSide());
+    } else {
+      move.hidden = true;
+      reset.hidden = true;
+    }
+    tools
+      .querySelector('[data-focus-stack-compact]')
+      ?.addEventListener('click', () => this.toggleStackCompact());
+    // The move tooltip states the drop DIRECTION: dragging it toward the
+    // other column (dual only).
+    const stackTips: Array<[string, HTMLElement]> = [
+      [
+        _('Compact circles'),
+        tools.querySelector('[data-focus-stack-compact]') as HTMLElement,
+      ],
+      ...(dualTools
+        ? ([
+            [
+              side === 'left'
+                ? _('Move all circles to the right column')
+                : _('Move all circles to the left column'),
+              move,
+            ],
+            [_('Distribute circles evenly'), reset],
+          ] as Array<[string, HTMLElement]>)
+        : []),
+      [
+        _('Scroll down'),
+        tools.querySelector('[data-focus-stack-scroll-down]') as HTMLElement,
+      ],
+      [
+        _('Scroll up'),
+        tools.querySelector('[data-focus-stack-scroll-up]') as HTMLElement,
+      ],
+    ];
+    for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
+    const scrollStep = (): number => stack.clientHeight;
+    tools
+      .querySelector('[data-focus-stack-scroll-down]')
+      ?.addEventListener('click', () =>
+        stack.scrollBy({ top: scrollStep(), behavior: 'smooth' })
+      );
+    tools
+      .querySelector('[data-focus-stack-scroll-up]')
+      ?.addEventListener('click', () =>
+        stack.scrollBy({ top: -scrollStep(), behavior: 'smooth' })
+      );
+    stack.addEventListener('scroll', () => this.syncStackScrollButtons(), {
+      passive: true,
+    });
+  }
+
+  /**
+   * Single-stack mode (tablet/phone): ONE side stack holding ALL
+   * non-active circles + widgets. Tablet places it beside the focused
+   * object (stack-left default, FOCUS_UI_STACK_SIDE swaps the columns —
+   * the grid carries the matching .is-stack-right column template).
+   * Phone mounts it into the slide-in nav sidebar instead of the grid.
+   */
+  private reparentSingleStack(activeId: string, mode: FocusStageMode): void {
+    const stack = document.createElement('div');
+    stack.className = 'focus-side-stack';
+    stack.dataset.focusStack = '';
+    stack.innerHTML = this.stackToolsHtml('left');
+    this.wireStackTools(stack, 'left', false);
+    this.distributeSideCircles(stack, stack, activeId);
+    this.placeWidgets(stack, stack);
+    const active = this.objects.get(activeId) as HTMLElement;
+    if (mode === 'phone') {
+      this.mountNavSidebar().appendChild(stack);
+      stack.classList.add('focus-side-stack--in-sidebar');
+    } else {
+      // Tablet: stack left of the object by default.
+      const side = this.stackSide();
+      stack.style.gridColumn = side === 'left' ? '1' : '2';
+      active.style.gridColumn = side === 'left' ? '2' : '1';
+      this.grid.classList.toggle('is-stack-right', side === 'right');
+      if (side === 'left') this.grid.insertBefore(stack, active);
+      else this.grid.insertBefore(stack, active.nextSibling);
+    }
+    this.sideStacks = [stack, stack];
+    this.applyStackCompact();
+    this.syncStackScrollButtons();
+  }
+
+  /**
+   * The FV layout mode, read from the stage's own CSS pseudo-element
+   * (.focus-stage::after — media-query-driven, see FocusStageMode). CSS
+   * is the single source of truth; JS never measures the viewport itself.
+   */
+  private stageMode(): FocusStageMode {
+    const content = getComputedStyle(this.root, '::after').content.replace(
+      /['"]/g,
+      ''
+    );
+    return content === 'phone' || content === 'tablet' ? content : 'desktop';
+  }
+
+  /** Tablet single-stack side ('left' default; FOCUS_UI_STACK_SIDE swaps). */
+  private stackSide(): 'left' | 'right' {
+    return PerAccountLocalStorage.getInstance().get<'left' | 'right'>(
+      StorageKeys.FOCUS_UI_STACK_SIDE,
+      'left'
+    ) === 'right'
+      ? 'right'
+      : 'left';
+  }
+
+  /**
+   * The phone-era nav sidebar: a fixed slide-in panel at the left screen
+   * edge holding the single side stack (round 1: handle click toggles —
+   * no drag-to-close; the EdgeDrawer marble painter is vertical-only, a
+   * left-edge variant is fine-tuning). Mounted lazily while a focus is
+   * active in phone mode, removed with the stacks on close. Listeners
+   * die with the element (same lifecycle as the stack tools).
+   */
+  private mountNavSidebar(): HTMLElement {
+    if (this.navSidebar) return this.sidebarPanel();
+    const root = document.createElement('div');
+    root.id = 'focus-nav-sidebar';
+    root.className = 'focus-nav-sidebar';
+    root.innerHTML = `
+      <div class="focus-nav-sidebar__panel" data-nav-sidebar-panel role="region" aria-label="${_('Navigation')}"></div>
+      <button type="button" class="focus-nav-sidebar__handle" data-nav-sidebar-handle aria-label="${_('Open navigation')}" aria-expanded="false">
+        <svg width="18" height="18" aria-hidden="true"><use href="#icon-hamburger"/></svg>
+      </button>`;
+    const handle = root.querySelector(
+      '[data-nav-sidebar-handle]'
+    ) as HTMLElement;
+    handle.addEventListener('click', () => this.toggleNavSidebar());
+    this.tooltipDisposers.push(
+      Tooltip.attach(
+        handle,
+        () => (this.sidebarOpen ? _('Close navigation') : _('Open navigation')),
+        { placement: 'bottom' }
+      )
+    );
+    this.root.appendChild(root);
+    this.navSidebar = root;
+    this.sidebarOpen = false;
+    return this.sidebarPanel();
+  }
+
+  private sidebarPanel(): HTMLElement {
+    return this.navSidebar?.querySelector(
+      '[data-nav-sidebar-panel]'
+    ) as HTMLElement;
+  }
+
+  private toggleNavSidebar(): void {
+    if (!this.navSidebar) return;
+    this.sidebarOpen = !this.sidebarOpen;
+    this.navSidebar.classList.toggle('is-open', this.sidebarOpen);
+    const handle = this.navSidebar.querySelector(
+      '[data-nav-sidebar-handle]'
+    ) as HTMLElement;
+    handle.setAttribute('aria-expanded', String(this.sidebarOpen));
+    handle.setAttribute(
+      'aria-label',
+      this.sidebarOpen ? _('Close navigation') : _('Open navigation')
+    );
+  }
+
+  private removeNavSidebar(): void {
+    this.navSidebar?.remove();
+    this.navSidebar = null;
+    this.sidebarOpen = false;
   }
 
   /**
@@ -2401,10 +2559,14 @@ export class FocusStage {
     activeId: string
   ): void {
     const layout = this.effectiveLayout();
+    // Single-stack mode (tablet/phone) passes the SAME element in both
+    // slots: the merged layout (left column order, then right — the active
+    // circle deduped out) fills the one stack, keeping the stored order.
+    const merged = left === right;
     for (const [stack, ids] of [
-      [left, layout.left],
-      [right, layout.right],
-    ] as const) {
+      [left, merged ? [...layout.left, ...layout.right] : layout.left],
+      ...(merged ? [] : ([[right, layout.right]] as const)),
+    ] as Array<[HTMLElement, string[]]>) {
       for (const id of ids) {
         if (id === activeId) continue;
         const circle = this.objects.get(id);
@@ -2435,6 +2597,8 @@ export class FocusStage {
     for (const [, circle] of this.objects) {
       circle.classList.remove('is-compact');
     }
+    this.removeNavSidebar();
+    this.grid.classList.remove('is-stack-right');
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
   }

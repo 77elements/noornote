@@ -124,6 +124,10 @@ export const StorageKeys = {
   // FV side stacks rendered as compact chips instead of full circles
   // (the top-bar tools' compact toggle). Per-account view preference.
   FOCUS_UI_STACK_COMPACT: 'noornote_focus_ui_stack_compact_map',
+  // FV tablet mode (768-1099px): which side the single side stack occupies
+  // ('left' default — stack left of the focused object; 'right' swaps the
+  // two columns). Per-account view preference.
+  FOCUS_UI_STACK_SIDE: 'noornote_focus_ui_stack_side_map',
   // Top-bar "Arrange positions" switch: while OFF (default) the layout
   // satellites (circle move/hide, stack tools, widget move) render
   // hidden. Per-account view preference.
