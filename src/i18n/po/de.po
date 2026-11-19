@@ -256,7 +256,7 @@ msgid "Accounts and threads you have muted."
 msgstr "Konten und Threads, die du stummgeschaltet hast."
 
 #: src/addons/analytics/AnalyticsAddonView.ts:239
-#: src/components/layout/MainLayout.ts:2190
+#: src/components/layout/MainLayout.ts:2239
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2373
@@ -267,7 +267,7 @@ msgstr "Artikel"
 
 #: src/addons/addonI18n.ts:18
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
-#: src/components/layout/MainLayout.ts:108
+#: src/components/layout/MainLayout.ts:109
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
@@ -296,8 +296,8 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
-#: src/components/layout/MainLayout.ts:1976
-#: src/components/layout/MainLayout.ts:2300
+#: src/components/layout/MainLayout.ts:2025
+#: src/components/layout/MainLayout.ts:2344
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 #: src/shell/focusLogPanel.ts:31
@@ -306,7 +306,7 @@ msgid "Export DiagLogs"
 msgstr "DiagLogs exportieren"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:243
-#: src/components/layout/MainLayout.ts:109
+#: src/components/layout/MainLayout.ts:110
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
 #: src/shell/focusDomains.ts:285
@@ -326,14 +326,14 @@ msgstr "Neueste Notizen pro Follow"
 msgid "Lists"
 msgstr "Listen"
 
-#: src/components/layout/MainLayout.ts:1914
+#: src/components/layout/MainLayout.ts:1963
 #: src/components/views/SettingsView.ts:46
 #: src/shell/focusDomains.ts:232
 #: src/shell/focusMediaSurface.ts:43
 msgid "Media"
 msgstr "Medien"
 
-#: src/components/layout/MainLayout.ts:110
+#: src/components/layout/MainLayout.ts:111
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 #: src/shell/focusDomains.ts:296
@@ -365,7 +365,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
-#: src/components/layout/MainLayout.ts:2204
+#: src/components/layout/MainLayout.ts:2253
 #: src/components/views/SettingsView.ts:71
 #: src/shell/focusStage.ts:1028
 #: src/shell/focusStage.ts:1187
@@ -380,13 +380,13 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
-#: src/components/layout/MainLayout.ts:2169
+#: src/components/layout/MainLayout.ts:2218
 #: src/components/views/TimelineView.ts:315
 msgid "Timeline"
 msgstr "Timeline"
 
 #: src/addons/addonI18n.ts:20
-#: src/components/layout/MainLayout.ts:111
+#: src/components/layout/MainLayout.ts:112
 #: src/components/layout/partials/ListsMenuPartial.ts:64
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
@@ -415,7 +415,7 @@ msgstr ""
 #: src/addons/marketplace/MyListingsView.ts:240
 #: src/addons/note-taking/NoteEditorModal.ts:365
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:119
-#: src/components/auth/AuthComponent.ts:495
+#: src/components/auth/AuthComponent.ts:509
 #: src/components/modals/DMComposeModal.ts:95
 #: src/components/modals/EditFolderModal.ts:63
 #: src/components/modals/ImportToNoorSignerModal.ts:106
@@ -467,8 +467,8 @@ msgstr "Erstellen"
 msgid "Current:"
 msgstr "Aktuell:"
 
-#: src/components/layout/MainLayout.ts:2216
-#: src/components/layout/MainLayout.ts:2229
+#: src/components/layout/MainLayout.ts:2265
+#: src/components/layout/MainLayout.ts:2278
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -719,7 +719,7 @@ msgstr "Aktiv"
 msgid "Addon order reset to default"
 msgstr "Addon-Reihenfolge zurückgesetzt"
 
-#: src/components/layout/MainLayout.ts:2912
+#: src/components/layout/MainLayout.ts:2956
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr "Addons"
@@ -1197,7 +1197,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #: src/addons/marketplace/ListingEditorView.ts:285
-#: src/components/layout/MainLayout.ts:2289
+#: src/components/layout/MainLayout.ts:2333
 #: src/components/views/ArticleEditorView.ts:408
 #: src/components/views/VideoEditorView.ts:183
 msgid "Details"
@@ -1299,7 +1299,7 @@ msgstr "Medien-Modul nicht verfügbar"
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
-#: src/components/layout/MainLayout.ts:2197
+#: src/components/layout/MainLayout.ts:2246
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
@@ -2183,7 +2183,7 @@ msgid "App"
 msgstr "App"
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2255
+#: src/components/layout/MainLayout.ts:2304
 #: src/components/ui/ThreadContextIndicator.ts:202
 msgid "Article"
 msgstr "Artikel"
@@ -4050,8 +4050,8 @@ msgstr ""
 msgid "Come back here and click the \"Open Rizful\" button below"
 msgstr "Komme hierher zurück und klicke unten auf „Rizful öffnen“"
 
-#: src/components/auth/AuthComponent.ts:187
-#: src/components/auth/AuthComponent.ts:662
+#: src/components/auth/AuthComponent.ts:190
+#: src/components/auth/AuthComponent.ts:676
 #: src/components/onboarding/AccountSetupWizard.ts:2943
 #: src/components/onboarding/AccountSetupWizard.ts:3022
 msgid "Connect"
@@ -4840,38 +4840,38 @@ msgstr[1] "(%s Folgungen)"
 msgid "(loading…)"
 msgstr "(lädt…)"
 
-#: src/components/layout/MainLayout.ts:2546
+#: src/components/layout/MainLayout.ts:2590
 msgid "A terminal window will open. There:"
 msgstr "Ein Terminalfenster öffnet sich. Dort:"
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2566
+#: src/components/layout/MainLayout.ts:2610
 msgid "Add Account"
 msgstr "Konto hinzufügen"
 
-#: src/components/layout/MainLayout.ts:2353
+#: src/components/layout/MainLayout.ts:2397
 msgid "App updated."
 msgstr "App aktualisiert."
 
-#: src/components/layout/MainLayout.ts:1007
-#: src/components/layout/MainLayout.ts:3269
+#: src/components/layout/MainLayout.ts:1029
+#: src/components/layout/MainLayout.ts:3313
 msgid "Back to timeline"
 msgstr "Zurück zur Timeline"
 
-#: src/components/layout/MainLayout.ts:2551
+#: src/components/layout/MainLayout.ts:2595
 msgid "Close the terminal"
 msgstr "Schließe das Terminal"
 
-#: src/components/layout/MainLayout.ts:1290
-#: src/components/layout/MainLayout.ts:2129
+#: src/components/layout/MainLayout.ts:1339
+#: src/components/layout/MainLayout.ts:2178
 msgid "Collapse sidebar"
 msgstr "Sidebar einklappen"
 
-#: src/components/layout/MainLayout.ts:2552
+#: src/components/layout/MainLayout.ts:2596
 msgid "Come back here and log in with NoorSigner"
 msgstr "Komme hierher zurück und melde dich mit NoorSigner an"
 
-#: src/components/layout/MainLayout.ts:2431
+#: src/components/layout/MainLayout.ts:2475
 msgid "Data Saver"
 msgstr "Datensparmodus"
 
@@ -4879,7 +4879,7 @@ msgstr "Datensparmodus"
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
 
-#: src/components/layout/MainLayout.ts:1290
+#: src/components/layout/MainLayout.ts:1339
 msgid "Expand sidebar"
 msgstr "Sidebar ausklappen"
 
@@ -4899,15 +4899,15 @@ msgstr "Zurück (Cmd+←)"
 msgid "Go Forward (Cmd+→)"
 msgstr "Vor (Cmd+→)"
 
-#: src/components/layout/MainLayout.ts:2116
+#: src/components/layout/MainLayout.ts:2165
 msgid "Navigation"
 msgstr "Navigation"
 
-#: src/components/layout/MainLayout.ts:2245
+#: src/components/layout/MainLayout.ts:2294
 msgid "New Post"
 msgstr "Neuer Beitrag"
 
-#: src/components/layout/MainLayout.ts:1913
+#: src/components/layout/MainLayout.ts:1962
 msgid "Newest Articles"
 msgstr "Neueste Artikel"
 
@@ -4920,26 +4920,26 @@ msgid "No recent URLs"
 msgstr "Keine aktuellen URLs"
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2251
+#: src/components/layout/MainLayout.ts:2300
 #: src/lists/bookmarks.ts:3258
 msgid "Note"
 msgstr "Notiz"
 
-#: src/components/layout/MainLayout.ts:2183
+#: src/components/layout/MainLayout.ts:2232
 #: src/components/views/NotificationsView.ts:112
 #: src/shell/focusDomains.ts:249
 msgid "Notifications"
 msgstr "Mitteilungen"
 
-#: src/components/layout/MainLayout.ts:2554
+#: src/components/layout/MainLayout.ts:2598
 msgid "OK, got it"
 msgstr "OK, verstanden"
 
-#: src/components/layout/MainLayout.ts:2109
+#: src/components/layout/MainLayout.ts:2158
 msgid "Open menu"
 msgstr "Menü öffnen"
 
-#: src/components/layout/MainLayout.ts:2549
+#: src/components/layout/MainLayout.ts:2593
 msgid "Paste the nsec of the new account"
 msgstr "Füge den nsec des neuen Kontos ein"
 
@@ -4947,36 +4947,36 @@ msgstr "Füge den nsec des neuen Kontos ein"
 msgid "Please check your network connection and try again."
 msgstr "Bitte prüfe deine Netzwerkverbindung und versuche es erneut."
 
-#: src/components/layout/MainLayout.ts:2263
+#: src/components/layout/MainLayout.ts:2312
 msgid "Product"
 msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:2176
+#: src/components/layout/MainLayout.ts:2225
 #: src/shell/focusDomains.ts:305
 msgid "Profile"
 msgstr "Profil"
 
-#: src/components/layout/MainLayout.ts:1000
+#: src/components/layout/MainLayout.ts:1022
 msgid "Profile: %s"
 msgstr "Profil: %s"
 
-#: src/components/layout/MainLayout.ts:1915
+#: src/components/layout/MainLayout.ts:1964
 #: src/shell/focusDomains.ts:240
 #: src/shell/focusRecipesSurface.ts:29
 msgid "Recipes"
 msgstr "Rezepte"
 
-#: src/components/layout/MainLayout.ts:2354
+#: src/components/layout/MainLayout.ts:2398
 msgid "Reload"
 msgstr "Neu laden"
 
-#: src/components/layout/MainLayout.ts:2167
-#: src/components/layout/MainLayout.ts:2170
-#: src/components/layout/MainLayout.ts:2174
-#: src/components/layout/MainLayout.ts:2177
-#: src/components/layout/MainLayout.ts:2188
-#: src/components/layout/MainLayout.ts:2191
+#: src/components/layout/MainLayout.ts:2216
+#: src/components/layout/MainLayout.ts:2219
+#: src/components/layout/MainLayout.ts:2223
+#: src/components/layout/MainLayout.ts:2226
+#: src/components/layout/MainLayout.ts:2237
+#: src/components/layout/MainLayout.ts:2240
 #: src/shell/focusStage.ts:1021
 #: src/shell/focusStage.ts:1185
 msgid "Scroll to top"
@@ -4984,9 +4984,9 @@ msgstr "Nach oben scrollen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:866
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:126
-#: src/components/layout/MainLayout.ts:2124
-#: src/components/layout/MainLayout.ts:2125
-#: src/components/layout/MainLayout.ts:2210
+#: src/components/layout/MainLayout.ts:2173
+#: src/components/layout/MainLayout.ts:2174
+#: src/components/layout/MainLayout.ts:2259
 #: src/shell/focusDomains.ts:316
 #: src/shell/focusSearchSurface.ts:37
 msgid "Search"
@@ -5000,7 +5000,7 @@ msgstr "Nur in lokalen Caches suchen"
 msgid "Search: (npub / nevent / username / full text)"
 msgstr "Suche: (npub / nevent / Benutzername / Volltext)"
 
-#: src/components/layout/MainLayout.ts:1001
+#: src/components/layout/MainLayout.ts:1023
 msgid "Search: %s"
 msgstr "Suche: %s"
 
@@ -5009,15 +5009,15 @@ msgstr "Suche: %s"
 msgid "Searching..."
 msgstr "Suche…"
 
-#: src/components/layout/MainLayout.ts:2550
+#: src/components/layout/MainLayout.ts:2594
 msgid "Set a password for this account"
 msgstr "Lege ein Passwort für dieses Konto fest"
 
-#: src/components/layout/MainLayout.ts:2233
+#: src/components/layout/MainLayout.ts:2282
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: src/components/layout/MainLayout.ts:2237
+#: src/components/layout/MainLayout.ts:2286
 msgid "Sign out"
 msgstr "Logout"
 
@@ -5025,7 +5025,7 @@ msgstr "Logout"
 msgid "Syncing follow list..."
 msgstr "Folgelist wird synchronisiert…"
 
-#: src/components/layout/MainLayout.ts:1912
+#: src/components/layout/MainLayout.ts:1961
 #: src/shell/focusLogPanel.ts:30
 msgid "System Logs"
 msgstr "System-Logs"
@@ -5037,7 +5037,7 @@ msgstr "System-Logs"
 msgid "Users"
 msgstr "Nutzer"
 
-#: src/components/layout/MainLayout.ts:2159
+#: src/components/layout/MainLayout.ts:2208
 msgid "Welcome"
 msgstr "Willkommen"
 
@@ -8248,7 +8248,7 @@ msgstr "Kommentar (optional)"
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
-#: src/components/auth/AuthComponent.ts:664
+#: src/components/auth/AuthComponent.ts:678
 #: src/components/onboarding/AccountSetupWizard.ts:2310
 #: src/components/onboarding/AccountSetupWizard.ts:2976
 #: src/components/settings/NWCSettingsSection.ts:300
@@ -10335,7 +10335,7 @@ msgstr "Ordner löschen"
 msgid "Delete folder (items move to root)"
 msgstr "Ordner löschen (Einträge wandern nach Hauptebene)"
 
-#: src/components/layout/MainLayout.ts:113
+#: src/components/layout/MainLayout.ts:114
 msgid "List: %s"
 msgstr "Liste: %s"
 
@@ -10406,7 +10406,7 @@ msgstr "Zaps: Eing. (%s) %s | Ausg. (%s) %s"
 msgid "Zaps: Loading..."
 msgstr "Zaps: Laden …"
 
-#: src/components/layout/MainLayout.ts:2284
+#: src/components/layout/MainLayout.ts:127
 msgid "← Back"
 msgstr "← Zurück"
 
@@ -10462,52 +10462,52 @@ msgstr "Erhaltene Zaps"
 msgid "Booking Calendar"
 msgstr "Terminbuchung"
 
-#: src/components/auth/AuthComponent.ts:283
+#: src/components/auth/AuthComponent.ts:286
 msgid "<p class=\"auth-hint\">QR code unavailable</p>"
 msgstr "<p class=\"auth-hint\">QR-Code nicht verfügbar</p>"
 
-#: src/components/auth/AuthComponent.ts:514
+#: src/components/auth/AuthComponent.ts:528
 msgid "⏳ Waiting for password..."
 msgstr "⏳ Warte auf Passwort..."
 
-#: src/components/auth/AuthComponent.ts:585
+#: src/components/auth/AuthComponent.ts:599
 msgid "🔑 Use Amber"
 msgstr "🔑 Amber verwenden"
 
-#: src/components/auth/AuthComponent.ts:483
+#: src/components/auth/AuthComponent.ts:497
 msgid "🔑 Use NoorSigner"
 msgstr "🔑 NoorSigner verwenden"
 
-#: src/components/auth/AuthComponent.ts:595
+#: src/components/auth/AuthComponent.ts:609
 msgid "Amber authentication failed"
 msgstr "Amber-Authentifizierung fehlgeschlagen"
 
-#: src/components/auth/AuthComponent.ts:602
+#: src/components/auth/AuthComponent.ts:616
 msgid "Amber error:"
 msgstr "Amber-Fehler:"
 
-#: src/components/auth/AuthComponent.ts:432
+#: src/components/auth/AuthComponent.ts:446
 msgid "Authentication failed after unlock"
 msgstr "Authentifizierung nach Entsperrung fehlgeschlagen"
 
-#: src/components/auth/AuthComponent.ts:183
+#: src/components/auth/AuthComponent.ts:186
 msgid "bunker://..."
 msgstr "bunker://..."
 
-#: src/components/auth/AuthComponent.ts:273
-#: src/components/auth/AuthComponent.ts:275
+#: src/components/auth/AuthComponent.ts:276
+#: src/components/auth/AuthComponent.ts:278
 msgid "Connection failed. Reload to try again."
 msgstr "Verbindung fehlgeschlagen. Zum erneuten Versuch neu laden."
 
-#: src/components/auth/AuthComponent.ts:287
+#: src/components/auth/AuthComponent.ts:290
 msgid "Connection unavailable. Reload to try again."
 msgstr "Verbindung nicht verfügbar. Zum erneuten Versuch neu laden."
 
-#: src/components/auth/AuthComponent.ts:204
+#: src/components/auth/AuthComponent.ts:207
 msgid "Create a new Nostr account"
 msgstr "Neues Nostr-Konto erstellen"
 
-#: src/components/auth/AuthComponent.ts:196
+#: src/components/auth/AuthComponent.ts:199
 msgid "e.g. Alby on mobile Firefox"
 msgstr "z. B. Alby im mobilen Firefox"
 
@@ -10515,17 +10515,17 @@ msgstr "z. B. Alby im mobilen Firefox"
 msgid "Extension handles signing"
 msgstr "Erweiterung übernimmt die Signatur"
 
-#: src/components/auth/AuthComponent.ts:170
+#: src/components/auth/AuthComponent.ts:173
 #: src/components/qrcode/QRCodeModal.ts:86
 msgid "Generating QR code..."
 msgstr "QR-Code wird erzeugt..."
 
-#: src/components/auth/AuthComponent.ts:208
+#: src/components/auth/AuthComponent.ts:211
 msgid "Import existing key to NoorSigner"
 msgstr "Vorhandenen Schlüssel zu NoorSigner importieren"
 
-#: src/components/auth/AuthComponent.ts:485
-#: src/components/auth/AuthComponent.ts:511
+#: src/components/auth/AuthComponent.ts:499
+#: src/components/auth/AuthComponent.ts:525
 msgid "Launching daemon..."
 msgstr "Daemon wird gestartet..."
 
@@ -10533,29 +10533,29 @@ msgstr "Daemon wird gestartet..."
 msgid "NIP-55 Android signer"
 msgstr "NIP-55-Android-Signer"
 
-#: src/components/auth/AuthComponent.ts:539
+#: src/components/auth/AuthComponent.ts:553
 msgid "NoorSigner authentication failed"
 msgstr "NoorSigner-Authentifizierung fehlgeschlagen"
 
-#: src/components/auth/AuthComponent.ts:587
+#: src/components/auth/AuthComponent.ts:601
 msgid "Opening Amber..."
 msgstr "Amber wird geöffnet..."
 
-#: src/components/auth/AuthComponent.ts:577
+#: src/components/auth/AuthComponent.ts:591
 msgid "Opening Amber… approve there, then come back."
 msgstr "Amber wird geöffnet… dort freigeben, dann zurückkommen."
 
-#: src/components/auth/AuthComponent.ts:163
-#: src/components/auth/AuthComponent.ts:192
-#: src/components/auth/AuthComponent.ts:200
+#: src/components/auth/AuthComponent.ts:166
+#: src/components/auth/AuthComponent.ts:195
+#: src/components/auth/AuthComponent.ts:203
 msgid "or"
 msgstr "oder"
 
-#: src/components/auth/AuthComponent.ts:167
+#: src/components/auth/AuthComponent.ts:170
 msgid "Remote Signer"
 msgstr "Remote-Signer"
 
-#: src/components/auth/AuthComponent.ts:172
+#: src/components/auth/AuthComponent.ts:175
 msgid "Scan with Amber or other mobile signer"
 msgstr "Mit Amber oder anderem mobilen Signer scannen"
 
@@ -10563,7 +10563,7 @@ msgstr "Mit Amber oder anderem mobilen Signer scannen"
 msgid "Secure local key signer"
 msgstr "Sicherer lokaler Schlüssel-Signer"
 
-#: src/components/auth/AuthComponent.ts:544
+#: src/components/auth/AuthComponent.ts:558
 msgid "Unexpected error during NoorSigner authentication"
 msgstr "Unerwarteter Fehler bei der NoorSigner-Authentifizierung"
 
@@ -10572,7 +10572,7 @@ msgid "Use Amber"
 msgstr "Amber verwenden"
 
 #: src/components/auth/AuthComponent.ts:156
-#: src/components/auth/AuthComponent.ts:195
+#: src/components/auth/AuthComponent.ts:198
 msgid "Use Browser extension"
 msgstr "Browser-Erweiterung verwenden"
 
@@ -10580,15 +10580,15 @@ msgstr "Browser-Erweiterung verwenden"
 msgid "Use NoorSigner"
 msgstr "NoorSigner verwenden"
 
-#: src/components/auth/AuthComponent.ts:619
+#: src/components/auth/AuthComponent.ts:633
 msgid "Waiting Extension"
 msgstr "Warte auf Erweiterung"
 
-#: src/components/auth/AuthComponent.ts:173
+#: src/components/auth/AuthComponent.ts:176
 msgid "Waiting for connection..."
 msgstr "Warte auf Verbindung..."
 
-#: src/components/auth/AuthComponent.ts:175
+#: src/components/auth/AuthComponent.ts:178
 msgid "Waiting for connection…"
 msgstr "Warte auf Verbindung…"
 
@@ -10668,7 +10668,7 @@ msgstr "%s Konten"
 msgid "+ New Event"
 msgstr "+ Neues Event"
 
-#: src/components/layout/MainLayout.ts:2805
+#: src/components/layout/MainLayout.ts:2849
 msgid "About"
 msgstr "Über"
 
@@ -10701,7 +10701,7 @@ msgstr "App-ID"
 msgid "Booked"
 msgstr "Gebucht"
 
-#: src/components/auth/AuthComponent.ts:673
+#: src/components/auth/AuthComponent.ts:687
 msgid "Bunker connection failed"
 msgstr "Bunker-Verbindung fehlgeschlagen"
 
@@ -10776,8 +10776,8 @@ msgid "Direct messages are not available with Bunker URL login"
 msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 
 #: src/addons/calendar/CalendarGridView.ts:303
-#: src/components/layout/MainLayout.ts:2147
-#: src/components/layout/MainLayout.ts:2148
+#: src/components/layout/MainLayout.ts:2196
+#: src/components/layout/MainLayout.ts:2197
 msgid "Dismiss"
 msgstr "Ablehnen"
 
@@ -10868,7 +10868,7 @@ msgstr ""
 "Profilbild (oder tippe darauf), um einem Konto zu folgen. Mehr findest du "
 "unter Addons → "
 
-#: src/components/auth/AuthComponent.ts:658
+#: src/components/auth/AuthComponent.ts:672
 msgid "Invalid bunker URI. Must start with bunker://"
 msgstr "Ungültige Bunker-URI. Muss mit bunker:// beginnen"
 
@@ -11012,7 +11012,7 @@ msgstr "Bezahlen"
 msgid "Paying…"
 msgstr "Bezahle…"
 
-#: src/components/auth/AuthComponent.ts:654
+#: src/components/auth/AuthComponent.ts:668
 msgid "Please enter a bunker:// URI"
 msgstr "Bitte eine bunker://-URI eingeben"
 
@@ -11146,7 +11146,7 @@ msgstr "Dieses Relay ist möglicherweise leer oder antwortet nicht"
 msgid "Timeline not ready. Please try again."
 msgstr "Timeline noch nicht bereit. Bitte erneut versuchen."
 
-#: src/components/auth/AuthComponent.ts:678
+#: src/components/auth/AuthComponent.ts:692
 msgid "Unexpected error during bunker connection"
 msgstr "Unerwarteter Fehler bei der Bunker-Verbindung"
 
@@ -11848,7 +11848,7 @@ msgstr ""
 "entschlüsselt die öffentliche Vorschau lokal und entdeckt deine Kanäle "
 "automatisch, dein Einladungs-Fragment verlässt dein Gerät nie."
 
-#: src/components/auth/AuthComponent.ts:570
+#: src/components/auth/AuthComponent.ts:584
 msgid "Connection not ready yet, try again in a moment."
 msgstr "Verbindung noch nicht bereit, gleich nochmal versuchen."
 
@@ -12398,7 +12398,7 @@ msgstr "hat dich in %s erwähnt oder dir geantwortet"
 msgid "(Author)"
 msgstr "(Autor)"
 
-#: src/shell/focusShell.ts:245
+#: src/shell/focusShell.ts:332
 msgid "Classic interface active"
 msgstr "Klassische Oberfläche aktiv"
 
@@ -12564,7 +12564,7 @@ msgstr "Vom Profil lösen"
 msgid "What's New"
 msgstr "Was ist neu"
 
-#: src/components/layout/MainLayout.ts:2141
+#: src/components/layout/MainLayout.ts:2190
 msgid "What's new in v%s"
 msgstr "Neu in v%s"
 
@@ -12604,11 +12604,11 @@ msgstr ""
 "verlassen. Nutzt hls.js; große Anbieter wie zap.stream funktionieren ohne "
 "Einrichtung. Laufende Streams werden unten gelistet."
 
-#: src/shell/focusShell.ts:92
+#: src/shell/focusShell.ts:103
 msgid "Bottom panel"
 msgstr "Untere Fläche"
 
-#: src/shell/focusShell.ts:92
+#: src/shell/focusShell.ts:103
 msgid "Top panel"
 msgstr "Obere Fläche"
 
@@ -12748,7 +12748,7 @@ msgstr ""
 "Öffentlicher Petname — liegt in deiner Kontaktliste (NIP-02) und ist für "
 "alle sichtbar. Zum Bearbeiten klicken."
 
-#: src/components/layout/MainLayout.ts:2259
+#: src/components/layout/MainLayout.ts:2308
 #: src/components/views/VideoEditorView.ts:125
 #: src/shell/focusMediaSurface.ts:44
 msgid "Post Media"
@@ -12804,8 +12804,8 @@ msgstr "Wieder einblenden"
 msgid "Unhide all"
 msgstr "Alle einblenden"
 
-#: src/shell/focusShell.ts:109
-#: src/shell/focusShell.ts:96
+#: src/shell/focusShell.ts:107
+#: src/shell/focusShell.ts:120
 msgid "Open edge drawer"
 msgstr "Edge-Drawer öffnen"
 
@@ -12814,7 +12814,7 @@ msgstr "Edge-Drawer öffnen"
 msgid "Load Resource Monitor"
 msgstr "Ressourcen-Monitor öffnen"
 
-#: src/shell/focusShell.ts:235
+#: src/shell/focusShell.ts:322
 msgid "Switch to v1"
 msgstr "Zu v1 wechseln"
 
@@ -12854,6 +12854,10 @@ msgid "Logs are stored in files on this device, use the export button."
 msgstr ""
 "Logs werden in Dateien auf diesem Gerät gespeichert, über den Export-Button "
 "herunterladen."
+
+#: src/components/auth/AuthComponent.ts:160
+msgid "New to Nostr?"
+msgstr "Neu bei Nostr?"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

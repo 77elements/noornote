@@ -304,3 +304,28 @@ html.layout--phone {
 
   @include custom-scrollbar;
 }
+
+// ========================================
+// Login route: single column — the sidebar (sdb), the scc and the global
+// back bar are dissolved; only the pcc remains, 600px wide and centered.
+// body.login-view comes from the Router's per-route view class.
+// ========================================
+body.login-view .main-layout {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: 'primary';
+
+  .mobile-header,
+  .sidebar,
+  .sidebar-overlay,
+  .secondary-content,
+  .nn-back-bar {
+    display: none;
+  }
+
+  .primary-content {
+    width: 100%;
+    max-width: 600px;
+    margin-inline: auto;
+  }
+}
