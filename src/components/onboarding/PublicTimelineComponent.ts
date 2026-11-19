@@ -203,6 +203,7 @@ export class PublicTimelineComponent {
         isLoggedIn: false,
         headerSize: 'medium',
         depth: 0,
+        disableNoteNavigation: true,
       });
 
       if (sentinel) {
@@ -363,6 +364,7 @@ export class PublicTimelineComponent {
           isLoggedIn: false,
           headerSize: 'medium',
           depth: 0,
+          disableNoteNavigation: true,
         })
       );
     }

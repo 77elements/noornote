@@ -35,8 +35,12 @@ export class OnboardingComponent {
       <div class="view-content view-content--onboarding">
         <!-- HERO SECTION (Banner 02 - Benefits) -->
         <section class="welcome-hero">
+          <span class="welcome-hero__brand" role="img" aria-label="NoorNote" title="NoorNote">
+            <svg class="welcome-hero__logo" aria-hidden="true"><use href="#nn-logo"/></svg>
+            <span class="welcome-hero__wordmark" aria-hidden="true">oorNote</span> <!-- i18n-ok brand -->
+          </span>
           <h1 class="welcome-hero__headline">${_('Your voice.<br><em>Unstoppable.</em>')}</h1>
-          <p class="welcome-hero__tagline">${_('NoorNote is social media built on open protocol - no company controls it.')}</p>
+          <p class="welcome-hero__tagline">${_('NoorNote is social media built on open protocol<br>no company controls it - not even us')}</p>
 
           <div class="welcome-hero__benefits">
             <div class="welcome-hero__benefit">
@@ -69,7 +73,7 @@ export class OnboardingComponent {
         <!-- PUBLIC TIMELINE -->
         <section class="public-timeline">
           <div class="public-timeline__header">
-            <h2>${_("See what's happening on Nostr")}</h2>
+            <h2>${_("See what's happening on NoorNote")}</h2>
             <div class="public-timeline__refresh-slot"></div>
           </div>
           <div class="public-timeline__container"></div>

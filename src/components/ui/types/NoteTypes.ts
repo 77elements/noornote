@@ -136,4 +136,5 @@ export interface NoteUIOptions {
   depth?: number;
   replyContext?: boolean; // SNV reply thread: render the thread-context band with a leading ↳
   zapReceiptClickable?: boolean; // Zap-receipt cards navigate to the zapped note on click (default true); disable for inert previews
+  disableNoteNavigation?: boolean; // Note → SNV click navigation off (welcome timeline: the visitor must not drop into the classic layout); links/media/"show more" stay interactive
 }

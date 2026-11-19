@@ -1109,9 +1109,13 @@ export class MainLayout {
   }
 
   private updateBackBar(): void {
-    // Login route: no back navigation exists there — the bar leaves the DOM
-    // entirely (not just hidden), even when the user enabled it in v1.
-    if (document.body.classList.contains('login-view')) {
+    // Login + welcome routes: no back navigation exists there — the bar
+    // leaves the DOM entirely (not just hidden), even when the user
+    // enabled it in v1.
+    if (
+      document.body.classList.contains('login-view') ||
+      document.body.classList.contains('welcome-view')
+    ) {
       this.element.querySelector('[data-back-bar]')?.remove();
       return;
     }

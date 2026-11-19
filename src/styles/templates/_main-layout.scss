@@ -23,8 +23,8 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "sidebar"
-    "primary";
+    'sidebar'
+    'primary';
   gap: calc($gap / 2);
   padding: calc($gap / 2);
 
@@ -34,7 +34,7 @@
   @include tablet {
     grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-rows: 1fr;
-    grid-template-areas: "sidebar primary";
+    grid-template-areas: 'sidebar primary';
     gap: $gap;
     padding: $gap;
   }
@@ -45,7 +45,7 @@
   @include desktop {
     grid-template-columns: var(--sidebar-w) 1fr 1fr;
     grid-template-rows: 1fr;
-    grid-template-areas: "sidebar primary secondary";
+    grid-template-areas: 'sidebar primary secondary';
   }
 }
 
@@ -64,13 +64,13 @@ html.layout--tablet .main-layout {
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "sidebar"
-    "primary";
+    'sidebar'
+    'primary';
 
   @include tablet {
     grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-rows: 1fr;
-    grid-template-areas: "sidebar primary";
+    grid-template-areas: 'sidebar primary';
   }
 
   @include desktop {
@@ -124,7 +124,7 @@ html.layout--phone {
   .main-layout {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
-    grid-template-areas: "primary";
+    grid-template-areas: 'primary';
     padding: 0;
     gap: 0;
     padding-top: 48px; // Space for mobile header
@@ -306,11 +306,15 @@ html.layout--phone {
 }
 
 // ========================================
-// Login route: single column — the sidebar (sdb), the scc and the global
-// back bar are dissolved; only the pcc remains, 600px wide and centered.
-// body.login-view comes from the Router's per-route view class.
+// Login + Welcome routes: single column — the sidebar (sdb) and the scc
+// are dissolved; only the pcc remains, 600px wide and centered.
+// body.login-view / body.welcome-view come from the Router's per-route
+// view class. (Welcome: the "What is Nostr?" intro needs a new home —
+// pending.) The back bar leaves the DOM entirely on both routes (see
+// MainLayout.updateBackBar).
 // ========================================
-body.login-view .main-layout {
+body.login-view .main-layout,
+body.welcome-view .main-layout {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: 'primary';
@@ -318,8 +322,7 @@ body.login-view .main-layout {
   .mobile-header,
   .sidebar,
   .sidebar-overlay,
-  .secondary-content,
-  .nn-back-bar {
+  .secondary-content {
     display: none;
   }
 

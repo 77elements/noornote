@@ -256,7 +256,7 @@ msgid "Accounts and threads you have muted."
 msgstr "Konten und Threads, die du stummgeschaltet hast."
 
 #: src/addons/analytics/AnalyticsAddonView.ts:239
-#: src/components/layout/MainLayout.ts:2239
+#: src/components/layout/MainLayout.ts:2243
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:42
 #: src/components/views/ProfileView.ts:2373
@@ -296,8 +296,8 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
-#: src/components/layout/MainLayout.ts:2025
-#: src/components/layout/MainLayout.ts:2344
+#: src/components/layout/MainLayout.ts:2029
+#: src/components/layout/MainLayout.ts:2348
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 #: src/shell/focusLogPanel.ts:31
@@ -326,7 +326,7 @@ msgstr "Neueste Notizen pro Follow"
 msgid "Lists"
 msgstr "Listen"
 
-#: src/components/layout/MainLayout.ts:1963
+#: src/components/layout/MainLayout.ts:1967
 #: src/components/views/SettingsView.ts:46
 #: src/shell/focusDomains.ts:232
 #: src/shell/focusMediaSurface.ts:43
@@ -365,7 +365,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
-#: src/components/layout/MainLayout.ts:2253
+#: src/components/layout/MainLayout.ts:2257
 #: src/components/views/SettingsView.ts:71
 #: src/shell/focusStage.ts:1028
 #: src/shell/focusStage.ts:1187
@@ -380,7 +380,7 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
-#: src/components/layout/MainLayout.ts:2218
+#: src/components/layout/MainLayout.ts:2222
 #: src/components/views/TimelineView.ts:315
 msgid "Timeline"
 msgstr "Timeline"
@@ -467,8 +467,8 @@ msgstr "Erstellen"
 msgid "Current:"
 msgstr "Aktuell:"
 
-#: src/components/layout/MainLayout.ts:2265
-#: src/components/layout/MainLayout.ts:2278
+#: src/components/layout/MainLayout.ts:2269
+#: src/components/layout/MainLayout.ts:2282
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -719,7 +719,7 @@ msgstr "Aktiv"
 msgid "Addon order reset to default"
 msgstr "Addon-Reihenfolge zurückgesetzt"
 
-#: src/components/layout/MainLayout.ts:2956
+#: src/components/layout/MainLayout.ts:2960
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr "Addons"
@@ -1197,7 +1197,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #: src/addons/marketplace/ListingEditorView.ts:285
-#: src/components/layout/MainLayout.ts:2333
+#: src/components/layout/MainLayout.ts:2337
 #: src/components/views/ArticleEditorView.ts:408
 #: src/components/views/VideoEditorView.ts:183
 msgid "Details"
@@ -1299,7 +1299,7 @@ msgstr "Medien-Modul nicht verfügbar"
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
-#: src/components/layout/MainLayout.ts:2246
+#: src/components/layout/MainLayout.ts:2250
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
@@ -2183,7 +2183,7 @@ msgid "App"
 msgstr "App"
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2304
+#: src/components/layout/MainLayout.ts:2308
 #: src/components/ui/ThreadContextIndicator.ts:202
 msgid "Article"
 msgstr "Artikel"
@@ -3670,7 +3670,7 @@ msgstr "Zap-Einstellungen"
 msgid "Zapper Cache Size"
 msgstr "Zapper-Cache-Größe"
 
-#: src/components/onboarding/OnboardingComponent.ts:185
+#: src/components/onboarding/OnboardingComponent.ts:189
 msgid "<strong>Censorship-resistant</strong>, no central authority can silence you"
 msgstr ""
 "<strong>Zensurresistent</strong> - keine zentrale Stelle kann dich zum "
@@ -3688,7 +3688,7 @@ msgstr ""
 "gehört. Deine Beiträge sind auf unabhängigen Servern weltweit verteilt. "
 "Kein Unternehmen betreibt es. Niemand kann es abschalten."
 
-#: src/components/onboarding/OnboardingComponent.ts:166
+#: src/components/onboarding/OnboardingComponent.ts:170
 msgid ""
 "<strong>Nostr</strong> stands for \"Notes and Other Stuff Transmitted by "
 "Relays\". It's a simple, open protocol that enables truly decentralized "
@@ -3698,31 +3698,31 @@ msgstr ""
 "Relays“. Es ist ein einfaches, offenes Protokoll, das wirklich dezentrales "
 "Social Networking ermöglicht."
 
-#: src/components/onboarding/OnboardingComponent.ts:186
+#: src/components/onboarding/OnboardingComponent.ts:190
 msgid "<strong>Portable identity</strong>, take your followers anywhere"
 msgstr "<strong>Tragbare Identität</strong>, nimm deine Follower überall mit hin"
 
-#: src/components/onboarding/OnboardingComponent.ts:178
+#: src/components/onboarding/OnboardingComponent.ts:182
 msgid "<strong>Private key (nsec)</strong>, your password, never share this!"
 msgstr "<strong>Private Key (nsec)</strong>, dein Passwort, niemals teilen!"
 
-#: src/components/onboarding/OnboardingComponent.ts:177
+#: src/components/onboarding/OnboardingComponent.ts:181
 msgid "<strong>Public key (npub)</strong>, your username, shareable with anyone"
 msgstr "<strong>Public Key (npub)</strong>, dein Benutzername, mit jedem teilbar"
 
-#: src/components/onboarding/OnboardingComponent.ts:188
+#: src/components/onboarding/OnboardingComponent.ts:192
 msgid "<strong>Simple</strong>, built on proven cryptography"
 msgstr "<strong>Einfach</strong>, auf bewährter Kryptografie aufgebaut"
 
-#: src/components/onboarding/OnboardingComponent.ts:44
+#: src/components/onboarding/OnboardingComponent.ts:48
 msgid "Can't be censored"
 msgstr "Kann nicht zensiert werden"
 
-#: src/components/onboarding/OnboardingComponent.ts:50
+#: src/components/onboarding/OnboardingComponent.ts:54
 msgid "Can't be deleted"
 msgstr "Kann nicht gelöscht werden"
 
-#: src/components/onboarding/OnboardingComponent.ts:63
+#: src/components/onboarding/OnboardingComponent.ts:67
 #: src/helpers/LoggedOutModals.ts:64
 msgid "Create my account"
 msgstr "Konto erstellen"
@@ -3731,7 +3731,7 @@ msgstr "Konto erstellen"
 msgid "Earn Bitcoin"
 msgstr "Bitcoin verdienen"
 
-#: src/components/onboarding/OnboardingComponent.ts:56
+#: src/components/onboarding/OnboardingComponent.ts:60
 msgid "Earn with every post"
 msgstr "Verdienen mit jedem Beitrag"
 
@@ -3747,24 +3747,24 @@ msgstr ""
 "Jeder Beitrag kann dir <strong>echtes Geld</strong> einbringen.<br>Kein "
 "Creator-Fund. Keine Minimum-Follower. Keine Gatekeeper."
 
-#: src/components/onboarding/OnboardingComponent.ts:142
+#: src/components/onboarding/OnboardingComponent.ts:146
 msgid "Get Started"
 msgstr "Loslegen"
 
-#: src/components/onboarding/OnboardingComponent.ts:164
+#: src/components/onboarding/OnboardingComponent.ts:168
 msgid "How Nostr works"
 msgstr "Wie Nostr funktioniert"
 
-#: src/components/onboarding/OnboardingComponent.ts:64
+#: src/components/onboarding/OnboardingComponent.ts:68
 #: src/helpers/LoggedOutModals.ts:65
 msgid "I already have a key"
 msgstr "Ich habe schon einen Schlüssel"
 
-#: src/components/onboarding/OnboardingComponent.ts:57
+#: src/components/onboarding/OnboardingComponent.ts:61
 msgid "instant, no middleman"
 msgstr "sofort, ohne Mittelsmann"
 
-#: src/components/onboarding/OnboardingComponent.ts:174
+#: src/components/onboarding/OnboardingComponent.ts:178
 msgid "Keys: Your Identity"
 msgstr "Keys: Deine Identität"
 
@@ -3777,7 +3777,7 @@ msgstr "Lade weitere Notes …"
 
 #: src/addons/calendar/CalendarGridView.ts:233
 #: src/components/onboarding/AccountSetupWizard.ts:2213
-#: src/components/onboarding/OnboardingComponent.ts:195
+#: src/components/onboarding/OnboardingComponent.ts:199
 #: src/helpers/CarouselHelper.ts:340
 msgid "Next"
 msgstr "Weiter"
@@ -3802,13 +3802,7 @@ msgstr "Keine Datensammlung"
 msgid "No notes found yet."
 msgstr "Noch keine Beiträge gefunden."
 
-#: src/components/onboarding/OnboardingComponent.ts:39
-msgid "NoorNote is social media built on open protocol - no company controls it."
-msgstr ""
-"NoorNote ist Social Media auf offenem Protokoll - kein Unternehmen "
-"kontrolliert es."
-
-#: src/components/onboarding/OnboardingComponent.ts:165
+#: src/components/onboarding/OnboardingComponent.ts:169
 msgid "Nostr illustration by @awayuki"
 msgstr "Nostr-Illustration von @awayuki"
 
@@ -3832,31 +3826,27 @@ msgstr "Beiträge leben auf dezentralen Relays"
 
 #: src/addons/calendar/CalendarGridView.ts:227
 #: src/components/onboarding/AccountSetupWizard.ts:2211
-#: src/components/onboarding/OnboardingComponent.ts:193
+#: src/components/onboarding/OnboardingComponent.ts:197
 #: src/helpers/CarouselHelper.ts:337
 msgid "Previous"
 msgstr "Zurück"
 
-#: src/components/onboarding/OnboardingComponent.ts:66
+#: src/components/onboarding/OnboardingComponent.ts:70
 #: src/helpers/LoggedOutModals.ts:67
 msgid "Ready in 2 minutes. No email. No phone number."
 msgstr "In 2 Minuten bereit. Keine E-Mail. Keine Telefonnummer."
 
-#: src/components/onboarding/OnboardingComponent.ts:58
+#: src/components/onboarding/OnboardingComponent.ts:62
 msgid "Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold."
 msgstr ""
 "Bitcoin-Trinkgelder (Zaps) direkt erhalten. Keine Plattformgebühr, keine "
 "Auszahlungsschwelle."
 
-#: src/components/onboarding/OnboardingComponent.ts:72
-msgid "See what's happening on Nostr"
-msgstr "Sieh, was auf Nostr passiert"
-
 #: src/components/onboarding/WelcomeInterstitials.ts:19
 msgid "Social Media that <em>can't</em> betray you."
 msgstr "Social Media, das dich <em>nicht verraten</em> kann."
 
-#: src/components/onboarding/OnboardingComponent.ts:45
+#: src/components/onboarding/OnboardingComponent.ts:49
 msgid "structurally impossible"
 msgstr "strukturell unmöglich"
 
@@ -3886,7 +3876,7 @@ msgstr ""
 msgid "Timeline coming soon."
 msgstr "Timeline kommt bald."
 
-#: src/components/onboarding/OnboardingComponent.ts:170
+#: src/components/onboarding/OnboardingComponent.ts:174
 msgid ""
 "Unlike traditional platforms, Nostr doesn't have a central server. Instead, "
 "it uses <strong>relays</strong>, independent servers that store and forward "
@@ -3896,15 +3886,15 @@ msgstr ""
 "Stattdessen nutzt es <strong>Relays</strong>, unabhängige Server, die deine "
 "Nachrichten speichern und weiterleiten."
 
-#: src/components/onboarding/OnboardingComponent.ts:159
+#: src/components/onboarding/OnboardingComponent.ts:163
 msgid "What is Nostr?"
 msgstr "Was ist Nostr?"
 
-#: src/components/onboarding/OnboardingComponent.ts:183
+#: src/components/onboarding/OnboardingComponent.ts:187
 msgid "Why Nostr?"
 msgstr "Warum Nostr?"
 
-#: src/components/onboarding/OnboardingComponent.ts:171
+#: src/components/onboarding/OnboardingComponent.ts:175
 msgid ""
 "You can connect to multiple relays at once. If one goes down, your content "
 "lives on through others. No single point of failure."
@@ -3912,11 +3902,11 @@ msgstr ""
 "Du kannst dich mit mehreren Relays gleichzeitig verbinden. Fällt eines aus, "
 "lebt dein Inhalt in den anderen weiter. Kein Single Point of Failure."
 
-#: src/components/onboarding/OnboardingComponent.ts:51
+#: src/components/onboarding/OnboardingComponent.ts:55
 msgid "you hold the keys"
 msgstr "du besitzt die Schlüssel"
 
-#: src/components/onboarding/OnboardingComponent.ts:180
+#: src/components/onboarding/OnboardingComponent.ts:184
 msgid "You own your identity. No company can ban you or delete your account."
 msgstr ""
 "Deine Identität gehört dir. Kein Unternehmen kann dich bannen oder dein "
@@ -3926,13 +3916,13 @@ msgstr ""
 msgid "Your followers belong to you"
 msgstr "Deine Follower gehören dir"
 
-#: src/components/onboarding/OnboardingComponent.ts:175
+#: src/components/onboarding/OnboardingComponent.ts:179
 msgid "Your identity on Nostr is a <strong>cryptographic key pair</strong>"
 msgstr ""
 "Deine Identität auf Nostr ist ein <strong>kryptografisches "
 "Schlüsselpaar</strong>"
 
-#: src/components/onboarding/OnboardingComponent.ts:46
+#: src/components/onboarding/OnboardingComponent.ts:50
 msgid "Your posts live on decentralized relays. No single entity can remove them."
 msgstr ""
 "Deine Beiträge liegen auf dezentralen Relays. Keine einzelne Stelle kann "
@@ -4840,38 +4830,38 @@ msgstr[1] "(%s Folgungen)"
 msgid "(loading…)"
 msgstr "(lädt…)"
 
-#: src/components/layout/MainLayout.ts:2590
+#: src/components/layout/MainLayout.ts:2594
 msgid "A terminal window will open. There:"
 msgstr "Ein Terminalfenster öffnet sich. Dort:"
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2610
+#: src/components/layout/MainLayout.ts:2614
 msgid "Add Account"
 msgstr "Konto hinzufügen"
 
-#: src/components/layout/MainLayout.ts:2397
+#: src/components/layout/MainLayout.ts:2401
 msgid "App updated."
 msgstr "App aktualisiert."
 
 #: src/components/layout/MainLayout.ts:1029
-#: src/components/layout/MainLayout.ts:3313
+#: src/components/layout/MainLayout.ts:3317
 msgid "Back to timeline"
 msgstr "Zurück zur Timeline"
 
-#: src/components/layout/MainLayout.ts:2595
+#: src/components/layout/MainLayout.ts:2599
 msgid "Close the terminal"
 msgstr "Schließe das Terminal"
 
-#: src/components/layout/MainLayout.ts:1339
-#: src/components/layout/MainLayout.ts:2178
+#: src/components/layout/MainLayout.ts:1343
+#: src/components/layout/MainLayout.ts:2182
 msgid "Collapse sidebar"
 msgstr "Sidebar einklappen"
 
-#: src/components/layout/MainLayout.ts:2596
+#: src/components/layout/MainLayout.ts:2600
 msgid "Come back here and log in with NoorSigner"
 msgstr "Komme hierher zurück und melde dich mit NoorSigner an"
 
-#: src/components/layout/MainLayout.ts:2475
+#: src/components/layout/MainLayout.ts:2479
 msgid "Data Saver"
 msgstr "Datensparmodus"
 
@@ -4879,7 +4869,7 @@ msgstr "Datensparmodus"
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
 
-#: src/components/layout/MainLayout.ts:1339
+#: src/components/layout/MainLayout.ts:1343
 msgid "Expand sidebar"
 msgstr "Sidebar ausklappen"
 
@@ -4899,15 +4889,15 @@ msgstr "Zurück (Cmd+←)"
 msgid "Go Forward (Cmd+→)"
 msgstr "Vor (Cmd+→)"
 
-#: src/components/layout/MainLayout.ts:2165
+#: src/components/layout/MainLayout.ts:2169
 msgid "Navigation"
 msgstr "Navigation"
 
-#: src/components/layout/MainLayout.ts:2294
+#: src/components/layout/MainLayout.ts:2298
 msgid "New Post"
 msgstr "Neuer Beitrag"
 
-#: src/components/layout/MainLayout.ts:1962
+#: src/components/layout/MainLayout.ts:1966
 msgid "Newest Articles"
 msgstr "Neueste Artikel"
 
@@ -4920,26 +4910,26 @@ msgid "No recent URLs"
 msgstr "Keine aktuellen URLs"
 
 #: src/addons/scheduled-posts/ScheduledPostsList.ts:109
-#: src/components/layout/MainLayout.ts:2300
+#: src/components/layout/MainLayout.ts:2304
 #: src/lists/bookmarks.ts:3258
 msgid "Note"
 msgstr "Notiz"
 
-#: src/components/layout/MainLayout.ts:2232
+#: src/components/layout/MainLayout.ts:2236
 #: src/components/views/NotificationsView.ts:112
 #: src/shell/focusDomains.ts:249
 msgid "Notifications"
 msgstr "Mitteilungen"
 
-#: src/components/layout/MainLayout.ts:2598
+#: src/components/layout/MainLayout.ts:2602
 msgid "OK, got it"
 msgstr "OK, verstanden"
 
-#: src/components/layout/MainLayout.ts:2158
+#: src/components/layout/MainLayout.ts:2162
 msgid "Open menu"
 msgstr "Menü öffnen"
 
-#: src/components/layout/MainLayout.ts:2593
+#: src/components/layout/MainLayout.ts:2597
 msgid "Paste the nsec of the new account"
 msgstr "Füge den nsec des neuen Kontos ein"
 
@@ -4947,12 +4937,12 @@ msgstr "Füge den nsec des neuen Kontos ein"
 msgid "Please check your network connection and try again."
 msgstr "Bitte prüfe deine Netzwerkverbindung und versuche es erneut."
 
-#: src/components/layout/MainLayout.ts:2312
+#: src/components/layout/MainLayout.ts:2316
 msgid "Product"
 msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:2225
+#: src/components/layout/MainLayout.ts:2229
 #: src/shell/focusDomains.ts:305
 msgid "Profile"
 msgstr "Profil"
@@ -4961,22 +4951,22 @@ msgstr "Profil"
 msgid "Profile: %s"
 msgstr "Profil: %s"
 
-#: src/components/layout/MainLayout.ts:1964
+#: src/components/layout/MainLayout.ts:1968
 #: src/shell/focusDomains.ts:240
 #: src/shell/focusRecipesSurface.ts:29
 msgid "Recipes"
 msgstr "Rezepte"
 
-#: src/components/layout/MainLayout.ts:2398
+#: src/components/layout/MainLayout.ts:2402
 msgid "Reload"
 msgstr "Neu laden"
 
-#: src/components/layout/MainLayout.ts:2216
-#: src/components/layout/MainLayout.ts:2219
+#: src/components/layout/MainLayout.ts:2220
 #: src/components/layout/MainLayout.ts:2223
-#: src/components/layout/MainLayout.ts:2226
-#: src/components/layout/MainLayout.ts:2237
-#: src/components/layout/MainLayout.ts:2240
+#: src/components/layout/MainLayout.ts:2227
+#: src/components/layout/MainLayout.ts:2230
+#: src/components/layout/MainLayout.ts:2241
+#: src/components/layout/MainLayout.ts:2244
 #: src/shell/focusStage.ts:1021
 #: src/shell/focusStage.ts:1185
 msgid "Scroll to top"
@@ -4984,9 +4974,9 @@ msgstr "Nach oben scrollen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:866
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:126
-#: src/components/layout/MainLayout.ts:2173
-#: src/components/layout/MainLayout.ts:2174
-#: src/components/layout/MainLayout.ts:2259
+#: src/components/layout/MainLayout.ts:2177
+#: src/components/layout/MainLayout.ts:2178
+#: src/components/layout/MainLayout.ts:2263
 #: src/shell/focusDomains.ts:316
 #: src/shell/focusSearchSurface.ts:37
 msgid "Search"
@@ -5009,15 +4999,15 @@ msgstr "Suche: %s"
 msgid "Searching..."
 msgstr "Suche…"
 
-#: src/components/layout/MainLayout.ts:2594
+#: src/components/layout/MainLayout.ts:2598
 msgid "Set a password for this account"
 msgstr "Lege ein Passwort für dieses Konto fest"
 
-#: src/components/layout/MainLayout.ts:2282
+#: src/components/layout/MainLayout.ts:2286
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: src/components/layout/MainLayout.ts:2286
+#: src/components/layout/MainLayout.ts:2290
 msgid "Sign out"
 msgstr "Logout"
 
@@ -5025,7 +5015,7 @@ msgstr "Logout"
 msgid "Syncing follow list..."
 msgstr "Folgelist wird synchronisiert…"
 
-#: src/components/layout/MainLayout.ts:1961
+#: src/components/layout/MainLayout.ts:1965
 #: src/shell/focusLogPanel.ts:30
 msgid "System Logs"
 msgstr "System-Logs"
@@ -5037,7 +5027,7 @@ msgstr "System-Logs"
 msgid "Users"
 msgstr "Nutzer"
 
-#: src/components/layout/MainLayout.ts:2208
+#: src/components/layout/MainLayout.ts:2212
 msgid "Welcome"
 msgstr "Willkommen"
 
@@ -7977,7 +7967,7 @@ msgstr "%s Sats gezappt"
 msgid "+ %s more..."
 msgstr "+ %s weitere …"
 
-#: src/components/onboarding/OnboardingComponent.ts:187
+#: src/components/onboarding/OnboardingComponent.ts:191
 msgid "<strong>Interoperable</strong>, use any client you like"
 msgstr "<strong>Interoperabel</strong> - nutze jeden Client, der dir gefällt"
 
@@ -8940,7 +8930,7 @@ msgstr "Reaktionen wieder aus deiner Timeline ausgeblendet"
 msgid "Reactions module not available"
 msgstr "Reaktionen-Modul nicht verfügbar"
 
-#: src/components/onboarding/OnboardingComponent.ts:169
+#: src/components/onboarding/OnboardingComponent.ts:173
 msgid "Relays: The Network"
 msgstr "Relays: Das Netzwerk"
 
@@ -9437,7 +9427,7 @@ msgstr "Schreibe alles, was du dir über diesen Benutzer merken willst …"
 msgid "You'll set a password in the next dialog"
 msgstr "Du legst im nächsten Dialog ein Passwort fest"
 
-#: src/components/onboarding/OnboardingComponent.ts:52
+#: src/components/onboarding/OnboardingComponent.ts:56
 msgid ""
 "Your account is a cryptographic key. Nobody can suspend, ban, or take it "
 "away."
@@ -9493,7 +9483,7 @@ msgstr ""
 "Dein Benutzername ist, wie andere dich finden und erwähnen. Wähle einen "
 "oder tippe deinen eigenen."
 
-#: src/components/onboarding/OnboardingComponent.ts:38
+#: src/components/onboarding/OnboardingComponent.ts:42
 msgid "Your voice.<br><em>Unstoppable.</em>"
 msgstr "Deine Stimme.<br><em>Unaufhaltbar.</em>"
 
@@ -10668,7 +10658,7 @@ msgstr "%s Konten"
 msgid "+ New Event"
 msgstr "+ Neues Event"
 
-#: src/components/layout/MainLayout.ts:2849
+#: src/components/layout/MainLayout.ts:2853
 msgid "About"
 msgstr "Über"
 
@@ -10776,8 +10766,8 @@ msgid "Direct messages are not available with Bunker URL login"
 msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 
 #: src/addons/calendar/CalendarGridView.ts:303
-#: src/components/layout/MainLayout.ts:2196
-#: src/components/layout/MainLayout.ts:2197
+#: src/components/layout/MainLayout.ts:2200
+#: src/components/layout/MainLayout.ts:2201
 msgid "Dismiss"
 msgstr "Ablehnen"
 
@@ -12564,7 +12554,7 @@ msgstr "Vom Profil lösen"
 msgid "What's New"
 msgstr "Was ist neu"
 
-#: src/components/layout/MainLayout.ts:2190
+#: src/components/layout/MainLayout.ts:2194
 msgid "What's new in v%s"
 msgstr "Neu in v%s"
 
@@ -12748,7 +12738,7 @@ msgstr ""
 "Öffentlicher Petname — liegt in deiner Kontaktliste (NIP-02) und ist für "
 "alle sichtbar. Zum Bearbeiten klicken."
 
-#: src/components/layout/MainLayout.ts:2308
+#: src/components/layout/MainLayout.ts:2312
 #: src/components/views/VideoEditorView.ts:125
 #: src/shell/focusMediaSurface.ts:44
 msgid "Post Media"
@@ -12858,6 +12848,18 @@ msgstr ""
 #: src/components/auth/AuthComponent.ts:160
 msgid "New to Nostr?"
 msgstr "Neu bei Nostr?"
+
+#: src/components/onboarding/OnboardingComponent.ts:43
+msgid ""
+"NoorNote is social media built on open protocol<br>no company controls it - "
+"not even us"
+msgstr ""
+"NoorNote ist Social Media auf offenem Protokoll<br>kein Unternehmen "
+"kontrolliert es - nicht einmal wir"
+
+#: src/components/onboarding/OnboardingComponent.ts:76
+msgid "See what's happening on NoorNote"
+msgstr "Sieh, was auf NoorNote passiert"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
