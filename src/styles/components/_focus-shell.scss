@@ -835,6 +835,17 @@ html:not(.ui--focus) .focus-view-header__action {
       color: var(--color-5);
     }
   }
+
+  // Plain hyperlink (order reset). Klick-mich color; hover deepens only.
+  .top-bar__reset-order {
+    color: var(--color-4);
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
 }
 
 // Tab geometry: visible tab height + the 1px overlap that fuses the tab

@@ -1129,7 +1129,7 @@ msgstr ""
 msgid "Armada communities are end-to-end encrypted (Concord protocol). Unlike Nostrord, there is no public membership list, you need to add each community manually by pasting its invite link below."
 msgstr ""
 
-#: src/shell/focusStage.ts:340
+#: src/shell/focusStage.ts:341
 msgid "Arrange positions"
 msgstr ""
 
@@ -1296,8 +1296,8 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1016
-#: src/shell/focusStage.ts:1184
+#: src/shell/focusStage.ts:1030
+#: src/shell/focusStage.ts:1198
 msgid "Back"
 msgstr ""
 
@@ -2031,8 +2031,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1011
-#: src/shell/focusStage.ts:1183
+#: src/shell/focusStage.ts:1025
+#: src/shell/focusStage.ts:1197
 msgid "Close"
 msgstr ""
 
@@ -2123,8 +2123,8 @@ msgstr ""
 msgid "Community removed"
 msgstr ""
 
-#: src/shell/focusStage.ts:2202
-#: src/shell/focusStage.ts:2273
+#: src/shell/focusStage.ts:2216
+#: src/shell/focusStage.ts:2287
 msgid "Compact circles"
 msgstr ""
 
@@ -3082,8 +3082,8 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2212
-#: src/shell/focusStage.ts:2280
+#: src/shell/focusStage.ts:2226
+#: src/shell/focusStage.ts:2294
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -4611,11 +4611,11 @@ msgstr ""
 msgid "Hidden Features"
 msgstr ""
 
-#: src/shell/focusStage.ts:998
+#: src/shell/focusStage.ts:1012
 msgid "Hide"
 msgstr ""
 
-#: src/shell/focusStage.ts:1178
+#: src/shell/focusStage.ts:1192
 msgid "Hide feature, it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom."
 msgstr ""
 
@@ -5385,7 +5385,7 @@ msgid "Load older messages"
 msgstr ""
 
 #: src/shell/focusStage.ts:305
-#: src/shell/focusStage.ts:364
+#: src/shell/focusStage.ts:365
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -6094,15 +6094,15 @@ msgstr ""
 msgid "More Frequent (every 5 min)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2277
+#: src/shell/focusStage.ts:2291
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2208
+#: src/shell/focusStage.ts:2222
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2207
+#: src/shell/focusStage.ts:2221
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -6140,8 +6140,8 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
-#: src/shell/focusStage.ts:2020
-#: src/shell/focusStage.ts:2027
+#: src/shell/focusStage.ts:2034
+#: src/shell/focusStage.ts:2041
 msgid "Move widget"
 msgstr ""
 
@@ -8529,8 +8529,8 @@ msgstr ""
 msgid "Rename Folder"
 msgstr ""
 
-#: src/shell/focusStage.ts:1176
-#: src/shell/focusStage.ts:995
+#: src/shell/focusStage.ts:1009
+#: src/shell/focusStage.ts:1190
 msgid "Reorder"
 msgstr ""
 
@@ -8765,6 +8765,10 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1518
 msgid "Restart"
+msgstr ""
+
+#: src/shell/focusStage.ts:308
+msgid "Restore default order"
 msgstr ""
 
 #: src/helpers/ListSyncMode.ts:150
@@ -9035,8 +9039,8 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2230
 #: src/components/layout/MainLayout.ts:2241
 #: src/components/layout/MainLayout.ts:2244
-#: src/shell/focusStage.ts:1021
-#: src/shell/focusStage.ts:1185
+#: src/shell/focusStage.ts:1035
+#: src/shell/focusStage.ts:1199
 msgid "Scroll to top"
 msgstr ""
 
@@ -9390,8 +9394,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2257
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1028
-#: src/shell/focusStage.ts:1187
+#: src/shell/focusStage.ts:1042
+#: src/shell/focusStage.ts:1201
 msgid "Settings"
 msgstr ""
 
@@ -11407,7 +11411,7 @@ msgstr ""
 msgid "Word Filter"
 msgstr ""
 
-#: src/shell/focusStage.ts:315
+#: src/shell/focusStage.ts:316
 msgid "Workspace"
 msgstr ""
 

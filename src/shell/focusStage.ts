@@ -305,6 +305,7 @@ export class FocusStage {
       <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
         <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
       </button>
+      <a href="#" class="top-bar__reset-order" data-sv-reset-order>${_('Restore default order')}</a>
     `;
     // Object-set selector: named bundles of visible objects, applied in
     // one step (everything not in the set is hidden — the same save →
@@ -365,6 +366,19 @@ export class FocusStage {
         placement: 'bottom',
       })
     );
+    // "Restore default order": drop the persisted circle order — the next
+    // loadOrder() falls back to the registry order — and mirror it into
+    // the grid (no-op while an object is active or morphing, same guard
+    // as swapOrder).
+    const resetOrderLink = topBar.querySelector(
+      '[data-sv-reset-order]'
+    ) as HTMLAnchorElement;
+    resetOrderLink.addEventListener('click', e => {
+      e.preventDefault();
+      PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
+      this.order = this.loadOrder();
+      this.applyOrderToGrid();
+    });
     this.root.appendChild(topBar);
 
     this.grid = document.createElement('div');
