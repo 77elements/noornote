@@ -337,7 +337,7 @@ msgstr "Medien"
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 #: src/shell/focusDomains.ts:296
-#: src/shell/focusMutesSurface.ts:36
+#: src/shell/focusMutesSurface.ts:25
 msgid "Muted"
 msgstr "Stummgeschaltet"
 
@@ -12632,8 +12632,8 @@ msgstr "Tablet-Modus"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet-Modus (2 Spalten, zentriert)"
 
-#: src/shell/focusStage.ts:2226
-#: src/shell/focusStage.ts:2294
+#: src/shell/focusStage.ts:2258
+#: src/shell/focusStage.ts:2387
 msgid "Distribute circles evenly"
 msgstr "Kreise gleichmäßig verteilen"
 
@@ -12658,15 +12658,15 @@ msgstr ""
 "Lange Posts werden immer vollständig angezeigt, ohne \"Mehr "
 "anzeigen\"-Buttons."
 
-#: src/shell/focusStage.ts:2291
+#: src/shell/focusStage.ts:2384
 msgid "Move all circles"
 msgstr "Alle Kreise verschieben"
 
-#: src/shell/focusStage.ts:2222
+#: src/shell/focusStage.ts:2254
 msgid "Move all circles to the left column"
 msgstr "Alle Kreise in die linke Spalte verschieben"
 
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2253
 msgid "Move all circles to the right column"
 msgstr "Alle Kreise in die rechte Spalte verschieben"
 
@@ -12748,8 +12748,8 @@ msgstr "Medien posten"
 msgid "Post Listing"
 msgstr "Anzeige posten"
 
-#: src/shell/focusStage.ts:2034
-#: src/shell/focusStage.ts:2041
+#: src/shell/focusStage.ts:2066
+#: src/shell/focusStage.ts:2073
 msgid "Move widget"
 msgstr "Widget verschieben"
 
@@ -12762,7 +12762,7 @@ msgstr ""
 "href=\"/live-streams\">Live Streams</a> Add-on, um diesen Livestream zu "
 "sehen."
 
-#: src/shell/focusBookmarksSurface.ts:47
+#: src/shell/focusBookmarksSurface.ts:38
 msgid "Enable Bookmarks in Settings."
 msgstr "Lesezeichen in den Einstellungen aktivieren."
 
@@ -12820,8 +12820,8 @@ msgstr "Workspace"
 msgid "Everything"
 msgstr "Alles"
 
-#: src/shell/focusStage.ts:2216
-#: src/shell/focusStage.ts:2287
+#: src/shell/focusStage.ts:2248
+#: src/shell/focusStage.ts:2380
 msgid "Compact circles"
 msgstr "Kreise kompakt darstellen"
 
@@ -12864,6 +12864,16 @@ msgstr "Sieh, was auf NoorNote passiert"
 #: src/shell/focusStage.ts:308
 msgid "Restore default order"
 msgstr "Standardreihenfolge wiederherstellen"
+
+#: src/shell/focusStage.ts:2262
+#: src/shell/focusStage.ts:2390
+msgid "Scroll down"
+msgstr "Nach unten scrollen"
+
+#: src/shell/focusStage.ts:2268
+#: src/shell/focusStage.ts:2393
+msgid "Scroll up"
+msgstr "Nach oben scrollen"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

@@ -83,6 +83,14 @@ html.ui--focus {
     height: 100dvh;
     box-sizing: border-box;
     overflow: hidden;
+    // Column flex: the focused grid takes the space BELOW the top-bar
+    // (flex: 1) instead of 100% of the stage's content box — with block
+    // flow, grid height 100% + its margin-top overflowed the stage's
+    // bottom clip by top-bar + margin, so the side stacks' lower part
+    // (last circle included) sat permanently below the fold no matter
+    // how far the column scrolled.
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -108,7 +116,11 @@ html.ui--focus {
   // height row — the focused column fills the stage, its inner view
   // scrolls (classic .timeline-view__timeline mechanics).
   &.is-focused {
-    height: 100%;
+    // Fill the stage's remaining height BELOW the top-bar (flex sibling,
+    // see .focus-stage) — replaces height: 100%, which ignored the
+    // top-bar + margin and overflowed the stage's bottom clip.
+    flex: 1;
+    min-height: 0;
     // Clears the ED-t drawer above the focused layout (all three columns
     // start flush below it).
     margin-top: calc($gap * 3);
@@ -387,6 +399,8 @@ html.ui--focus {
 .focus-side-stack__move:hover,
 .focus-side-stack__reset:hover,
 .focus-side-stack__compact:hover,
+.focus-side-stack__scroll-down:hover,
+.focus-side-stack__scroll-up:hover,
 .focus-widget-slot__move:hover,
 .focus-object-compact__unhide:hover {
   color: var(--color-5);
@@ -442,6 +456,11 @@ html.ui--focus {
   .focus-stage__grid.is-focused & {
     height: 100%;
     overflow-y: auto;
+    // Breathing room below the last circle: without it the final circle
+    // sits cut at the column's bottom edge (the scroll range ends flush
+    // with the circle). One gap keeps the last circle + its rhythm fully
+    // reachable.
+    padding-bottom: $gap;
     // Scrollable but chromeless: the columns stay wheel-scrollable (bottom
     // circles stay reachable), yet no scrollbar is drawn next to the TV.
     scrollbar-width: none;
@@ -479,7 +498,9 @@ html.ui--focus {
 
 .focus-side-stack__move,
 .focus-side-stack__reset,
-.focus-side-stack__compact {
+.focus-side-stack__compact,
+.focus-side-stack__scroll-down,
+.focus-side-stack__scroll-up {
   display: grid;
   place-items: center;
   width: 30px;
@@ -500,6 +521,13 @@ html.ui--focus {
 
 .focus-side-stack__move {
   cursor: grab;
+}
+
+// Scroll-up is removed from the row at the top ([hidden] — the tools row
+// re-centers); scroll-down needs no state: at the bottom end its click
+// clamps, like the wheel.
+.focus-side-stack__scroll-up[hidden] {
+  display: none;
 }
 
 // Compact toggle state flip: compacted stacks point the arrows OUTWARD

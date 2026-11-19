@@ -2123,8 +2123,8 @@ msgstr ""
 msgid "Community removed"
 msgstr ""
 
-#: src/shell/focusStage.ts:2216
-#: src/shell/focusStage.ts:2287
+#: src/shell/focusStage.ts:2248
+#: src/shell/focusStage.ts:2380
 msgid "Compact circles"
 msgstr ""
 
@@ -3082,8 +3082,8 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2226
-#: src/shell/focusStage.ts:2294
+#: src/shell/focusStage.ts:2258
+#: src/shell/focusStage.ts:2387
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -3382,7 +3382,7 @@ msgstr ""
 msgid "Enable Bookmarks"
 msgstr ""
 
-#: src/shell/focusBookmarksSurface.ts:47
+#: src/shell/focusBookmarksSurface.ts:38
 msgid "Enable Bookmarks in Settings."
 msgstr ""
 
@@ -6094,15 +6094,15 @@ msgstr ""
 msgid "More Frequent (every 5 min)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2291
+#: src/shell/focusStage.ts:2384
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2222
+#: src/shell/focusStage.ts:2254
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2253
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -6140,8 +6140,8 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
-#: src/shell/focusStage.ts:2034
-#: src/shell/focusStage.ts:2041
+#: src/shell/focusStage.ts:2066
+#: src/shell/focusStage.ts:2073
 msgid "Move widget"
 msgstr ""
 
@@ -6195,7 +6195,7 @@ msgstr ""
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 #: src/shell/focusDomains.ts:296
-#: src/shell/focusMutesSurface.ts:36
+#: src/shell/focusMutesSurface.ts:25
 msgid "Muted"
 msgstr ""
 
@@ -9033,6 +9033,11 @@ msgstr ""
 msgid "Scheduling..."
 msgstr ""
 
+#: src/shell/focusStage.ts:2262
+#: src/shell/focusStage.ts:2390
+msgid "Scroll down"
+msgstr ""
+
 #: src/components/layout/MainLayout.ts:2220
 #: src/components/layout/MainLayout.ts:2223
 #: src/components/layout/MainLayout.ts:2227
@@ -9042,6 +9047,11 @@ msgstr ""
 #: src/shell/focusStage.ts:1035
 #: src/shell/focusStage.ts:1199
 msgid "Scroll to top"
+msgstr ""
+
+#: src/shell/focusStage.ts:2268
+#: src/shell/focusStage.ts:2393
+msgid "Scroll up"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:866

@@ -486,7 +486,7 @@ msgstr "Media"
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 #: src/shell/focusDomains.ts:296
-#: src/shell/focusMutesSurface.ts:36
+#: src/shell/focusMutesSurface.ts:25
 msgid "Muted"
 msgstr "Muted"
 
@@ -12445,8 +12445,8 @@ msgstr "Tablet Mode"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
-#: src/shell/focusStage.ts:2226
-#: src/shell/focusStage.ts:2294
+#: src/shell/focusStage.ts:2258
+#: src/shell/focusStage.ts:2387
 msgid "Distribute circles evenly"
 msgstr "Distribute circles evenly"
 
@@ -12469,15 +12469,15 @@ msgstr "Hides reposts of users' own notes from your timeline."
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
 
-#: src/shell/focusStage.ts:2291
+#: src/shell/focusStage.ts:2384
 msgid "Move all circles"
 msgstr "Move all circles"
 
-#: src/shell/focusStage.ts:2222
+#: src/shell/focusStage.ts:2254
 msgid "Move all circles to the left column"
 msgstr "Move all circles to the left column"
 
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2253
 msgid "Move all circles to the right column"
 msgstr "Move all circles to the right column"
 
@@ -12559,8 +12559,8 @@ msgstr "Post Media"
 msgid "Post Listing"
 msgstr "Post Listing"
 
-#: src/shell/focusStage.ts:2034
-#: src/shell/focusStage.ts:2041
+#: src/shell/focusStage.ts:2066
+#: src/shell/focusStage.ts:2073
 msgid "Move widget"
 msgstr "Move widget"
 
@@ -12613,7 +12613,7 @@ msgstr ""
 "Activate the <a class=\"live-stream-card__hint-link\" "
 "href=\"/live-streams\">Live Streams</a> addon to see this live stream."
 
-#: src/shell/focusBookmarksSurface.ts:47
+#: src/shell/focusBookmarksSurface.ts:38
 msgid "Enable Bookmarks in Settings."
 msgstr "Enable Bookmarks in Settings."
 
@@ -12671,8 +12671,8 @@ msgstr "Workspace"
 msgid "Everything"
 msgstr "Everything"
 
-#: src/shell/focusStage.ts:2216
-#: src/shell/focusStage.ts:2287
+#: src/shell/focusStage.ts:2248
+#: src/shell/focusStage.ts:2380
 msgid "Compact circles"
 msgstr "Compact circles"
 
@@ -12713,6 +12713,16 @@ msgstr "See what's happening on NoorNote"
 #: src/shell/focusStage.ts:308
 msgid "Restore default order"
 msgstr "Restore default order"
+
+#: src/shell/focusStage.ts:2262
+#: src/shell/focusStage.ts:2390
+msgid "Scroll down"
+msgstr "Scroll down"
+
+#: src/shell/focusStage.ts:2268
+#: src/shell/focusStage.ts:2393
+msgid "Scroll up"
+msgstr "Scroll up"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

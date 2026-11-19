@@ -2258,8 +2258,35 @@ export class FocusStage {
           _('Distribute circles evenly'),
           tools.querySelector('[data-focus-stack-reset]') as HTMLElement,
         ],
+        [
+          _('Scroll down'),
+          tools.querySelector('[data-focus-stack-scroll-down]') as HTMLElement,
+        ],
+        [
+          _('Scroll up'),
+          tools.querySelector('[data-focus-stack-scroll-up]') as HTMLElement,
+        ],
       ];
       for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
+      // Stack-scoped scroll controls: PageDown/PageUp steps (one column
+      // viewport per click), smooth. Keyboard scrolling deliberately
+      // reaches only the middle column — these cover the side columns.
+      // The buttons' sync dies with the stack (listeners on the stack),
+      // same lifecycle as the other tools.
+      const scrollStep = (): number => stack.clientHeight;
+      tools
+        .querySelector('[data-focus-stack-scroll-down]')
+        ?.addEventListener('click', () =>
+          stack.scrollBy({ top: scrollStep(), behavior: 'smooth' })
+        );
+      tools
+        .querySelector('[data-focus-stack-scroll-up]')
+        ?.addEventListener('click', () =>
+          stack.scrollBy({ top: -scrollStep(), behavior: 'smooth' })
+        );
+      stack.addEventListener('scroll', () => this.syncStackScrollButtons(), {
+        passive: true,
+      });
     }
     this.distributeSideCircles(left, right, activeId);
     this.placeWidgets(left, right);
@@ -2268,6 +2295,27 @@ export class FocusStage {
     this.grid.insertBefore(right, active.nextSibling);
     this.sideStacks = [left, right];
     this.applyStackCompact();
+    // Initial button state (stack is in the DOM now, geometry measurable).
+    this.syncStackScrollButtons();
+  }
+
+  /**
+   * Sync the stack scroll buttons with each stack's scroll position:
+   * scroll-up exists only while scrolled away from the top (appears to
+   * the right of scroll-down). Driven by the stacks' scroll events (the
+   * only way scrollTop leaves 0 — wheel, drag or these buttons), after
+   * mount and after the compact morph (which clamps scrollTop without a
+   * user gesture). Scroll-down needs no state: at the bottom end its
+   * click simply clamps, like the wheel.
+   */
+  private syncStackScrollButtons(): void {
+    for (const stack of this.sideStacks ?? []) {
+      const up = stack.querySelector(
+        '[data-focus-stack-scroll-up]'
+      ) as HTMLElement | null;
+      if (!up) continue;
+      up.hidden = stack.scrollTop <= 1;
+    }
   }
 
   /** Toggle the side-stack compact rendering (circles → ED-b chips) and
@@ -2301,6 +2349,9 @@ export class FocusStage {
         .querySelector('[data-focus-stack-compact]')
         ?.classList.toggle('is-active', this.stackCompact);
     }
+    // The morph changes every circle's height — the reachable scroll
+    // range shifts without a scroll event, re-sync the scroll buttons.
+    this.syncStackScrollButtons();
   }
 
   /** Apply the arrange gate: the root class keys the CSS that hides the
@@ -2311,7 +2362,9 @@ export class FocusStage {
   }
 
   /** The stack's top tools: compact toggle (leftmost), move handle (drag
-   * moves ALL circles) + reset (even distribution). */
+   * moves ALL circles) + reset (even distribution), then the stack's own
+   * scroll controls (PageDown/PageUp steps — keyboard scrolling only
+   * reaches the middle column). Scroll-up only exists while scrolled. */
   private stackToolsHtml(side: 'left' | 'right'): string {
     return `<div class="focus-side-stack__tools" data-focus-stack-tools>
       <button type="button" class="focus-side-stack__compact${
@@ -2325,6 +2378,12 @@ export class FocusStage {
       </button>
       <button type="button" class="focus-side-stack__reset" data-focus-stack-reset aria-label="${_('Distribute circles evenly')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-pull-refresh"/></svg>
+      </button>
+      <button type="button" class="focus-side-stack__scroll-down" data-focus-stack-scroll-down aria-label="${_('Scroll down')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+      </button>
+      <button type="button" class="focus-side-stack__scroll-up" data-focus-stack-scroll-up aria-label="${_('Scroll up')}" hidden>
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-up"/></svg>
       </button>
     </div>`;
   }

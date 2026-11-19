@@ -5769,7 +5769,7 @@ msgstr ""
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 #: src/shell/focusDomains.ts:296
-#: src/shell/focusMutesSurface.ts:36
+#: src/shell/focusMutesSurface.ts:25
 msgid "Muted"
 msgstr ""
 
@@ -12016,8 +12016,8 @@ msgstr "Mode tablette"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Mode tablette (2 colonnes, centrées)"
 
-#: src/shell/focusStage.ts:2226
-#: src/shell/focusStage.ts:2294
+#: src/shell/focusStage.ts:2258
+#: src/shell/focusStage.ts:2387
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -12042,15 +12042,15 @@ msgstr ""
 "Les longues publications sont toujours affichées intégralement, sans "
 "boutons « Afficher plus »."
 
-#: src/shell/focusStage.ts:2291
+#: src/shell/focusStage.ts:2384
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2222
+#: src/shell/focusStage.ts:2254
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2221
+#: src/shell/focusStage.ts:2253
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -12135,8 +12135,8 @@ msgstr "Publier un média"
 msgid "Post Listing"
 msgstr "Publier une annonce"
 
-#: src/shell/focusStage.ts:2034
-#: src/shell/focusStage.ts:2041
+#: src/shell/focusStage.ts:2066
+#: src/shell/focusStage.ts:2073
 msgid "Move widget"
 msgstr ""
 
@@ -12189,7 +12189,7 @@ msgstr ""
 "Activez l'extension <a class=\"live-stream-card__hint-link\" "
 "href=\"/live-streams\">Live Streams</a> pour voir ce flux en direct."
 
-#: src/shell/focusBookmarksSurface.ts:47
+#: src/shell/focusBookmarksSurface.ts:38
 msgid "Enable Bookmarks in Settings."
 msgstr "Activez les favoris dans les paramètres."
 
@@ -12247,8 +12247,8 @@ msgstr ""
 msgid "Everything"
 msgstr ""
 
-#: src/shell/focusStage.ts:2216
-#: src/shell/focusStage.ts:2287
+#: src/shell/focusStage.ts:2248
+#: src/shell/focusStage.ts:2380
 msgid "Compact circles"
 msgstr "Compacter les cercles"
 
@@ -12286,6 +12286,16 @@ msgstr "Voyez ce qui se passe sur NoorNote"
 #: src/shell/focusStage.ts:308
 msgid "Restore default order"
 msgstr "Restaurer l’ordre par défaut"
+
+#: src/shell/focusStage.ts:2262
+#: src/shell/focusStage.ts:2390
+msgid "Scroll down"
+msgstr "Faire défiler vers le bas"
+
+#: src/shell/focusStage.ts:2268
+#: src/shell/focusStage.ts:2393
+msgid "Scroll up"
+msgstr "Faire défiler vers le haut"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
