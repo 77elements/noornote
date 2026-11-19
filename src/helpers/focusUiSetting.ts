@@ -137,6 +137,19 @@ export function applyFocusUi(): void {
 }
 
 /**
+ * Login seam: while logged out the focus flag reads as OFF (default), so
+ * the classic login screen shows. After a login the flag must be re-read
+ * — an account with v2 enabled lands directly in the shell, a v1 account
+ * never sees it. Registered once at boot (MainLayout init, next to the
+ * typed trigger).
+ */
+export function registerFocusUiLoginSync(): void {
+  TypedEventBus.getInstance().on('user:login', () => {
+    applyFocusUi();
+  });
+}
+
+/**
  * Secret keyboard switch: typing `focusui` anywhere (outside inputs)
  * toggles between the classic interface and the Focus Shell — the
  * user-only path into v2 while the public UI-settings switch stays

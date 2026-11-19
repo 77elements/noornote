@@ -58,10 +58,11 @@ import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
 import {
-  applyFocusUi,
   isFocusUiActive,
   isFocusDomainHidden,
   isFocusUiEnabled,
+  applyFocusUi,
+  registerFocusUiLoginSync,
   registerFocusUiTypedTrigger,
 } from '../../helpers/focusUiSetting';
 import {
@@ -308,6 +309,10 @@ export class MainLayout {
     // Secret typed switch (`focusui`) — the user-only path into v2 while
     // the public UI-settings switch stays hidden (v2 embargo).
     registerFocusUiTypedTrigger();
+    // Re-apply the interface mode after each login: the boot call above
+    // runs in the logged-out context (flag OFF) — only the login event
+    // re-reads the account's own preference.
+    registerFocusUiLoginSync();
 
     // Lazy-load list managers (they pull in heavy deps)
     void this.loadListManagers();

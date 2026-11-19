@@ -26,7 +26,11 @@ import { Tooltip } from '../components/ui/Tooltip';
 import { AccountSwitcher } from '../components/ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../components/ui/FontSizeSwitcher';
 import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
-import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
+import {
+  applyFocusUi,
+  isFocusUiEnabled,
+  setFocusUiEnabled,
+} from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { AuthService } from '../services/AuthService';
 import { LayoutService } from '../services/LayoutService';
@@ -245,7 +249,14 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
     accountSwitcher = new AccountSwitcher({
       npub,
       pubkey,
-      onLogout: () => void AuthService.getInstance().signOut(),
+      onLogout: async () => {
+        await AuthService.getInstance().signOut();
+        // Re-apply the interface mode: the logged-out context reads the
+        // focus flag as OFF, so the shell unmounts and the classic login
+        // screen (App's user:logout → /login) is visible immediately —
+        // without this, shell + gate would cover it until a reload.
+        applyFocusUi();
+      },
       onAddAccount: () => {
         sessionStorage.setItem('noornote_add_account', 'true');
         Router.getInstance().navigate('/login');
