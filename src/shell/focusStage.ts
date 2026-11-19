@@ -224,6 +224,9 @@ export class FocusStage {
   /** Phone-era nav sidebar (slide-in panel holding the single stack). */
   private navSidebar: HTMLElement | null = null;
   private sidebarOpen = false;
+  /** Right settings sidebar (absorbed the top bar + the ED-t drawer). */
+  private settingsSidebar: HTMLElement | null = null;
+  private settingsOpen = false;
   /** Per-object scroll-to-top action state (button + last scroll source). */
   private scrollTopState = new Map<
     string,
@@ -308,93 +311,10 @@ export class FocusStage {
 
   /** Build the FS grid into the stage element. */
   mount(): void {
-    // SV top bar: permanent header row above the grid (placeholder for
-    // future controls). Today it holds the v1 switch (injected by the
-    // shell into the slot — it used to live in the ED-t panel, whose tab
-    // covered the top circles) and the load-resource-monitor button.
-    const topBar = document.createElement('div');
-    topBar.className = 'top-bar';
-    topBar.innerHTML = `
-      <div class="top-bar__switch" data-sv-v1-switch-slot></div>
-      <div class="top-bar__arrange" data-sv-arrange-slot></div>
-      <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
-        <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
-      </button>
-      <a href="#" class="top-bar__reset-order" data-sv-reset-order>${_('Restore default order')}</a>
-    `;
-    // Object-set selector: named bundles of visible objects, applied in
-    // one step (everything not in the set is hidden — the same save →
-    // event → shutdown-diff path as the per-object hide button). The
-    // trigger label shows the active set; a custom mixed state shows the
-    // neutral placeholder.
-    const setOptions = [
-      { value: '', label: _('Workspace') },
-      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
-    ];
-    this.setDropdown = new NnDropdown({
-      options: setOptions,
-      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
-      onChange: value => {
-        if (!value) {
-          this.syncObjectSetDropdown();
-          return;
-        }
-        applyObjectSet(value);
-      },
-      className: 'top-bar__set',
-    });
-    const setDropdownEl = this.setDropdown.getElement();
-    // Arrange-positions gate: the layout satellites render only while the
-    // switch is ON (persisted per account, default OFF).
-    this.arrangeOn =
-      PerAccountLocalStorage.getInstance().get<boolean>(
-        StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
-        false
-      ) === true;
-    this.applyArrangeGate();
-    const arrangeSwitch = new Switch({
-      label: _('Arrange positions'),
-      checked: this.arrangeOn,
-      onChange: checked => {
-        this.arrangeOn = checked;
-        PerAccountLocalStorage.getInstance().set(
-          StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
-          checked
-        );
-        this.applyArrangeGate();
-        diagLog('system', 'focus_arrange_positions_toggled', { on: checked });
-      },
-    });
-    const arrangeWrap = topBar.querySelector(
-      '[data-sv-arrange-slot]'
-    ) as HTMLElement;
-    arrangeWrap.innerHTML = arrangeSwitch.render();
-    arrangeSwitch.setupEventListeners(arrangeWrap);
-    const loadmonBtn = topBar.querySelector('[data-sv-loadmon]') as HTMLElement;
-    topBar.insertBefore(setDropdownEl, loadmonBtn);
-    loadmonBtn.addEventListener('click', () => {
-      // Same boot-path discipline as the typed trigger: dynamic import.
-      void import('./loadHud').then(m => m.openLoadHud());
-    });
-    this.tooltipDisposers.push(
-      Tooltip.attach(loadmonBtn, _('Load Resource Monitor'), {
-        placement: 'bottom',
-      })
-    );
-    // "Restore default order": drop the persisted circle order — the next
-    // loadOrder() falls back to the registry order — and mirror it into
-    // the grid (no-op while an object is active or morphing, same guard
-    // as swapOrder).
-    const resetOrderLink = topBar.querySelector(
-      '[data-sv-reset-order]'
-    ) as HTMLAnchorElement;
-    resetOrderLink.addEventListener('click', e => {
-      e.preventDefault();
-      PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
-      this.order = this.loadOrder();
-      this.applyOrderToGrid();
-    });
-    this.root.appendChild(topBar);
+    // The right settings sidebar: absorbed the SV top bar AND the ED-t
+    // drawer (both removed). The lasche handles are the only triggers —
+    // one entry point per concern: circles left (FV), settings right.
+    this.mountSettingsSidebar();
 
     this.grid = document.createElement('div');
     this.grid.className = 'focus-stage__grid';
@@ -808,6 +728,7 @@ export class FocusStage {
     for (const dispose of this.tooltipDisposers) dispose();
     this.tooltipDisposers = [];
     this.removeNavSidebar();
+    this.removeSettingsSidebar();
     this.grid?.remove();
   }
 
@@ -1309,6 +1230,7 @@ export class FocusStage {
 
     this.morphing = true;
     this.activeId = def.id;
+    this.syncSettingsState();
     const mode = this.stageMode();
 
     // Surface mounts BEFORE the morph: in document flow the column height
@@ -1486,6 +1408,7 @@ export class FocusStage {
     this.grid.classList.remove('is-focused');
     el.style.gridColumn = '';
     this.activeId = null;
+    this.syncSettingsState();
     // Back to the home grid URL (no-op when already there). PUSH: the
     // grid is a state of its own — back from it returns to the object.
     pushFocusUrl(HOME_ROUTE);
@@ -2455,6 +2378,178 @@ export class FocusStage {
     this.navSidebar?.remove();
     this.navSidebar = null;
     this.sidebarOpen = false;
+  }
+
+  /**
+   * The right settings sidebar (slide-in panel, mirrored twin of the nav
+   * sidebar): full height, glass, hamburger lasche at the left rim of the
+   * translated root — closed the lasche pokes out at the right screen
+   * edge, open it sits on the panel's inner rim. Absorbed the old SV top
+   * bar AND the ED-t drawer (both removed — the phone bar overflowed, and
+   * one entry point per concern beats two surfaces). Sections:
+   *  - Interface: v1 switch (shell-injected, TEMP), arrange gate,
+   *    restore default order.
+   *  - Object sets: the set selector — SV state only (grid domain; the
+   *    section hides while a domain is focused, see syncSettingsState).
+   *  - Appearance & account: the switcher bar (theme/font/account — was
+   *    the ED-t panel content), shell-mounted into the slot.
+   *  - Diagnostics: the load-resource monitor.
+   * Listeners die with the element (stage destroy removes the root).
+   */
+  private mountSettingsSidebar(): void {
+    const root = document.createElement('div');
+    root.id = 'focus-settings-sidebar';
+    root.className = 'focus-settings-sidebar';
+    root.innerHTML = `
+      <div class="focus-settings-sidebar__panel" data-settings-panel role="region" aria-label="${_('Settings')}">
+        <div class="focus-settings-sidebar__section">
+          <div class="focus-settings-sidebar__title">${_('Interface')}</div>
+          <div class="focus-settings-sidebar__row" data-settings-v1-slot></div>
+          <div class="focus-settings-sidebar__row" data-settings-arrange-slot></div>
+          <button type="button" class="focus-settings-sidebar__row focus-settings-sidebar__action" data-settings-reset-order>${_('Restore default order')}</button>
+        </div>
+        <div class="focus-settings-sidebar__section" data-settings-sets-section>
+          <div class="focus-settings-sidebar__title">${_('Object sets')}</div>
+          <div class="focus-settings-sidebar__row" data-settings-sets-slot></div>
+        </div>
+        <div class="focus-settings-sidebar__section">
+          <div class="focus-settings-sidebar__title">${_('Appearance & account')}</div>
+          <div class="focus-settings-sidebar__switchbar" data-settings-switchbar-slot></div>
+        </div>
+        <div class="focus-settings-sidebar__section">
+          <div class="focus-settings-sidebar__title">${_('Diagnostics')}</div>
+          <div class="focus-settings-sidebar__row">
+            <span class="focus-settings-sidebar__label">${_('Load Resource Monitor')}</span>
+            <button type="button" class="focus-settings-sidebar__icon-action" data-settings-loadmon aria-label="${_('Load Resource Monitor')}">
+              <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="focus-settings-sidebar__handle" data-settings-handle aria-label="${_('Open settings')}" aria-expanded="false">
+        <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
+      </button>`;
+
+    // Object-set selector: named bundles of visible objects, applied in
+    // one step (everything not in the set is hidden — the same save →
+    // event → shutdown-diff path as the per-object hide button). The
+    // trigger label shows the active set; a custom mixed state shows the
+    // neutral placeholder.
+    const setOptions = [
+      { value: '', label: _('Workspace') },
+      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
+    ];
+    this.setDropdown = new NnDropdown({
+      options: setOptions,
+      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
+      onChange: value => {
+        if (!value) {
+          this.syncObjectSetDropdown();
+          return;
+        }
+        applyObjectSet(value);
+      },
+      className: 'focus-settings-sidebar__set',
+    });
+    (
+      root.querySelector('[data-settings-sets-slot]') as HTMLElement
+    ).appendChild(this.setDropdown.getElement());
+
+    // Arrange-positions gate: the layout satellites render only while the
+    // switch is ON (persisted per account, default OFF).
+    this.arrangeOn =
+      PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+        false
+      ) === true;
+    this.applyArrangeGate();
+    const arrangeSwitch = new Switch({
+      label: _('Arrange positions'),
+      checked: this.arrangeOn,
+      onChange: checked => {
+        this.arrangeOn = checked;
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+          checked
+        );
+        this.applyArrangeGate();
+        diagLog('system', 'focus_arrange_positions_toggled', { on: checked });
+      },
+    });
+    const arrangeWrap = root.querySelector(
+      '[data-settings-arrange-slot]'
+    ) as HTMLElement;
+    arrangeWrap.innerHTML = arrangeSwitch.render();
+    arrangeSwitch.setupEventListeners(arrangeWrap);
+
+    const loadmonBtn = root.querySelector(
+      '[data-settings-loadmon]'
+    ) as HTMLElement;
+    loadmonBtn.addEventListener('click', () => {
+      // Same boot-path discipline as the typed trigger: dynamic import.
+      void import('./loadHud').then(m => m.openLoadHud());
+    });
+    this.tooltipDisposers.push(
+      Tooltip.attach(loadmonBtn, _('Load Resource Monitor'), {
+        placement: 'bottom',
+      })
+    );
+
+    // "Restore default order": drop the persisted circle order — the next
+    // loadOrder() falls back to the registry order — and mirror it into
+    // the grid (no-op while an object is active or morphing, same guard
+    // as swapOrder).
+    const resetOrderBtn = root.querySelector(
+      '[data-settings-reset-order]'
+    ) as HTMLElement;
+    resetOrderBtn.addEventListener('click', () => {
+      PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
+      this.order = this.loadOrder();
+      this.applyOrderToGrid();
+    });
+
+    const handle = root.querySelector('[data-settings-handle]') as HTMLElement;
+    handle.addEventListener('click', () => this.toggleSettingsSidebar());
+    this.tooltipDisposers.push(
+      Tooltip.attach(
+        handle,
+        () => (this.settingsOpen ? _('Close settings') : _('Open settings')),
+        { placement: 'bottom' }
+      )
+    );
+
+    this.root.appendChild(root);
+    this.settingsSidebar = root;
+    this.settingsOpen = false;
+    this.syncSettingsState();
+  }
+
+  private toggleSettingsSidebar(): void {
+    if (!this.settingsSidebar) return;
+    this.settingsOpen = !this.settingsOpen;
+    this.settingsSidebar.classList.toggle('is-open', this.settingsOpen);
+    const handle = this.settingsSidebar.querySelector(
+      '[data-settings-handle]'
+    ) as HTMLElement;
+    handle.setAttribute('aria-expanded', String(this.settingsOpen));
+    handle.setAttribute(
+      'aria-label',
+      this.settingsOpen ? _('Close settings') : _('Open settings')
+    );
+  }
+
+  private removeSettingsSidebar(): void {
+    this.settingsSidebar?.remove();
+    this.settingsSidebar = null;
+    this.settingsOpen = false;
+  }
+
+  /** The set dropdown is grid (SV) domain — hidden while a domain is focused. */
+  private syncSettingsState(): void {
+    const section = this.settingsSidebar?.querySelector(
+      '[data-settings-sets-section]'
+    ) as HTMLElement | null;
+    if (section) section.hidden = this.activeId !== null;
   }
 
   /**

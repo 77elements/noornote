@@ -1065,6 +1065,10 @@ msgstr ""
 msgid "App updated."
 msgstr ""
 
+#: src/shell/focusStage.ts:2416
+msgid "Appearance & account"
+msgstr ""
+
 #: src/components/post/composerShared.ts:1180
 #: src/components/views/ConversationView.ts:802
 msgid "Apply"
@@ -1129,7 +1133,7 @@ msgstr ""
 msgid "Armada communities are end-to-end encrypted (Concord protocol). Unlike Nostrord, there is no public membership list, you need to add each community manually by pasting its invite link below."
 msgstr ""
 
-#: src/shell/focusStage.ts:356
+#: src/shell/focusStage.ts:2467
 msgid "Arrange positions"
 msgstr ""
 
@@ -1296,8 +1300,8 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1046
-#: src/shell/focusStage.ts:1214
+#: src/shell/focusStage.ts:1135
+#: src/shell/focusStage.ts:967
 msgid "Back"
 msgstr ""
 
@@ -1611,7 +1615,7 @@ msgstr ""
 msgid "Both calendars side-by-side"
 msgstr ""
 
-#: src/shell/focusShell.ts:103
+#: src/shell/focusShell.ts:102
 msgid "Bottom panel"
 msgstr ""
 
@@ -1942,7 +1946,7 @@ msgstr ""
 msgid "City"
 msgstr ""
 
-#: src/shell/focusShell.ts:342
+#: src/shell/focusShell.ts:338
 msgid "Classic interface active"
 msgstr ""
 
@@ -2031,8 +2035,8 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1041
-#: src/shell/focusStage.ts:1213
+#: src/shell/focusStage.ts:1134
+#: src/shell/focusStage.ts:962
 msgid "Close"
 msgstr ""
 
@@ -2041,13 +2045,18 @@ msgstr ""
 msgid "Close (ESC)"
 msgstr ""
 
-#: src/shell/focusShell.ts:206
+#: src/shell/focusShell.ts:201
 msgid "Close edge drawer"
 msgstr ""
 
-#: src/shell/focusStage.ts:2424
-#: src/shell/focusStage.ts:2450
+#: src/shell/focusStage.ts:2347
+#: src/shell/focusStage.ts:2373
 msgid "Close navigation"
+msgstr ""
+
+#: src/shell/focusStage.ts:2519
+#: src/shell/focusStage.ts:2540
+msgid "Close settings"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2599
@@ -2132,8 +2141,8 @@ msgstr ""
 msgid "Community removed"
 msgstr ""
 
-#: src/shell/focusStage.ts:2303
-#: src/shell/focusStage.ts:2530
+#: src/shell/focusStage.ts:2226
+#: src/shell/focusStage.ts:2628
 msgid "Compact circles"
 msgstr ""
 
@@ -3003,6 +3012,10 @@ msgstr ""
 msgid "DiagLog: %s"
 msgstr ""
 
+#: src/shell/focusStage.ts:2420
+msgid "Diagnostics"
+msgstr ""
+
 #: src/addons/analytics/AnalyticsAddonView.ts:349
 msgid "Diagrams"
 msgstr ""
@@ -3091,8 +3104,8 @@ msgstr ""
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2314
-#: src/shell/focusStage.ts:2537
+#: src/shell/focusStage.ts:2237
+#: src/shell/focusStage.ts:2635
 msgid "Distribute circles evenly"
 msgstr ""
 
@@ -4620,11 +4633,11 @@ msgstr ""
 msgid "Hidden Features"
 msgstr ""
 
-#: src/shell/focusStage.ts:1028
+#: src/shell/focusStage.ts:949
 msgid "Hide"
 msgstr ""
 
-#: src/shell/focusStage.ts:1208
+#: src/shell/focusStage.ts:1129
 msgid "Hide feature, it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom."
 msgstr ""
 
@@ -4983,6 +4996,10 @@ msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:752
 msgid "interacted with your %s"
+msgstr ""
+
+#: src/shell/focusStage.ts:2406
+msgid "Interface"
 msgstr ""
 
 #: src/services/ConnectivityService.ts:138
@@ -5393,8 +5410,9 @@ msgstr ""
 msgid "Load older messages"
 msgstr ""
 
-#: src/shell/focusStage.ts:320
-#: src/shell/focusStage.ts:380
+#: src/shell/focusStage.ts:2422
+#: src/shell/focusStage.ts:2423
+#: src/shell/focusStage.ts:2493
 msgid "Load Resource Monitor"
 msgstr ""
 
@@ -6103,15 +6121,15 @@ msgstr ""
 msgid "More Frequent (every 5 min)"
 msgstr ""
 
-#: src/shell/focusStage.ts:2534
+#: src/shell/focusStage.ts:2632
 msgid "Move all circles"
 msgstr ""
 
-#: src/shell/focusStage.ts:2311
+#: src/shell/focusStage.ts:2234
 msgid "Move all circles to the left column"
 msgstr ""
 
-#: src/shell/focusStage.ts:2310
+#: src/shell/focusStage.ts:2233
 msgid "Move all circles to the right column"
 msgstr ""
 
@@ -6149,8 +6167,8 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
-#: src/shell/focusStage.ts:2085
-#: src/shell/focusStage.ts:2092
+#: src/shell/focusStage.ts:2008
+#: src/shell/focusStage.ts:2015
 msgid "Move widget"
 msgstr ""
 
@@ -6266,7 +6284,7 @@ msgid "Navigate with ← / → or click the page edges"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2169
-#: src/shell/focusStage.ts:2413
+#: src/shell/focusStage.ts:2336
 msgid "Navigation"
 msgstr ""
 
@@ -7149,6 +7167,10 @@ msgstr ""
 msgid "NWC String"
 msgstr ""
 
+#: src/shell/focusStage.ts:2412
+msgid "Object sets"
+msgstr ""
+
 #: src/components/ui/UploadProgressOverlay.ts:104
 msgid "of"
 msgstr ""
@@ -7206,7 +7228,7 @@ msgstr ""
 msgid "Open drafts"
 msgstr ""
 
-#: src/shell/focusShell.ts:206
+#: src/shell/focusShell.ts:201
 msgid "Open edge drawer"
 msgstr ""
 
@@ -7222,9 +7244,9 @@ msgstr ""
 msgid "Open menu"
 msgstr ""
 
-#: src/shell/focusStage.ts:2414
-#: src/shell/focusStage.ts:2424
-#: src/shell/focusStage.ts:2450
+#: src/shell/focusStage.ts:2337
+#: src/shell/focusStage.ts:2347
+#: src/shell/focusStage.ts:2373
 msgid "Open navigation"
 msgstr ""
 
@@ -7238,6 +7260,12 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2908
 msgid "Open Rizful"
+msgstr ""
+
+#: src/shell/focusStage.ts:2429
+#: src/shell/focusStage.ts:2519
+#: src/shell/focusStage.ts:2540
+msgid "Open settings"
 msgstr ""
 
 #: src/components/views/AboutView.ts:121
@@ -8544,8 +8572,8 @@ msgstr ""
 msgid "Rename Folder"
 msgstr ""
 
-#: src/shell/focusStage.ts:1025
-#: src/shell/focusStage.ts:1206
+#: src/shell/focusStage.ts:1127
+#: src/shell/focusStage.ts:946
 msgid "Reorder"
 msgstr ""
 
@@ -8782,7 +8810,7 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: src/shell/focusStage.ts:323
+#: src/shell/focusStage.ts:2409
 msgid "Restore default order"
 msgstr ""
 
@@ -9048,8 +9076,8 @@ msgstr ""
 msgid "Scheduling..."
 msgstr ""
 
-#: src/shell/focusStage.ts:2318
-#: src/shell/focusStage.ts:2540
+#: src/shell/focusStage.ts:2241
+#: src/shell/focusStage.ts:2638
 msgid "Scroll down"
 msgstr ""
 
@@ -9059,13 +9087,13 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:2230
 #: src/components/layout/MainLayout.ts:2241
 #: src/components/layout/MainLayout.ts:2244
-#: src/shell/focusStage.ts:1051
-#: src/shell/focusStage.ts:1215
+#: src/shell/focusStage.ts:1136
+#: src/shell/focusStage.ts:972
 msgid "Scroll to top"
 msgstr ""
 
-#: src/shell/focusStage.ts:2322
-#: src/shell/focusStage.ts:2543
+#: src/shell/focusStage.ts:2245
+#: src/shell/focusStage.ts:2641
 msgid "Scroll up"
 msgstr ""
 
@@ -9419,8 +9447,9 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2257
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1058
-#: src/shell/focusStage.ts:1217
+#: src/shell/focusStage.ts:1138
+#: src/shell/focusStage.ts:2404
+#: src/shell/focusStage.ts:979
 msgid "Settings"
 msgstr ""
 
@@ -10058,7 +10087,7 @@ msgstr ""
 msgid "Switch to NoorSigner or browser extension to send messages"
 msgstr ""
 
-#: src/shell/focusShell.ts:332
+#: src/shell/focusShell.ts:328
 msgid "Switch to v1"
 msgstr ""
 
@@ -10668,10 +10697,6 @@ msgstr ""
 
 #: src/components/ui/WalletBalanceDisplay.ts:119
 msgid "Toggle visibility"
-msgstr ""
-
-#: src/shell/focusShell.ts:103
-msgid "Top panel"
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:348
@@ -11436,7 +11461,7 @@ msgstr ""
 msgid "Word Filter"
 msgstr ""
 
-#: src/shell/focusStage.ts:331
+#: src/shell/focusStage.ts:2439
 msgid "Workspace"
 msgstr ""
 

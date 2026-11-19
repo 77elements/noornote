@@ -7,15 +7,16 @@
  * `html.ui--focus` CSS gate (styles/components/_focus-shell.scss) while
  * the shell owns the screen.
  *
- * Edge drawers (ED-t top / ED-b bottom — AGENTS.md shorthand): browser-tab
- * style handles at the top and bottom screen edge. Click (or drag on touch)
- * slides a panel in as an overlay ON TOP of the shell content — content is
- * never pushed aside. Panels are empty frames for now (green field); their
- * content comes later.
+ * Edge drawer (ED-b bottom — AGENTS.md shorthand): a browser-tab style
+ * handle at the bottom screen edge. Click (or drag on touch) slides the
+ * panel in as an overlay ON TOP of the shell content — content is never
+ * pushed aside. Hosts the focused object's settings (and the tab-open
+ * Hidden Features / log panels).
  *
- * TEMPORARY: the Focus-UI switch lives inside the ED-t panel so the user
- * is never locked into the shell. It moves out again as soon as Settings
- * gets its proper place inside the shell.
+ * The old ED-t (top drawer, switcher bar) died with the settings sidebar
+ * absorbing its content. The v1 switch lives in the settings sidebar's
+ * Interface section (TEMP — it moves out again as soon as Settings gets
+ * its proper place inside the shell).
  *
  * Rescue hatch (dev): `?focusui=0` boots the classic interface even when
  * the flag is on (see helpers/focusUiSetting.ts).
@@ -47,18 +48,19 @@ const SHELL_ID = 'focus-shell';
 const CLICK_SLOP_PX = 6;
 /** Live stage instance — cleaned up on shell unmount. */
 let stage: FocusStage | null = null;
-/** Active ED-t switcher bar — destroyed on shell unmount. */
+/** Active switcher bar (settings sidebar) — destroyed on shell unmount. */
 let switchBar: { destroy(): void } | null = null;
 
-/** Drawer ids — ED-t (top) / ED-b (bottom), see AGENTS.md abbreviations. */
-type EdgeDrawerId = 'ed-t' | 'ed-b';
+/** Drawer id — ED-b (bottom) only; the old ED-t died with the settings
+ * sidebar absorbing its content. See AGENTS.md abbreviations. */
+type EdgeDrawerId = 'ed-b';
 
 const clamp = (v: number, min: number, max: number): number =>
   Math.min(Math.max(v, min), max);
 
 /**
  * One slide-in panel at a screen edge with a browser-tab handle.
- * Instances: ED-t (top) / ED-b (bottom). Panel heights live ONLY in
+ * Instance: ED-b (bottom). Panel heights live ONLY in
  * _focus-shell.scss (--panel-h) — this class reads them at mount time.
  *
  * Geometry (see _focus-shell.scss): the drawer box is the panel; the tab
@@ -89,20 +91,15 @@ class EdgeDrawer {
     this.panelHeight = fallbackPanelHeight;
   }
 
-  private get edge(): 'top' | 'bottom' {
-    return this.id === 'ed-t' ? 'top' : 'bottom';
-  }
-
   mount(
     parent: HTMLElement,
     decoratePanel?: (panel: HTMLElement) => void
   ): void {
     this.root = document.createElement('div');
     this.root.id = this.id;
-    this.root.className = `focus-drawer focus-drawer--${this.edge}`;
-    const label = this.edge === 'top' ? _('Top panel') : _('Bottom panel');
+    this.root.className = 'focus-drawer focus-drawer--bottom';
     this.root.innerHTML = `
-      <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${label}"></div>
+      <div class="focus-drawer__panel" data-drawer-panel role="region" aria-label="${_('Bottom panel')}"></div>
       <button type="button" class="focus-drawer__tab" data-drawer-tab
         aria-expanded="false"></button>
     `;
@@ -121,7 +118,7 @@ class EdgeDrawer {
     // it re-evaluates on every show, so the label flips with the drawer
     // state (Open ↔ Close).
     Tooltip.attach(this.tab, () => this.tabLabel(), {
-      placement: this.edge === 'top' ? 'bottom' : 'top',
+      placement: 'top',
     });
     this.tab.addEventListener('pointerdown', this.onPointerDown);
     this.tab.addEventListener('pointermove', this.onPointerMove);
@@ -162,15 +159,13 @@ class EdgeDrawer {
     if (Math.abs(dy) > CLICK_SLOP_PX) this.hasMoved = true;
     if (!this.hasMoved) return;
     // Offset along the close direction: 0 = fully open, height = closed.
-    const along = this.edge === 'bottom' ? dy : -dy;
+    const along = dy;
     this.lastOffset = clamp(
       this.isOpen ? along : this.panelHeight + along,
       0,
       this.panelHeight
     );
-    this.root.style.transform = `translateY(${
-      this.edge === 'bottom' ? this.lastOffset : -this.lastOffset
-    }px)`;
+    this.root.style.transform = `translateY(${this.lastOffset}px)`;
   };
 
   private onPointerUp = (e: PointerEvent): void => {
@@ -239,9 +234,9 @@ class EdgeDrawer {
 }
 
 /**
- * ED-t content: the switcher bar (v1's .user-login-bar, renamed) —
- * theme / font-size / account switchers, centered in the panel row.
- * Mounts as soon as a session exists, follows account switches in
+ * Settings-sidebar content: the switcher bar (v1's .user-login-bar,
+ * renamed) — theme / font-size / account switchers. Mounts as soon as a
+ * session exists, follows account switches in
  * place, clears on logout (the classic login flow takes over).
  */
 function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
@@ -314,7 +309,7 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
   };
 }
 
-/** Mount the Focus Shell with edge drawers; ED-t hosts the switcher bar. */
+/** Mount the Focus Shell with the ED-b settings drawer. */
 export function mountFocusShell(): void {
   if (document.getElementById(SHELL_ID)) return;
   // Focus UI switch mid-session: stop + remove the (about-to-be-hidden)
@@ -325,9 +320,10 @@ export function mountFocusShell(): void {
   shell.id = SHELL_ID;
   shell.className = 'focus-shell';
 
-  // The v1 switch — lives in the SV top bar (it used to sit in the ED-t
-  // panel, whose tab covered the top circles). Toggling OFF restores the
-  // classic interface.
+  // The v1 switch — lives in the settings sidebar's Interface section
+  // (it used to sit in the SV top bar, before that was absorbed into the
+  // sidebar; before THAT in the ED-t panel, whose tab covered the top
+  // circles). Toggling OFF restores the classic interface.
   const switchBack = new Switch({
     label: _('Switch to v1'),
     checked: isFocusUiEnabled(),
@@ -344,7 +340,7 @@ export function mountFocusShell(): void {
     },
   });
   const tempSwitchWrap = document.createElement('div');
-  tempSwitchWrap.className = 'top-bar__switch';
+  tempSwitchWrap.className = 'focus-settings-sidebar__row';
   tempSwitchWrap.innerHTML = switchBack.render();
   switchBack.setupEventListeners(tempSwitchWrap);
 
@@ -408,18 +404,18 @@ export function mountFocusShell(): void {
   stage = new FocusStage(stageEl);
   stage.mount();
 
-  // Inject the v1 switch into the SV top bar slot the stage prepared.
-  stageEl
-    .querySelector('[data-sv-v1-switch-slot]')
-    ?.appendChild(tempSwitchWrap);
+  // Inject the v1 switch + the switcher bar (theme/font/account — was
+  // the ED-t panel content) into the settings sidebar slots the stage
+  // prepared.
+  stageEl.querySelector('[data-settings-v1-slot]')?.appendChild(tempSwitchWrap);
+  switchBar = mountSwitchBar(
+    stageEl.querySelector('[data-settings-switchbar-slot]') as HTMLElement
+  );
 
-  // Edge drawers ED-b (bottom) and ED-t (top) as overlays — heights live
-  // in SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
+  // Object settings drawer (ED-b, bottom) as overlay — heights live in
+  // SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
   const edB = new EdgeDrawer('ed-b', 300);
   edB.mount(shell);
-  new EdgeDrawer('ed-t', 70).mount(shell, panel => {
-    switchBar = mountSwitchBar(panel);
-  });
 
   // Object settings (gear action): the stage mounts the focused object's
   // settings panel into the ED-b panel and opens/closes the drawer.

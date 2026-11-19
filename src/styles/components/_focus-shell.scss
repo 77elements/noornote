@@ -103,10 +103,10 @@ html.ui--focus {
     height: 100dvh;
     box-sizing: border-box;
     overflow: hidden;
-    // Column flex: the focused grid takes the space BELOW the top-bar
-    // (flex: 1) instead of 100% of the stage's content box — with block
-    // flow, grid height 100% + its margin-top overflowed the stage's
-    // bottom clip by top-bar + margin, so the side stacks' lower part
+    // Column flex: the focused grid takes the space BELOW the shell top
+    // edge (flex: 1) instead of 100% of the stage's content box — with
+    // block flow, grid height 100% + its margin-top overflowed the
+    // stage's bottom clip, so the side stacks' lower part
     // (last circle included) sat permanently below the fold no matter
     // how far the column scrolled.
     display: flex;
@@ -144,14 +144,13 @@ html.ui--focus {
   // — the focused column fills the stage, its inner view scrolls
   // (classic .timeline-view__timeline mechanics).
   &.is-focused {
-    // Fill the stage's remaining height BELOW the top-bar (flex sibling,
-    // see .focus-stage) — replaces height: 100%, which ignored the
-    // top-bar + margin and overflowed the stage's bottom clip.
+    // Fill the stage's remaining height (flex sibling, see .focus-stage)
+    // — replaces height: 100%, which overflowed the stage's bottom clip.
     flex: 1;
     min-height: 0;
-    // Clears the ED-t drawer above the focused layout (all three columns
-    // start flush below it).
-    margin-top: calc($gap * 3);
+    // The old ED-t strip + top bar above the focused layout are gone
+    // (settings sidebar absorbed both) — the columns start flush.
+    margin-top: 0;
     grid-template-columns: 1fr;
     grid-template-rows: 100%;
 
@@ -432,8 +431,8 @@ html.ui--focus {
 }
 
 // Hover lift on all 30px round action buttons: the icon goes to the
-// brightest text color (the .top-bar__loadmon pattern, applied to the
-// whole family).
+// brightest text color (the settings-sidebar icon-action pattern,
+// applied to the whole family).
 .focus-object__move:hover,
 .focus-object__hide:hover,
 .focus-object__control:hover,
@@ -462,7 +461,7 @@ html.ui--focus {
   transform: rotate(90deg);
 }
 
-// Arrange-positions gate (top-bar switch, default OFF): the layout
+// Arrange-positions gate (settings sidebar switch, default OFF): the layout
 // satellites — circle move/hide handles, the side-stack tool buttons,
 // the widget move handle — render only while the switch is ON. Diodes
 // (unread counters) and the active column's .focus-object__actions are
@@ -522,14 +521,26 @@ html.ui--focus {
 // tab-on-a-translated-root trick as the EdgeDrawer tabs). Toggle: handle
 // click (round 1 — no drag; the EdgeDrawer marble painter is
 // vertical-only, a left-edge variant is fine-tuning).
-.focus-nav-sidebar {
+// The two edge sidebars (mirrored twins): LEFT = FV navigation (the
+// single circle stack, phone mode), RIGHT = settings (absorbed the SV
+// top bar AND the ED-t drawer). Full height, glass, hamburger lasche at
+// the outer rim of the translated root — closed the lasche pokes out at
+// the screen edge, open it sits on the panel's inner rim. Handle click
+// toggles (round 1 — no drag; the EdgeDrawer marble painter is
+// vertical-only, horizontal variants are fine-tuning). Mounted by
+// focusStage; listeners die with the elements (stage destroy removes
+// the roots).
+.focus-nav-sidebar,
+.focus-settings-sidebar {
   position: fixed;
   top: 0;
   bottom: 0;
-  left: 0;
   width: min(320px, 86vw);
-  z-index: $z-back-bar; // overlay above shell content, below modals/toasts
-  transform: translateX(-100%);
+  // Overlay above ALL shell content — including the circles' diode badges
+  // (same $z-back-bar level as the old top bar; the grid mounts after the
+  // sidebars, so at equal z-index the badges would win the DOM-order
+  // tie-break and paint over the panel). Below modals/toasts.
+  z-index: $z-fullscreen-overlay;
   transition: $transition-all;
   will-change: transform;
 
@@ -540,20 +551,16 @@ html.ui--focus {
   &__panel {
     height: 100%;
     box-sizing: border-box;
-    // Glass panel, right rim framed — kin to the EdgeDrawer panels.
+    // Glass panel — kin to the EdgeDrawer panels.
     padding: calc($gap * 3) $gap $gap;
     background: color-mix(in srgb, var(--color-1) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.2);
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
-    border-right: 1px solid var(--color-3);
-    border-radius: 0 $radius-xl $radius-xl 0;
-    overflow: hidden;
   }
 
   &__handle {
     position: absolute;
     top: 50%;
-    left: 100%;
     transform: translateY(-50%);
     display: grid;
     place-items: center;
@@ -561,13 +568,125 @@ html.ui--focus {
     height: 56px;
     padding: 0;
     border: 1px solid var(--color-3);
-    border-left: none;
-    border-radius: 0 $radius-xl $radius-xl 0;
     background: color-mix(in srgb, var(--color-1) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.2);
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
     color: var(--color-4);
     cursor: pointer;
+  }
+}
+
+// Left twin: slides from the left edge, rim + rounding on the right.
+.focus-nav-sidebar {
+  left: 0;
+  transform: translateX(-100%);
+
+  &__panel {
+    border-right: 1px solid var(--color-3);
+    border-radius: 0 $radius-xl $radius-xl 0;
+    overflow: hidden;
+  }
+
+  &__handle {
+    left: 100%;
+    border-left: none;
+    border-radius: 0 $radius-xl $radius-xl 0;
+  }
+}
+
+// Right twin: slides from the right edge, rim + rounding on the left.
+// Content: stacked settings sections (see mountSettingsSidebar).
+.focus-settings-sidebar {
+  right: 0;
+  transform: translateX(100%);
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap * 1.25);
+    border-left: 1px solid var(--color-3);
+    border-radius: $radius-xl 0 0 $radius-xl;
+    // Sections grow per account/setup — the panel body scrolls.
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__handle {
+    right: 100%;
+    border-right: none;
+    border-radius: $radius-xl 0 0 $radius-xl;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap * 0.6);
+
+    // State-gated section (object sets = SV domain, hidden in FV) — the
+    // flex display above would override the hidden attribute otherwise.
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-3);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+    min-height: 34px;
+  }
+
+  &__label {
+    color: var(--color-5);
+    font-size: 0.95rem;
+  }
+
+  // Text action row (restore default order): klick-mich color.
+  &__action {
+    justify-content: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-4);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
+
+  // Icon action (loadmon): same 30px circle chrome as the stack tools.
+  &__icon-action {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--color-4);
+    border-radius: 50%;
+    background: var(--color-1);
+    color: var(--color-4);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
   }
 }
 
@@ -958,49 +1077,6 @@ html:not(.ui--focus) .focus-view-header__action {
 // switch vertically, left-aligned.
 // SV top bar — permanent header row above the start grid (right-aligned
 // controls; more to come later).
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: calc($gap * 0.75);
-  width: 100%;
-  margin-bottom: $gap;
-
-  .top-bar__switch,
-  .top-bar__arrange {
-    display: flex;
-    align-items: center;
-  }
-
-  .top-bar__loadmon {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    border: 2px solid var(--color-4);
-    border-radius: 50%;
-    background: var(--color-1);
-    color: var(--color-4);
-    cursor: pointer;
-
-    &:hover {
-      color: var(--color-5);
-    }
-  }
-
-  // Plain hyperlink (order reset). Klick-mich color; hover deepens only.
-  .top-bar__reset-order {
-    color: var(--color-4);
-    text-decoration: underline;
-    cursor: pointer;
-
-    &:hover {
-      color: var(--color-5);
-    }
-  }
-}
-
 // Tab geometry: visible tab height + the 1px overlap that fuses the tab
 // onto the panel frame (folder-tab technique).
 $focus-tab-w: 160px;
@@ -1008,8 +1084,8 @@ $focus-tab-h: 30px;
 $focus-tab-overlap: 1px;
 
 .focus-drawer {
-  // Instances: ED-t = this--top, ED-b = this--bottom (AGENTS.md shorthand;
-  // the DOM ids #ed-t / #ed-b carry the same names).
+  // Instance: ED-b = this--bottom (AGENTS.md shorthand; the DOM id #ed-b
+  // carries the same name).
   --panel-h: 300px;
   // Marble sweep height for the painter layers (::before panel, ::after
   // tab slice). --bottom stretches it so the sweep ends exactly AT the
@@ -1034,17 +1110,6 @@ $focus-tab-overlap: 1px;
     bottom: 0;
     height: 45vh;
     transform: translateY(100%);
-
-    &.is-open {
-      transform: none;
-    }
-  }
-
-  &--top {
-    --panel-h: 70px;
-    top: 0;
-    height: 70px;
-    transform: translateY(-100%);
 
     &.is-open {
       transform: none;
@@ -1107,14 +1172,6 @@ $focus-tab-overlap: 1px;
   // 30px above it → row 130).
   background-position: 0 #{-160px + $focus-tab-h};
 }
-
-.focus-drawer--top::after {
-  bottom: -$focus-tab-h;
-  border-radius: 0 0 $radius-xl $radius-xl;
-  // Sweep rows at the tab's top edge (row 160 at drawer top, drawer 70px,
-  // tab starts 1px before the drawer's bottom → row 229).
-  background-position: 0 #{-160px - 70px + $focus-tab-overlap};
-}
 .focus-drawer__panel {
   height: 100%;
 
@@ -1129,24 +1186,18 @@ $focus-tab-overlap: 1px;
     // Same chrome as the timeline's scrollers (thin, themed thumb).
     @include custom-scrollbar;
   }
-
-  // Top surface: top + bottom line, no side borders.
-  .focus-drawer--top & {
-    border-top: 1px solid var(--color-3);
-    border-bottom: 1px solid var(--color-3);
-    border-radius: 0 0 $radius-xl $radius-xl;
-  }
 }
 
 // Switcher bar (ED-t content): theme / font-size / account switchers —
 // v1's .user-login-bar, renamed and centered in the panel row.
+// Switcher bar (settings sidebar): theme / font-size / account switchers
+// — v1's .user-login-bar, renamed. Vertical stack in the panel column
+// (it was a centered row in the old ED-t panel).
 .switch-bar {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: center;
-  align-items: center;
-  gap: $gap;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: calc($gap * 0.6);
 }
 
 // Object settings (ED-b content, mounted by focusStage): simple block
@@ -1408,12 +1459,6 @@ $focus-tab-overlap: 1px;
     top: -$focus-tab-h;
     border-bottom: none;
     border-radius: $radius-xl $radius-xl 0 0;
-  }
-
-  .focus-drawer--top & {
-    bottom: -$focus-tab-h;
-    border-top: none;
-    border-radius: 0 0 $radius-xl $radius-xl;
   }
 
   // Drag-handle grip: two engraved 70px lines, 4px apart, centered. The dark
