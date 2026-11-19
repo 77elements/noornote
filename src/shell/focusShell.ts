@@ -23,12 +23,17 @@
 
 import { Switch } from '../components/ui/Switch';
 import { Tooltip } from '../components/ui/Tooltip';
+import { AccountSwitcher } from '../components/ui/AccountSwitcher';
+import { FontSizeSwitcher } from '../components/ui/FontSizeSwitcher';
+import { ThemeSwitcher } from '../components/ui/ThemeSwitcher';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
+import { AuthService } from '../services/AuthService';
 import { LayoutService } from '../services/LayoutService';
 import { ViewMountingService } from '../services/ViewMountingService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { FocusStage } from './focusStage';
 
 import { _ } from '../i18n';
@@ -38,6 +43,8 @@ const SHELL_ID = 'focus-shell';
 const CLICK_SLOP_PX = 6;
 /** Live stage instance — cleaned up on shell unmount. */
 let stage: FocusStage | null = null;
+/** Active ED-t switcher bar — destroyed on shell unmount. */
+let switchBar: { destroy(): void } | null = null;
 
 /** Drawer ids — ED-t (top) / ED-b (bottom), see AGENTS.md abbreviations. */
 type EdgeDrawerId = 'ed-t' | 'ed-b';
@@ -217,7 +224,76 @@ class EdgeDrawer {
   }
 }
 
-/** Mount the Focus Shell with edge drawers; ED-t hosts the TEMP switch. */
+/**
+ * ED-t content: the switcher bar (v1's .user-login-bar, renamed) —
+ * theme / font-size / account switchers, centered in the panel row.
+ * Mounts as soon as a session exists, follows account switches in
+ * place, clears on logout (the classic login flow takes over).
+ */
+function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
+  const bus = TypedEventBus.getInstance();
+  const bar = document.createElement('div');
+  bar.className = 'switch-bar';
+
+  let themeSwitcher: ThemeSwitcher | null = null;
+  let fontSizeSwitcher: FontSizeSwitcher | null = null;
+  let accountSwitcher: AccountSwitcher | null = null;
+
+  const mount = (npub: string, pubkey: string): void => {
+    themeSwitcher = new ThemeSwitcher();
+    fontSizeSwitcher = new FontSizeSwitcher();
+    accountSwitcher = new AccountSwitcher({
+      npub,
+      pubkey,
+      onLogout: () => void AuthService.getInstance().signOut(),
+      onAddAccount: () => {
+        sessionStorage.setItem('noornote_add_account', 'true');
+        Router.getInstance().navigate('/login');
+      },
+    });
+    bar.replaceChildren(
+      themeSwitcher.getElement(),
+      fontSizeSwitcher.getElement(),
+      accountSwitcher.getElement()
+    );
+  };
+
+  const user = AuthService.getInstance().getCurrentUser();
+  if (user) mount(user.npub, user.pubkey);
+  panel.appendChild(bar);
+
+  const destroySwitchers = (): void => {
+    themeSwitcher?.destroy();
+    fontSizeSwitcher?.destroy();
+    accountSwitcher?.destroy();
+    themeSwitcher = null;
+    fontSizeSwitcher = null;
+    accountSwitcher = null;
+  };
+
+  const loginSub = bus.on('user:login', data => {
+    if (accountSwitcher) {
+      accountSwitcher.updateUser({ npub: data.npub, pubkey: data.pubkey });
+    } else {
+      mount(data.npub, data.pubkey);
+    }
+  });
+  const logoutSub = bus.on('user:logout', () => {
+    destroySwitchers();
+    bar.replaceChildren();
+  });
+
+  return {
+    destroy(): void {
+      bus.off(loginSub);
+      bus.off(logoutSub);
+      destroySwitchers();
+      bar.remove();
+    },
+  };
+}
+
+/** Mount the Focus Shell with edge drawers; ED-t hosts the switcher bar. */
 export function mountFocusShell(): void {
   if (document.getElementById(SHELL_ID)) return;
   // Focus UI switch mid-session: stop + remove the (about-to-be-hidden)
@@ -320,7 +396,9 @@ export function mountFocusShell(): void {
   // in SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
   const edB = new EdgeDrawer('ed-b', 300);
   edB.mount(shell);
-  new EdgeDrawer('ed-t', 70).mount(shell);
+  new EdgeDrawer('ed-t', 70).mount(shell, panel => {
+    switchBar = mountSwitchBar(panel);
+  });
 
   // Object settings (gear action): the stage mounts the focused object's
   // settings panel into the ED-b panel and opens/closes the drawer.
@@ -350,6 +428,8 @@ export function mountFocusShell(): void {
 /** Remove the Focus Shell (idempotent); tears down the stage surfaces. */
 export function unmountFocusShell(): void {
   setFocusUiNavHandler(null);
+  switchBar?.destroy();
+  switchBar = null;
   stage?.destroy();
   stage = null;
   document.getElementById(SHELL_ID)?.remove();

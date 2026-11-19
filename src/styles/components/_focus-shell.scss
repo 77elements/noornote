@@ -974,6 +974,17 @@ $focus-tab-overlap: 1px;
   }
 }
 
+// Switcher bar (ED-t content): theme / font-size / account switchers —
+// v1's .user-login-bar, renamed and centered in the panel row.
+.switch-bar {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: center;
+  align-items: center;
+  gap: $gap;
+  height: 100%;
+}
+
 // Object settings (ED-b content, mounted by focusStage): simple block
 // flow in the classic .section/.setting markup. The container mirrors the
 // focused object's column (600px surface + $gap + 30px actions strip), so
