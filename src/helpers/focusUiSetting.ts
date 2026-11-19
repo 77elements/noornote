@@ -20,6 +20,11 @@ import {
 import { diagLog } from '../services/DiagnosticLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { mountFocusShell, unmountFocusShell } from '../shell/focusShell';
+import { isDomainHidden } from '../shell/hiddenObjectsStore';
+import { isBookmarksEnabled } from '../addons/bookmarks/index';
+import { isTribesEnabled } from '../addons/tribes/index';
+import { isCustomEmojisEnabled } from '../addons/custom-emojis/index';
+import { isScheduledPostsEnabled } from '../addons/scheduled-posts/index';
 
 /**
  * Stored preference + session override in one read:
@@ -50,6 +55,59 @@ export function isFocusUiEnabled(): boolean {
  */
 export function isFocusUiActive(): boolean {
   return document.documentElement.classList.contains('ui--focus');
+}
+
+/**
+ * Hidden-objects probe (v2) — the sanctioned v1-side seam for "is this
+ * focus domain hidden?" (docs/todos/hidden-objects.md). Classic machinery
+ * that must stay down while a domain is hidden (e.g. DM toasts) gates
+ * through here instead of importing the shell directly.
+ */
+export function isFocusDomainHidden(domainId: string): boolean {
+  return isFocusUiActive() && isDomainHidden(domainId);
+}
+
+/**
+ * Bookmark affordances that live inside OTHER objects' surfaces (the ISL
+ * bookmark action, the note-menu bookmark items): the addon flag AND the
+ * v2 hidden-objects state — a hidden Bookmarks object makes the feature
+ * unreachable, so its affordances vanish there too (v1: addon flag only,
+ * the classic surfaces keep working).
+ */
+export function isBookmarksUiActive(): boolean {
+  return isBookmarksEnabled() && !isFocusDomainHidden('bookmarks');
+}
+
+/**
+ * Tribes affordances that live inside OTHER surfaces (the timeline's
+ * tribe tabs + "Edit tribes" link, the note-menu tribe item): the addon
+ * flag AND the v2 hidden-objects state — a hidden Tribes object makes
+ * the feature unreachable, so its affordances vanish there too (and the
+ * `lists/tribes` module must not even load — RAM principle).
+ */
+export function isTribesUiActive(): boolean {
+  return isTribesEnabled() && !isFocusDomainHidden('tribes');
+}
+
+/**
+ * Custom-emojis affordances outside the object's own surface (the
+ * composer's picker pack + `:shortcode:` autocomplete): the addon flag
+ * AND the v2 hidden-objects state. NOTE the composer's ON-DEMAND paths
+ * are flag-independent by design (session load while the stored
+ * preference is OFF) — those gate on the hidden probe alone.
+ */
+export function isCustomEmojisUiActive(): boolean {
+  return isCustomEmojisEnabled() && !isFocusDomainHidden('custom-emojis');
+}
+
+/**
+ * Scheduled-posts affordances outside the object's own surface (the
+ * composer's schedule icon): the addon flag AND the v2 hidden-objects
+ * state. The v2 on-demand icon visibility is flag-independent by design
+ * — there the hidden probe alone is the gate.
+ */
+export function isScheduledPostsUiActive(): boolean {
+  return isScheduledPostsEnabled() && !isFocusDomainHidden('scheduled-posts');
 }
 
 export function setFocusUiEnabled(enabled: boolean): void {
@@ -87,6 +145,15 @@ export function applyFocusUi(): void {
  */
 const FOCUS_UI_TRIGGER_WORD = 'focusui';
 
+/**
+ * Secret typed switch `loadmon`: opens the Load HUD (the terminal-style
+ * proof widget for the hidden-objects load promise, src/shell/loadHud.ts)
+ * — demo surface to show non-developers that hidden objects shed their
+ * relay/addon machinery live. Dynamic import keeps the widget out of the
+ * boot path entirely; typed again while open just refreshes it.
+ */
+const LOAD_HUD_TRIGGER_WORD = 'loadmon';
+
 export function registerFocusUiTypedTrigger(): void {
   let buffer = '';
   document.addEventListener('keydown', event => {
@@ -103,10 +170,16 @@ export function registerFocusUiTypedTrigger(): void {
     }
     if (event.key.length !== 1) return; // ignore modifiers/Enter/arrows
     buffer = (buffer + event.key.toLowerCase()).slice(
-      -FOCUS_UI_TRIGGER_WORD.length
+      -Math.max(FOCUS_UI_TRIGGER_WORD.length, LOAD_HUD_TRIGGER_WORD.length)
     );
-    if (buffer !== FOCUS_UI_TRIGGER_WORD) return;
-    buffer = '';
-    setFocusUiEnabled(!isFocusUiEnabled());
+    if (buffer === FOCUS_UI_TRIGGER_WORD) {
+      buffer = '';
+      setFocusUiEnabled(!isFocusUiEnabled());
+      return;
+    }
+    if (buffer === LOAD_HUD_TRIGGER_WORD) {
+      buffer = '';
+      void import('../shell/loadHud').then(m => m.openLoadHud());
+    }
   });
 }

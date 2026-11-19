@@ -136,7 +136,19 @@ module.exports = {
       // - src/shell/** is the v2 layer itself — internal imports are the rule.
       // - src/helpers/focusUiSetting.ts is the ONLY v1-side module allowed to
       //   import the shell (mount/unmount switch).
-      files: ['src/shell/**', 'src/helpers/focusUiSetting.ts'],
+      // - src/services/DevLoadExpectations.ts + DevLoadMonitor.ts are the
+      //   dev-only load guard (never in prod bundles, `import.meta.env.DEV`
+      //   dynamic import): Phase 6 of the hidden-objects feature reads the
+      //   hidden state (hiddenObjectsStore) + the pure leaf id map
+      //   (hiddenAddonDomains.ts) to resolve dynamic budgets. Production
+      //   classic code may not import the shell — these two are the
+      //   documented exception (docs/todos/hidden-objects.md Phase 6).
+      files: [
+        'src/shell/**',
+        'src/helpers/focusUiSetting.ts',
+        'src/services/DevLoadExpectations.ts',
+        'src/services/DevLoadMonitor.ts',
+      ],
       rules: {
         'no-restricted-imports': 'off',
       },

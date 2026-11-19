@@ -129,7 +129,23 @@
     
       <circle cx="12" cy="12" r="10" />
   </symbol>
-  <symbol id="icon-contrast" viewBox="0 0 24 24" fill="none">
+  <symbol id="icon-compact" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    
+      <path d="M12 3v5" />
+      <path d="m9 6 3 3 3-3" />
+      <path d="M8 12h8" />
+      <path d="M12 21v-5" />
+      <path d="m9 18 3-3 3 3" />
+  </symbol>
+    <symbol id="icon-compact-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    
+      <path d="M12 3v5" />
+      <path d="m9 6 3-3 3 3" />
+      <path d="M8 12h8" />
+      <path d="M12 21v-5" />
+      <path d="m9 18 3 3 3-3" />
+  </symbol>
+    <symbol id="icon-contrast" viewBox="0 0 24 24" fill="none">
     <!-- Monochrome reading toggle: left half white, right half black, adaptive ring.
          Deliberately NOT currentColor-filled — the white/black halves are the point. -->
     <circle cx="12" cy="12" r="10" fill="#ffffff" />

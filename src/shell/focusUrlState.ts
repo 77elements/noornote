@@ -51,6 +51,7 @@ const ADDON_LIST_ROUTES: Record<string, string> = {
   'follower-notification': 'follower-notification',
   'group-chats': 'group-chats',
   'wallet-balance': 'wallet-balance',
+  'btc-price': 'btc-price',
   // v1 slug has no hyphen — keep it as the canonical URL.
   wordfilter: 'word-filter',
   // /addons/live-streams is a classic alias of the canonical /live-streams.

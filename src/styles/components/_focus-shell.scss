@@ -232,10 +232,10 @@ html.ui--focus {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: grab;
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
@@ -247,6 +247,35 @@ html.ui--focus {
     .focus-object:not(.focus-object--active):hover
     &,
   .focus-side-stack .focus-object:hover & {
+    display: grid;
+  }
+}
+
+// Hide affordance (hidden-objects): 12 o'clock on the circle, same hover
+// gating as the move handle. Removes the object from the grid AND unloads
+// its code — blocked domains (visible requirer) keep the button hidden
+// (attribute), it never appears as a disabled affordance.
+.focus-object__hide {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-4);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-4);
+  cursor: pointer;
+  z-index: $z-back-bar;
+
+  .focus-stage__grid:not(.is-focused)
+    .focus-object:not(.focus-object--active):hover
+    &:not([hidden]),
+  .focus-side-stack .focus-object:hover &:not([hidden]) {
     display: grid;
   }
 }
@@ -333,10 +362,10 @@ html.ui--focus {
   width: 100%; // fill the 30px actions column
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -344,6 +373,23 @@ html.ui--focus {
   &[hidden] {
     display: none;
   }
+}
+
+// Hover lift on all 30px round action buttons: the icon goes to the
+// brightest text color (the .top-bar__loadmon pattern, applied to the
+// whole family).
+.focus-object__move:hover,
+.focus-object__hide:hover,
+.focus-object__control:hover,
+.focus-object__back:hover,
+.focus-object__scroll-top:hover,
+.focus-object__settings:hover,
+.focus-side-stack__move:hover,
+.focus-side-stack__reset:hover,
+.focus-side-stack__compact:hover,
+.focus-widget-slot__move:hover,
+.focus-object-compact__unhide:hover {
+  color: var(--color-5);
 }
 
 // Settings is a toggle: active while its drawer content is mounted.
@@ -356,6 +402,24 @@ html.ui--focus {
 // arrow with shaft).
 .focus-object__scroll-top-icon {
   transform: rotate(90deg);
+}
+
+// Arrange-positions gate (top-bar switch, default OFF): the layout
+// satellites — circle move/hide handles, the side-stack tool buttons,
+// the widget move handle — render only while the switch is ON. Diodes
+// (unread counters) and the active column's .focus-object__actions are
+// exempt: they are not layout tools. Visibility (not display) keeps the
+// sticky tools band at its height — no layout jump when toggling.
+.focus-stage:not(.is-arrange-on) {
+  .focus-object__move,
+  .focus-object__hide,
+  .focus-side-stack__move,
+  .focus-side-stack__reset,
+  .focus-side-stack__compact,
+  .focus-widget-slot__move {
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 // Side stacks: while a domain is focused, the non-active circles are
@@ -414,16 +478,17 @@ html.ui--focus {
 }
 
 .focus-side-stack__move,
-.focus-side-stack__reset {
+.focus-side-stack__reset,
+.focus-side-stack__compact {
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: pointer;
   touch-action: none; // the pointer drag must not scroll the page
 
@@ -435,6 +500,110 @@ html.ui--focus {
 
 .focus-side-stack__move {
   cursor: grab;
+}
+
+// Compact toggle state flip: compacted stacks point the arrows OUTWARD
+// (click = expand back to circles). The icon is point-symmetric, so a
+// rotation would map it onto itself — instead two symbols swap: the
+// closed state pulls inward (arrows toward the line), the active state
+// pushes outward (arrows away from the line).
+.focus-side-stack__compact-icon-out {
+  display: none;
+}
+
+.focus-side-stack__compact.is-active {
+  .focus-side-stack__compact-icon-in {
+    display: none;
+  }
+
+  .focus-side-stack__compact-icon-out {
+    display: block;
+  }
+}
+
+// Compact toggle (stack tools, leftmost): morphs every stack circle into
+// the ED-b chip shape (focusStage.toggleStackCompact, persisted per
+// account) — more objects visible in the column, less vertical rhythm.
+// The morph lives on these two rules ONLY: the explicit stack height
+// gives the transition an interpolable start value (the base circle's
+// height comes from aspect-ratio, which cannot animate), and keeping the
+// geometry transition out of the base class keeps the WAAPI-driven
+// grid/focus morphs untouched. The ACTIVE circle never compacts.
+.focus-side-stack .focus-object {
+  height: 230px; // identical to the aspect-ratio result (fixed 230px column)
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast,
+    background-color $transition-fast,
+    height $transition-fast,
+    border-width $transition-fast,
+    outline-width $transition-fast,
+    outline-offset $transition-fast,
+    border-radius $transition-fast;
+}
+
+.focus-object.is-compact {
+  aspect-ratio: auto;
+  height: 48px;
+  // Double ring at HALF the circle's width, pulled in like the circles
+  // and the ED-b chips (outline directly inside the border).
+  border-width: 7px;
+  outline-width: 7px;
+  outline-offset: -14px;
+  border-radius: $radius-2xl;
+  // Flat chip: no dome glow.
+  background-image: none;
+  background-color: var(--color-1);
+
+  // Chip content: label only (no icon), centered like on the circles —
+  // the whole chip stays the click target. Inline padding keeps the text
+  // clear of the corner cluster (diode always, handles on hover).
+  .focus-object__icon {
+    display: none;
+  }
+
+  .focus-object__label {
+    font-size: 1rem; // standard text size — no circle-scale display type
+    max-width: 100%;
+    padding-inline: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Corner cluster on the top border: the unread diode sits flush right
+  // (same flush-right anchor as on the round circles), straddling the
+  // border band, always visible. Move + hide join its row on hover, to
+  // its left — opaque 30px buttons overlaying a long label's tail. Same
+  // specificity as the hover-show rules above — the later source order
+  // wins the tie.
+  .focus-object__diode {
+    bottom: auto;
+    top: -16px;
+    right: 0;
+  }
+
+  &:hover .focus-object__move,
+  &:hover .focus-object__hide:not([hidden]) {
+    display: grid;
+    top: -16px;
+  }
+
+  &:hover .focus-object__move {
+    right: 64px;
+  }
+
+  // Blocked domains have no hide button (hidden attribute) — the move
+  // handle slides into its slot instead of leaving a hover hole.
+  &:hover:has(> .focus-object__hide[hidden]) .focus-object__move {
+    right: 32px;
+  }
+
+  &:hover .focus-object__hide {
+    right: 32px;
+    left: auto;
+    transform: none;
+  }
 }
 
 // Drop zone while a stack handle is dragged: the opposite stack lights up
@@ -488,10 +657,10 @@ html.ui--focus {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 2px solid var(--color-3);
+  border: 2px solid var(--color-4);
   border-radius: 50%;
   background: var(--color-1);
-  color: var(--color-3);
+  color: var(--color-4);
   cursor: grab;
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
@@ -634,13 +803,38 @@ html:not(.ui--focus) .focus-view-header__action {
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in
 // the shell. Covers the ED-t panel area (not the tab) and centers the
 // switch vertically, left-aligned.
-.focus-shell__temp-switch {
-  position: absolute;
-  inset: 0;
-  padding: $gap;
-  display: grid;
-  align-content: center;
-  justify-content: start;
+// SV top bar — permanent header row above the start grid (right-aligned
+// controls; more to come later).
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc($gap * 0.75);
+  width: 100%;
+  margin-bottom: $gap;
+
+  .top-bar__switch,
+  .top-bar__arrange {
+    display: flex;
+    align-items: center;
+  }
+
+  .top-bar__loadmon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--color-4);
+    border-radius: 50%;
+    background: var(--color-1);
+    color: var(--color-4);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
 }
 
 // Tab geometry: visible tab height + the 1px overlap that fuses the tab
@@ -796,7 +990,6 @@ $focus-tab-overlap: 1px;
   @media (max-width: 1099px) {
     max-width: none;
   }
-
   // Composed multi-panel content (composePanels): the panels stack with
   // <hr> dividers between them — plain flow, readable width.
   .focus-settings__stack {
@@ -810,6 +1003,203 @@ $focus-tab-overlap: 1px;
     margin: $gap 0;
     border: 0;
     border-top: 1px solid var(--color-3);
+  }
+}
+
+// Hidden Features (ED-b, tab-open): the compact restorable list of
+// hidden object circles. Full width (no object-settings width cap) —
+// chips wrap in an auto-fill grid, one-liner each, rounded corners and
+// the circles' double ring at HALF width (7px inner/outer instead of
+// 15px, same $ring hues + alpha darkening).
+.focus-settings--hidden-features {
+  max-width: none; // full width — the SV's chips grid spans the drawer
+}
+
+// Focused-view ED-b log panel (tab-open): the flattened system-log
+// stream + Export DiagLogs. Same 600px content column as the settings
+// stack (symmetric $gap padding, centered by the base margin); fills
+// the drawer height, the list scrolls internally so the header
+// (title + export) stays pinned.
+.focus-settings--focus-log {
+  height: 100%;
+  max-width: calc(600px + #{$gap * 2});
+  // The inner panel owns the padding — the base .focus-settings padding
+  // would stack on top of it (600px column + double gap).
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.focus-log-panel {
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: $gap $gap calc($gap * 1.5);
+
+  .focus-log-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc($gap * 0.75);
+    margin-bottom: calc($gap * 0.75);
+  }
+
+  .focus-log-panel__heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-3);
+  }
+
+  .focus-log-panel__export {
+    padding: 2px 12px;
+    border: 2px solid var(--color-4);
+    border-radius: $radius-full;
+    background: var(--color-1);
+    color: var(--color-4);
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-5);
+    }
+  }
+
+  .focus-log-panel__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    user-select: text; // log lines are copy material
+    @include custom-scrollbar;
+  }
+
+  .focus-log-panel__table {
+    width: 100%;
+    // Fixed layout: a long token (npub/nevent/URL) in a log line must
+    // never stretch the table beyond the 600px column.
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .focus-log-panel__time {
+    padding-right: calc($gap * 0.5);
+    color: var(--color-3);
+    white-space: nowrap;
+    vertical-align: top;
+    opacity: 0.7;
+  }
+
+  .focus-log-panel__msg {
+    color: var(--color-5);
+    word-break: break-word;
+  }
+
+  .focus-log-panel__row--error .focus-log-panel__msg {
+    color: $color-red;
+  }
+
+  .focus-log-panel__row--warn .focus-log-panel__msg {
+    color: var(--color-3);
+  }
+
+  .focus-log-panel__count {
+    margin-left: calc($gap * 0.4);
+    color: var(--color-3);
+    font-size: 0.7rem;
+  }
+
+  .focus-log-panel__older,
+  .focus-log-panel__empty {
+    color: var(--color-3);
+    font-size: 0.8rem;
+    padding: calc($gap * 0.5) 0;
+  }
+}
+
+.hidden-features {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $gap $gap calc($gap * 1.5);
+  padding-right: calc(#{$gap * 2} + 30px);
+
+  .hidden-features__head {
+    display: flex;
+    align-items: baseline;
+    gap: calc($gap * 0.75);
+  }
+
+  .hidden-features__heading {
+    margin: 0 0 $gap;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-3);
+  }
+
+  .hidden-features__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: $gap * 0.5;
+    width: 100%;
+  }
+
+  .hidden-features__empty {
+    margin: 0;
+    color: var(--color-5);
+    font-size: 0.9rem;
+  }
+}
+
+.focus-object-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap * 0.5;
+  min-width: 0;
+  padding: calc($gap * 0.5) calc($gap * 0.5) calc($gap * 0.5)
+    calc(7px + $gap * 0.5);
+  // Double ring at HALF the circle's width, pulled in like the circles
+  // (outline directly inside the border).
+  border: 7px solid $ring-inner;
+  outline: 7px solid $ring-outer;
+  outline-offset: -14px;
+  border-radius: $radius-2xl; // 30px — prominent rounded corners
+  background-color: var(--color-1);
+  transition:
+    border-color $transition-fast,
+    outline-color $transition-fast;
+
+  &:hover {
+    border-color: $ring-inner-hover;
+    outline-color: $ring-outer-hover;
+  }
+
+  .focus-object-compact__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem; // standard text size — no circle-scale display type
+  }
+
+  // Unhide: the FV widget-button pattern (30px round, 2px ring).
+  .focus-object-compact__unhide {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid var(--color-4);
+    border-radius: 50%;
+    background: var(--color-1);
+    color: var(--color-4);
+    cursor: pointer;
   }
 }
 
@@ -866,5 +1256,80 @@ $focus-tab-overlap: 1px;
 
   &::after {
     top: calc(50% + 2px);
+  }
+}
+
+// Load HUD ("loadmon" typed trigger): the proof widget for the hidden
+// objects promise — terminal look (black, green mono), bottom right,
+// portalled to <body> so it survives focus navigation and hide/unhide
+// re-renders. Demo-only, opt-in by the typed trigger, session-only.
+.load-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  box-sizing: border-box;
+  width: 240px;
+  max-height: 30vh; // ~30% of the monitor — room for the event feed
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid rgba(74, 222, 128, 40%);
+  border-radius: 6px;
+  background: #000;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 60%);
+  font-family: $font-family-mono;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #4ade80;
+  user-select: text;
+  z-index: $z-tooltip; // must never be occluded — it is the demo surface
+
+  .load-hud__title {
+    display: block;
+    width: 100%;
+    padding: 0 0 4px;
+    border: 0;
+    border-bottom: 1px solid rgba(74, 222, 128, 30%);
+    background: none;
+    color: #86efac;
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-align: left;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .load-hud__row {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .load-hud__row--head {
+    margin-top: 4px;
+    font-weight: 700;
+    color: #86efac;
+  }
+
+  .load-hud__row--sub {
+    padding-left: 8px;
+    color: #4ade80;
+  }
+
+  // Narrated event feed: one block per detected change, newest first.
+  .load-hud__ev {
+    padding: 2px 0 0 8px;
+    border-top: 1px solid rgba(74, 222, 128, 15%);
+
+    .load-hud__ev-line {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #4ade80;
+    }
+
+    .load-hud__ev-line:first-child {
+      color: #86efac;
+    }
   }
 }

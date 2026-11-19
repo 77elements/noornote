@@ -151,6 +151,13 @@ export interface FocusSettingsDrawer {
   close(): void;
   /** Callback fired on every transition to closed (tab, drag, program). */
   setOnClosed(cb: (() => void) | null): void;
+  /**
+   * Callback fired on every transition to OPEN (tab click/drag) — the
+   * stage mounts the Hidden Features panel when the tab opens the drawer
+   * on the start view without a per-object settings panel; in a focused
+   * view the panel stays empty (future: system logs + diag-log export).
+   */
+  setOnOpened(cb: (() => void) | null): void;
 }
 
 export interface FocusDomainDef {
@@ -195,6 +202,9 @@ export interface FocusDomainDef {
    * Marked now, rendered differently later (docs/todos/v2-focus-ui.md).
    */
   addon?: boolean;
+  // NOTE: object dependencies (requires/locked) live ONLY in
+  // shell/focusDependencyGraph.ts — the single source of truth
+  // (docs/todos/dependency-graph.md). Do not re-declare edges here.
 }
 
 /** FS primary domains in display order. `(a)` = addon-backed domain. */
@@ -622,6 +632,24 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
           '../addons/wallet-balance/WalletBalanceAddonView'
         );
         return new WalletBalanceAddonView();
+      },
+    }),
+  },
+  {
+    id: 'btc-price',
+    label: _('BTC Price'),
+    icon: 'icon-trending-up',
+    addon: true,
+    route: '/btc-price',
+    // NOT ephemeral (like wallet-balance): the object provides the FV
+    // side-stack widget — leaving the object must not unload the runtime
+    // the widget lives in.
+    createSurface: focusAddonObjectSurface({
+      load: async () => {
+        const { BtcPriceAddonView } = await import(
+          '../addons/btc-price/BtcPriceAddonView'
+        );
+        return new BtcPriceAddonView();
       },
     }),
   },

@@ -27,10 +27,11 @@ import { AddonLoader } from '../addons/AddonLoader';
 import { ViewMountingService } from './ViewMountingService';
 import { isFocusUiActive, isFocusUiEnabled } from '../helpers/focusUiSetting';
 import {
-  DEV_LOAD_EXPECTATIONS,
   evaluateLoadGuard,
+  resolveExpectationsForHiddenState,
   type LoadGuardResult,
 } from './DevLoadExpectations';
+import { loadHiddenObjectIds } from '../shell/hiddenObjectsStore';
 
 const STORAGE_KEY = 'noornote_load_monitor';
 
@@ -247,19 +248,27 @@ function dumpLoadSnapshot(): DevLoadSnapshot {
 /** Run the guard against the committed expectations and dump the outcome. */
 function runLoadGuard(): LoadGuardResult | null {
   const snapshot = gatherSnapshot();
-  const result = evaluateLoadGuard(snapshot, DEV_LOAD_EXPECTATIONS);
+  // Phase 6 (hidden objects): the budgets adapt to the user's hidden
+  // state — hidden = stilllegung, the guard measures the reduced baseline
+  // and reports a loaded hidden addon as violation.
+  const hidden = loadHiddenObjectIds();
+  const expectations = resolveExpectationsForHiddenState(
+    hidden,
+    snapshot.addons.registered
+  );
+  const result = evaluateLoadGuard(snapshot, expectations);
 
   console.groupCollapsed(
     `%c── Load guard: ${result.ok ? 'PASS' : 'FAIL'} ` +
       `(${result.violations.length} violation(s), ` +
-      `${result.warnings.length} warning(s)) ──`,
+      `${result.warnings.length} warning(s)${hidden.length ? `, ${hidden.length} hidden` : ''}) ──`,
     `font-weight:bold;color:${result.ok ? 'green' : 'red'}`
   );
   console.debug(
     `Snapshot: ${snapshot.intervals.length} intervals (budget ` +
-      `${DEV_LOAD_EXPECTATIONS.maxIntervals}), ` +
+      `${expectations.maxIntervals}), ` +
       `${snapshot.addons.loaded.length} addons (budget ` +
-      `${DEV_LOAD_EXPECTATIONS.maxAddons}), ` +
+      `${expectations.maxAddons}), ` +
       `${snapshot.relaySubscriptions.length} relay subs, ` +
       `${snapshot.v1.primaryContentChildren} v1 primary content children`
   );

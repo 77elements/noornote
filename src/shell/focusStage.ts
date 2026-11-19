@@ -26,6 +26,7 @@
 
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
+import { Switch } from '../components/ui/Switch';
 import { Router } from '../services/Router';
 import { NavigationDispatcher } from '../services/NavigationDispatcher';
 import { AddonLoader, type AddonRuntime } from '../addons/AddonLoader';
@@ -57,6 +58,23 @@ import {
   type FocusSettingsDrawer,
   type FocusSettingsView,
 } from './focusDomains';
+import { loadHiddenObjectIds, hideObject } from './hiddenObjectsStore';
+import { diagLog } from '../services/DiagnosticLogger';
+import { NnDropdown } from '../components/ui/NnDropdown';
+import {
+  FOCUS_OBJECT_SETS,
+  applyObjectSet,
+  matchingObjectSet,
+} from './focusObjectSets';
+import { canHideObject } from './focusDependencyGraph';
+import { reportDependencyError } from './dependencyError';
+import {
+  DETACHED_DETAILS,
+  type DetachedDetailComponent,
+} from './detachedDetails';
+import { HiddenFeaturesPanel } from './hiddenFeaturesPanel';
+import { FocusLogPanel } from './focusLogPanel';
+import { applyDomainShutdown } from './domainShutdown';
 
 /** URL of the home grid (no domain focused). */
 const HOME_ROUTE = '/';
@@ -155,6 +173,24 @@ export class FocusStage {
   private badgeManagers: Array<{
     destroy(): void;
   }> = [];
+  /**
+   * Hidden object ids (user-hideable circles, docs/todos/hidden-objects.md).
+   * Hidden circles are absent from the grid, their code fully unloaded
+   * (surfaces destroyed, widgets removed). Fresh ids arrive via the
+   * 'focus:objects-hidden-changed' subscription (live grid update).
+   */
+  private hiddenIds: string[] = [];
+  /** Side stacks render their circles as compact chips (the stack tools'
+   * compact toggle). Per-account view preference; the active circle and
+   * the home grid always render round. */
+  private stackCompact = false;
+  /** Top-bar "Arrange positions" gate (default OFF): while OFF the layout
+   * satellites (circle move/hide, stack tools, widget move) render hidden
+   * — the shell stays calm for users who never rearrange. Diodes and the
+   * active column's actions are exempt (not layout tools). */
+  private arrangeOn = false;
+  /** focus:objects-hidden-changed subscription (mount → destroy contract). */
+  private hiddenSubId: string | null = null;
   /** live-streams:widget-toggle subscription (mount → destroy contract). */
   private widgetToggleSubId: string | null = null;
   /** live-streams:background-player subscription (mini player widget). */
@@ -188,6 +224,27 @@ export class FocusStage {
   private settingsHost: HTMLElement | null = null;
   /** True while the panel came from the surface's secondary detail. */
   private settingsFromSecondary = false;
+  /** Hidden Features panel (tab-open ED-b) — mount/destroy contract. */
+  private hiddenPanelView: HiddenFeaturesPanel | null = null;
+  private hiddenPanelHost: HTMLElement | null = null;
+  /** Top-bar object-set selector (destroy contract: NnDropdown portals
+   * its menu to <body> — must be torn down with the stage). */
+  private setDropdown: NnDropdown | null = null;
+  /** Flattened system-log panel (tab-open ED-b in a FV) — same contract. */
+  private logPanelView: FocusLogPanel | null = null;
+  private logPanelHost: HTMLElement | null = null;
+  /**
+   * Detached detail (Phase 5): a hidden owner's detail component rendered
+   * directly in the active column — without the owner object. The stashed
+   * frame content + back-button state restore on close (syncFromUrl of
+   * the detail route, or a new seam nav).
+   */
+  private detached: {
+    component: DetachedDetailComponent;
+    activeEl: HTMLElement;
+    stash: HTMLElement | null;
+    backWasHidden: boolean;
+  } | null = null;
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -236,15 +293,102 @@ export class FocusStage {
 
   /** Build the FS grid into the stage element. */
   mount(): void {
+    // SV top bar: permanent header row above the grid (placeholder for
+    // future controls). Today it holds the v1 switch (injected by the
+    // shell into the slot — it used to live in the ED-t panel, whose tab
+    // covered the top circles) and the load-resource-monitor button.
+    const topBar = document.createElement('div');
+    topBar.className = 'top-bar';
+    topBar.innerHTML = `
+      <div class="top-bar__switch" data-sv-v1-switch-slot></div>
+      <div class="top-bar__arrange" data-sv-arrange-slot></div>
+      <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
+        <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
+      </button>
+    `;
+    // Object-set selector: named bundles of visible objects, applied in
+    // one step (everything not in the set is hidden — the same save →
+    // event → shutdown-diff path as the per-object hide button). The
+    // trigger label shows the active set; a custom mixed state shows the
+    // neutral placeholder.
+    const setOptions = [
+      { value: '', label: _('Workspace') },
+      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
+    ];
+    this.setDropdown = new NnDropdown({
+      options: setOptions,
+      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
+      onChange: value => {
+        if (!value) {
+          this.syncObjectSetDropdown();
+          return;
+        }
+        applyObjectSet(value);
+      },
+      className: 'top-bar__set',
+    });
+    const setDropdownEl = this.setDropdown.getElement();
+    // Arrange-positions gate: the layout satellites render only while the
+    // switch is ON (persisted per account, default OFF).
+    this.arrangeOn =
+      PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+        false
+      ) === true;
+    this.applyArrangeGate();
+    const arrangeSwitch = new Switch({
+      label: _('Arrange positions'),
+      checked: this.arrangeOn,
+      onChange: checked => {
+        this.arrangeOn = checked;
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
+          checked
+        );
+        this.applyArrangeGate();
+        diagLog('system', 'focus_arrange_positions_toggled', { on: checked });
+      },
+    });
+    const arrangeWrap = topBar.querySelector(
+      '[data-sv-arrange-slot]'
+    ) as HTMLElement;
+    arrangeWrap.innerHTML = arrangeSwitch.render();
+    arrangeSwitch.setupEventListeners(arrangeWrap);
+    const loadmonBtn = topBar.querySelector('[data-sv-loadmon]') as HTMLElement;
+    topBar.insertBefore(setDropdownEl, loadmonBtn);
+    loadmonBtn.addEventListener('click', () => {
+      // Same boot-path discipline as the typed trigger: dynamic import.
+      void import('./loadHud').then(m => m.openLoadHud());
+    });
+    this.tooltipDisposers.push(
+      Tooltip.attach(loadmonBtn, _('Load Resource Monitor'), {
+        placement: 'bottom',
+      })
+    );
+    this.root.appendChild(topBar);
+
     this.grid = document.createElement('div');
     this.grid.className = 'focus-stage__grid';
     this.order = this.loadOrder();
+    this.hiddenIds = loadHiddenObjectIds();
+    this.stackCompact =
+      PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.FOCUS_UI_STACK_COMPACT,
+        false
+      ) === true;
     for (const id of this.order) {
+      if (this.hiddenIds.includes(id)) continue;
       const def = FOCUS_DOMAINS.find(d => d.id === id);
       if (def) this.grid.appendChild(this.createObject(def));
     }
     this.root.appendChild(this.grid);
     window.addEventListener('resize', this.onResize);
+    // Hidden set changed (a circle was hidden via its hide button or
+    // restored from the ED-b panel): apply the delta to the live grid.
+    this.hiddenSubId = TypedEventBus.getInstance().on(
+      'focus:objects-hidden-changed',
+      data => this.onObjectsHiddenChanged(data?.hidden ?? [])
+    );
     // "Show Live Streams Widget" toggled in the addon object: place (or
     // remove) the widget live while stacks exist — next focus would
     // otherwise only pick the new setting up.
@@ -300,6 +444,183 @@ export class FocusStage {
     if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
     if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
     this.badgeManagers.push(new ListsCountManager(this.grid));
+  }
+
+  /**
+   * Open a hidden owner's detail component in the ACTIVE column (Phase
+   * 5 seam fallback): the surface's current content is stashed (never
+   * destroyed — the surface owns it), the detail element takes the slot,
+   * the back action is armed and the history follows the owner's detail
+   * route — so the global back button unwinds the detached state via
+   * syncFromUrl (which restores the stash instead of navigating).
+   */
+  private async openDetachedDetail(
+    viewType: string,
+    param?: string
+  ): Promise<void> {
+    const factory = DETACHED_DETAILS[viewType];
+    const activeId = this.activeId;
+    const activeEl = activeId ? this.objects.get(activeId) : null;
+    if (!factory || !activeId || !activeEl) return;
+    const component = await factory(param);
+    // A detached detail already open: unwind it first (back to the
+    // stashed content), then swap — a quoted-note click inside the open
+    // SNV replaces the detail, it never stacks.
+    if (this.detached) this.closeDetachedDetail();
+    // The morph may have closed meanwhile — don't orphan the component.
+    if (this.activeId !== activeId) {
+      component.destroy();
+      return;
+    }
+    const slot = activeEl.querySelector('[data-focus-slot]') as HTMLElement;
+    const backBtn = activeEl.querySelector(
+      "[data-focus-action='back']"
+    ) as HTMLElement | null;
+    const scrollTop = this.scrollTopState.get(activeId);
+    this.detached = {
+      component,
+      activeEl,
+      stash: (slot.firstElementChild as HTMLElement) ?? null,
+      backWasHidden: backBtn?.hidden ?? true,
+    };
+    slot.replaceChildren(component.el);
+    if (scrollTop) scrollTop.btn.hidden = true;
+    if (backBtn) backBtn.hidden = false;
+    // History follows the owner's detail route — back unwinds via
+    // syncFromUrl. Routes mirror the owner surfaces' detailRoute shapes.
+    const route =
+      viewType === 'article' ? `/article/${param}` : `/note/${param}`;
+    pushFocusUrl(route);
+  }
+
+  /** Tear the detached detail down and restore the stashed column content. */
+  private closeDetachedDetail(): void {
+    const d = this.detached;
+    if (!d) return;
+    this.detached = null;
+    d.component.destroy();
+    const slot = d.activeEl.querySelector('[data-focus-slot]') as HTMLElement;
+    if (d.stash) slot.replaceChildren(d.stash);
+    const backBtn = d.activeEl.querySelector(
+      "[data-focus-action='back']"
+    ) as HTMLElement | null;
+    if (backBtn) backBtn.hidden = d.backWasHidden;
+  }
+
+  /**
+   * Widget ids (FV side-stack widgets) contributed by a domain — hiding
+   * the domain removes its widgets (RAM principle); widgetFor additionally
+   * refuses to ensure-load runtimes for hidden domains.
+   */
+  private static readonly WIDGETS_BY_DOMAIN: Record<string, string[]> = {
+    'live-streams': ['live-streams', 'live-streams-mini-player'],
+    majlis: ['nostr-majlis', 'nostr-majlis-quran'],
+    'btc-price': ['btc-price'],
+    'wallet-balance': ['wallet-balance'],
+  };
+
+  /**
+   * Hidden set changed: apply the delta to the live grid. Hide = circle
+   * removed + its surface destroyed and evicted (RAM principle: the
+   * object's code is fully unloaded — a fresh surface is created lazily
+   * on unhide). Unhide = circle re-created at its stored order position.
+   * In the FOCUSED layout the side stacks are rebuilt; in the home grid
+   * the DOM order is re-mirrored. Badge managers re-attach when the
+   * membership changed (their diodes may have entered/left the grid).
+   */
+  private onObjectsHiddenChanged(hidden: string[]): void {
+    const previous = this.hiddenIds;
+    this.hiddenIds = hidden;
+    // RAM principle (Phase 4): newly hidden addon domains are switched
+    // OFF entirely (runtime destroyed), unhidden ones re-enabled — same
+    // code path as the classic settings toggle.
+    applyDomainShutdown(previous, hidden);
+    this.syncObjectSetDropdown();
+    let membershipChanged = false;
+
+    for (const id of hidden) {
+      if (previous.includes(id)) continue;
+      const el = this.objects.get(id);
+      if (!el || id === this.activeId) continue;
+      const surface = this.surfaces.get(id);
+      if (surface) {
+        surface.view?.destroy?.();
+        this.surfaces.delete(id);
+      }
+      this.scrollTopState.delete(id);
+      el.remove();
+      this.objects.delete(id);
+      membershipChanged = true;
+      for (const widgetId of FocusStage.WIDGETS_BY_DOMAIN[id] ?? []) {
+        this.setWidgetAvailable(widgetId, false);
+      }
+    }
+
+    for (const id of this.order) {
+      if (hidden.includes(id) || this.objects.has(id)) continue;
+      const def = FOCUS_DOMAINS.find(d => d.id === id);
+      if (!def) continue;
+      const circle = this.createObject(def);
+      this.objects.set(id, circle);
+      // Insert at the stored order position — but only against anchors
+      // that are live grid children: in the FOCUSED layout the mounted
+      // circles live inside the side stacks (reparentSideStacks), so a
+      // blind insertBefore threw NotFoundError on the first mass-apply
+      // from the top bar. The post-loop applyOrderToGrid / stack rebuild
+      // normalizes the order either way.
+      const index = this.order.indexOf(id);
+      let anchor: HTMLElement | null = null;
+      for (const laterId of this.order.slice(index + 1)) {
+        const laterEl = this.objects.get(laterId) ?? null;
+        if (laterEl && laterEl.parentElement === this.grid) {
+          anchor = laterEl;
+          break;
+        }
+      }
+      if (anchor) this.grid.insertBefore(circle, anchor);
+      else this.grid.appendChild(circle);
+      membershipChanged = true;
+    }
+
+    // A requirer got hidden/unhidden — the hide affordances of the
+    // remaining circles flip with it.
+    for (const [id, el] of this.objects) {
+      const btn = el.querySelector(
+        "[data-focus-action='hide']"
+      ) as HTMLElement | null;
+      if (!btn) continue;
+      btn.hidden = !canHideObject(
+        id,
+        FOCUS_DOMAINS.map(d => d.id),
+        this.hiddenIds
+      );
+    }
+
+    if (!membershipChanged) return;
+
+    if (this.sideStacks && this.activeId) {
+      // Focused: rebuild the stacks fresh (reparentSideStacks re-runs the
+      // distribution + widget placement — widgetFor skips hidden domains).
+      for (const stack of this.sideStacks) stack.remove();
+      this.sideStacks = null;
+      this.reparentSideStacks(this.activeId);
+    } else {
+      this.applyOrderToGrid();
+    }
+    // Badge diodes may have entered/left the grid.
+    for (const mgr of this.badgeManagers) mgr.destroy();
+    this.badgeManagers = [];
+    this.setupBadgeManagers();
+  }
+
+  /**
+   * Re-derive the object-set trigger label from the live hidden set: the
+   * active set's name while the state matches it exactly, the neutral
+   * placeholder for any custom state (per-object hides, unhide-all).
+   */
+  private syncObjectSetDropdown(): void {
+    if (!this.setDropdown) return;
+    this.setDropdown.setValue(matchingObjectSet(this.hiddenIds)?.id ?? '');
   }
 
   /**
@@ -413,6 +734,8 @@ export class FocusStage {
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    this.setDropdown?.destroy();
+    this.setDropdown = null;
     if (this.widgetToggleSubId) {
       TypedEventBus.getInstance().off(this.widgetToggleSubId);
       this.widgetToggleSubId = null;
@@ -433,6 +756,10 @@ export class FocusStage {
       TypedEventBus.getInstance().off(this.walletSubId);
       this.walletSubId = null;
     }
+    if (this.hiddenSubId) {
+      TypedEventBus.getInstance().off(this.hiddenSubId);
+      this.hiddenSubId = null;
+    }
     window.removeEventListener(
       'router:history-changed',
       this.onRouterHistoryChanged
@@ -440,6 +767,7 @@ export class FocusStage {
     this.onSettingsClosed();
     this.drawer?.setOnClosed(null);
     this.drawer = null;
+    this.closeDetachedDetail();
     for (const surface of this.surfaces.values()) {
       surface.view?.destroy?.();
     }
@@ -472,6 +800,24 @@ export class FocusStage {
     if (!state) return false;
     const def = FOCUS_DOMAINS.find(d => d.id === state.defId);
     if (!def?.createSurface) return false;
+    if (this.hiddenIds.includes(def.id)) {
+      // A URL state of a hidden owner. With a detached detail open this
+      // is the RESTORE path (the global back button unwinding the
+      // Phase 5 seam fallback — the stash returns to the column). A
+      // deep link with nothing detached is a graph bug / dead entry:
+      // tripwire, no hidden code is ensure-loaded.
+      if (this.detached) {
+        this.closeDetachedDetail();
+        return true;
+      }
+      reportDependencyError(
+        'focus-stage:syncFromUrl',
+        def.id,
+        `route "${path}"`
+      );
+      return false;
+    }
+    if (this.detached) this.closeDetachedDetail();
     if (this.activeId === def.id) {
       await this.surfaces.get(def.id)?.view?.restoreState?.(state);
       return true;
@@ -489,6 +835,53 @@ export class FocusStage {
     // Any close path (tab click, drag snap, programmatic close) tears the
     // mounted panel down and clears the gear's active state.
     drawer.setOnClosed(() => this.onSettingsClosed());
+    // Tab-open (no gear): the drawer opens onto the Hidden Features
+    // panel (SV) or an empty panel (FV — future home of the system
+    // logs with their diag-log export buttons).
+    drawer.setOnOpened(() => this.onDrawerOpened());
+  }
+
+  /**
+   * The ED-b opened via its tab (not the gear): on the start view mount
+   * the Hidden Features panel; in a focused view (FV) mount the
+   * flattened system-log stream + Export DiagLogs. A per-object
+   * settings panel (gear) always wins.
+   */
+  private onDrawerOpened(): void {
+    if (this.settingsView || !this.drawer) return;
+    this.unmountTabPanels();
+    const host = document.createElement('div');
+    if (this.activeId) {
+      // FV: one continuous log stream (classic global/page split gone;
+      // page entries keep the v1 semantics — view-filtered, cleared on
+      // navigation) + the diag-log export button.
+      host.className = 'focus-settings focus-settings--focus-log';
+      this.logPanelHost = host;
+      this.logPanelView = new FocusLogPanel();
+      this.logPanelView.mount(host);
+    } else {
+      host.className = 'focus-settings focus-settings--hidden-features';
+      this.hiddenPanelHost = host;
+      this.hiddenPanelView = new HiddenFeaturesPanel();
+      this.hiddenPanelView.mount(host);
+    }
+    this.drawer.panel.appendChild(host);
+  }
+
+  /** Tear the tab-open panels down (close or gear takeover). */
+  private unmountTabPanels(): void {
+    if (this.hiddenPanelView) {
+      this.hiddenPanelView.destroy();
+      this.hiddenPanelView = null;
+      this.hiddenPanelHost?.remove();
+      this.hiddenPanelHost = null;
+    }
+    if (this.logPanelView) {
+      this.logPanelView.destroy();
+      this.logPanelView = null;
+      this.logPanelHost?.remove();
+      this.logPanelHost = null;
+    }
   }
 
   /**
@@ -507,6 +900,9 @@ export class FocusStage {
       this.drawer.close();
       return;
     }
+    // Gear takeover: a mounted tab-open panel (Hidden Features / log
+    // stream) yields to the object's own settings panel.
+    this.unmountTabPanels();
     const surface = this.surfaces.get(def.id);
     let settings: FocusSettingsView | null = null;
     if (surface?.view?.getSettingsForCurrentState) {
@@ -527,6 +923,7 @@ export class FocusStage {
 
   /** Drawer closed (any way): tear the settings panel down. */
   private onSettingsClosed(): void {
+    this.unmountTabPanels();
     if (this.settingsDef) {
       this.objects
         .get(this.settingsDef.id)
@@ -557,8 +954,31 @@ export class FocusStage {
       if (surface?.view?.handleFocusNav?.(viewType, param)) return true;
     }
     if (this.morphing) return false;
-    const def = FOCUS_DOMAINS.find(d => d.viewTypes?.includes(viewType));
-    if (!def?.createSurface) return false;
+    const def = FOCUS_DOMAINS.find(
+      d => !this.hiddenIds.includes(d.id) && d.viewTypes?.includes(viewType)
+    );
+    if (!def) {
+      // No visible owner: a hidden owner's detail renders DETACHED in the
+      // active column (Phase 5 feature — not a dependency error); only a
+      // miss with NO active host falls through to the tripwire (the
+      // classic layer below the shell would render it invisibly).
+      const owner = FOCUS_DOMAINS.find(d => d.viewTypes?.includes(viewType));
+      if (owner && this.hiddenIds.includes(owner.id)) {
+        if (this.activeId && DETACHED_DETAILS[viewType]) {
+          // Fire-and-forget: the seam contract is sync; the component
+          // factory imports lazily and swaps into the column when ready.
+          void this.openDetachedDetail(viewType, param);
+          return true;
+        }
+        reportDependencyError(
+          'focus-stage:handleFocusNav',
+          owner.id,
+          `view type "${viewType}" (no active host for detached render)`
+        );
+      }
+      return false;
+    }
+    if (!def.createSurface) return false;
     void this.switchTo(def, param ? { viewType, param } : { viewType });
     return true;
   }
@@ -574,6 +994,17 @@ export class FocusStage {
       </button>
       <button type="button" class="focus-object__move" data-focus-action="move" aria-label="${_('Reorder')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
+      </button>
+      <button type="button" class="focus-object__hide" data-focus-action="hide" aria-label="${_('Hide')}"${
+        canHideObject(
+          def.id,
+          FOCUS_DOMAINS.map(d => d.id),
+          this.hiddenIds
+        )
+          ? ''
+          : ' hidden'
+      }>
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-eye-closed"/></svg>
       </button>
       <div class="focus-object__actions">
         <button type="button" class="focus-object__control" data-focus-action="close"
@@ -620,6 +1051,18 @@ export class FocusStage {
         return;
       }
       this.startOrderDrag(e, def.id, el);
+    });
+    // Hide affordance (docs/todos/hidden-objects.md): removes the circle
+    // from the grid AND unloads the object's code (RAM principle). The
+    // event listener applies the change to the live grid — the click
+    // itself stays optimistic (no await, no dialog).
+    const hideBtn = el.querySelector(
+      "[data-focus-action='hide']"
+    ) as HTMLElement | null;
+    hideBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      if (this.morphing || def.id === this.activeId) return;
+      hideObject(def.id);
     });
     const control = el.querySelector(
       "[data-focus-action='close']"
@@ -731,6 +1174,12 @@ export class FocusStage {
     // reuse them. Disposers tracked for the destroy contract.
     const tips: Array<[string, HTMLElement | null]> = [
       [_('Reorder'), moveBtn],
+      [
+        _(
+          'Hide feature, it will be hidden and unloaded from the app memory. All background requests are stopped. You can unhide it in the Edge Drawer at the bottom.'
+        ),
+        hideBtn,
+      ],
       [_('Close'), control],
       [_('Back'), backBtn],
       [_('Scroll to top'), scrollTopBtn],
@@ -813,8 +1262,10 @@ export class FocusStage {
     restore?: FocusUrlState
   ): Promise<void> {
     // Column content switches — object settings (ED-b) belong to the old
-    // object and follow it out.
-    if (this.settingsView) this.drawer?.close();
+    // object and follow it out; the tab-open panels (Hidden Features,
+    // log stream) too — they must not ride along into a focused view.
+    if (this.settingsView || this.hiddenPanelView || this.logPanelView)
+      this.drawer?.close();
     // Object-to-object switch: capture the old object up front — it is
     // torn down inside the mutation phase below, so one FLIP pass
     // animates the old object back to its circle while the new one
@@ -822,6 +1273,9 @@ export class FocusStage {
     const oldId = this.activeId !== def.id ? this.activeId : null;
     const oldEl = oldId ? this.objects.get(oldId) : undefined;
     const oldSurface = oldId ? this.surfaces.get(oldId) : undefined;
+    // A detached detail (Phase 5) belongs to the old host column — its
+    // component dies before the teardown animates.
+    if (oldId) this.closeDetachedDetail();
 
     this.morphing = true;
     this.activeId = def.id;
@@ -962,6 +1416,8 @@ export class FocusStage {
     const def = FOCUS_DOMAINS.find(d => d.id === this.activeId);
     const el = def ? this.objects.get(def.id) : undefined;
     if (!def || !el) return;
+    // A detached detail (Phase 5) dies with its host column.
+    this.closeDetachedDetail();
     const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
     // Object settings (ED-b) die with their object.
     if (this.settingsView) this.drawer?.close();
@@ -1442,6 +1898,12 @@ export class FocusStage {
    * demand and the stacks re-applied as soon as it is up.
    */
   private widgetFor(id: string): FocusWidgetLike | null {
+    // Hidden domains contribute no widgets (RAM principle) — and their
+    // runtimes must not be ensure-loaded by a widget miss either.
+    const domainId = Object.entries(FocusStage.WIDGETS_BY_DOMAIN).find(
+      ([, widgetIds]) => widgetIds.includes(id)
+    )?.[0];
+    if (domainId && this.hiddenIds.includes(domainId)) return null;
     let addonId = 'live-streams';
     if (id === 'live-streams') {
       // Same contract as classic: the widget exists only while the addon
@@ -1710,8 +2172,8 @@ export class FocusStage {
     right.className = 'focus-side-stack';
     right.dataset.focusStack = '';
     right.style.gridColumn = '3';
-    left.innerHTML = this.stackMoveIcon('left');
-    right.innerHTML = this.stackMoveIcon('right');
+    left.innerHTML = this.stackToolsHtml('left');
+    right.innerHTML = this.stackToolsHtml('right');
     for (const [stack, side] of [
       [left, 'left'],
       [right, 'right'],
@@ -1726,6 +2188,9 @@ export class FocusStage {
       ) as HTMLElement;
       move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
       tools
+        .querySelector('[data-focus-stack-compact]')
+        ?.addEventListener('click', () => this.toggleStackCompact());
+      tools
         .querySelector('[data-focus-stack-reset]')
         ?.addEventListener('click', () => this.resetStackSide());
       // Stack tools live only while their stack exists (recreated per
@@ -1733,6 +2198,10 @@ export class FocusStage {
       // so no disposer tracking is needed here. The move tooltip states
       // the drop DIRECTION: dragging it toward the other column.
       const stackTips: Array<[string, HTMLElement]> = [
+        [
+          _('Compact circles'),
+          tools.querySelector('[data-focus-stack-compact]') as HTMLElement,
+        ],
         [
           side === 'left'
             ? _('Move all circles to the right column')
@@ -1752,11 +2221,59 @@ export class FocusStage {
     this.grid.insertBefore(left, active);
     this.grid.insertBefore(right, active.nextSibling);
     this.sideStacks = [left, right];
+    this.applyStackCompact();
   }
 
-  /** The stack's top tools: move handle (drag moves ALL circles) + reset. */
-  private stackMoveIcon(side: 'left' | 'right'): string {
+  /** Toggle the side-stack compact rendering (circles → ED-b chips) and
+   * persist the preference per account. */
+  private toggleStackCompact(): void {
+    this.stackCompact = !this.stackCompact;
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FOCUS_UI_STACK_COMPACT,
+      this.stackCompact
+    );
+    this.applyStackCompact();
+    diagLog('system', 'focus_stack_compact_toggled', {
+      on: this.stackCompact,
+    });
+  }
+
+  /** Apply the compact state to every live circle. The ACTIVE circle is
+   * never compact — it is the focused column, not a stack item; the home
+   * grid renders round again on close (restoreSideCircles clears the
+   * class). The tools' compact buttons mirror the state (icon flips to
+   * outward arrows via .is-active). */
+  private applyStackCompact(): void {
+    for (const [id, circle] of this.objects) {
+      circle.classList.toggle(
+        'is-compact',
+        this.stackCompact && id !== this.activeId
+      );
+    }
+    for (const stack of this.sideStacks ?? []) {
+      stack
+        .querySelector('[data-focus-stack-compact]')
+        ?.classList.toggle('is-active', this.stackCompact);
+    }
+  }
+
+  /** Apply the arrange gate: the root class keys the CSS that hides the
+   * layout satellites while OFF (visibility, not display — the sticky
+   * tools band keeps its height, no layout jump on toggle). */
+  private applyArrangeGate(): void {
+    this.root.classList.toggle('is-arrange-on', this.arrangeOn);
+  }
+
+  /** The stack's top tools: compact toggle (leftmost), move handle (drag
+   * moves ALL circles) + reset (even distribution). */
+  private stackToolsHtml(side: 'left' | 'right'): string {
     return `<div class="focus-side-stack__tools" data-focus-stack-tools>
+      <button type="button" class="focus-side-stack__compact${
+        this.stackCompact ? ' is-active' : ''
+      }" data-focus-stack-compact aria-label="${_('Compact circles')}">
+        <svg class="focus-side-stack__compact-icon-in" width="15" height="15" aria-hidden="true"><use href="#icon-compact"/></svg>
+        <svg class="focus-side-stack__compact-icon-out" width="15" height="15" aria-hidden="true"><use href="#icon-compact-open"/></svg>
+      </button>
       <button type="button" class="focus-side-stack__move" data-stack-side="${side}" data-focus-stack-move aria-label="${_('Move all circles')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
@@ -1808,6 +2325,11 @@ export class FocusStage {
       entry.host.remove();
     }
     this.widgetHosts.clear();
+    // Back in the home grid the circles render round again — the compact
+    // preference re-applies to the stacks on the next focus.
+    for (const [, circle] of this.objects) {
+      circle.classList.remove('is-compact');
+    }
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
   }
@@ -1854,6 +2376,11 @@ export class FocusStage {
       if (el.classList.contains('focus-object--active')) {
         frames[0]!.borderRadius = '50%';
         frames[1]!.borderRadius = getComputedStyle(el).borderRadius;
+      } else if (el.classList.contains('is-compact')) {
+        // Compact chips measured as round circles (pre-reparent first
+        // rects): animate the radius down with the height instead of
+        // snapping to the chip's corner radius.
+        frames[0]!.borderRadius = '50%';
       }
       const animation = el.animate(frames, {
         duration: reduced ? 0 : MORPH_MS,

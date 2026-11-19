@@ -156,6 +156,10 @@ describe('parseFocusUrl', () => {
       defId: 'wallet-balance',
       kind: 'list',
     });
+    expect(parseFocusUrl('/btc-price')).toEqual({
+      defId: 'btc-price',
+      kind: 'list',
+    });
     expect(parseFocusUrl('/follow-packs')).toEqual({
       defId: 'follow-packs',
       kind: 'list',
@@ -195,6 +199,10 @@ describe('parseFocusUrl', () => {
     });
     expect(parseFocusUrl('/addons/wallet-balance')).toEqual({
       defId: 'wallet-balance',
+      kind: 'list',
+    });
+    expect(parseFocusUrl('/addons/btc-price')).toEqual({
+      defId: 'btc-price',
       kind: 'list',
     });
     expect(parseFocusUrl('/addons/follow-packs')).toEqual({
@@ -273,8 +281,6 @@ describe('parseFocusUrl', () => {
     expect(parseFocusUrl('/addons')).toBeNull();
     expect(parseFocusUrl('/mutes')).toBeNull();
     expect(parseFocusUrl('/')).toBeNull();
-    // btc-price has no FV object — stays classic.
-    expect(parseFocusUrl('/addons/btc-price')).toBeNull();
   });
 
   /**

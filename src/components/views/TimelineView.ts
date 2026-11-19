@@ -22,7 +22,10 @@ import {
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
-import { isTribesEnabled } from '../../addons/tribes/index';
+import {
+  isBookmarksUiActive,
+  isTribesUiActive,
+} from '../../helpers/focusUiSetting';
 import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 
@@ -53,6 +56,16 @@ export class TimelineView extends View {
   // into exactly one more run.
   private tabRowRefreshing = false;
   private tabRowRefreshPending = false;
+  /** Tribes-gate state at the last tab build — resume() re-checks it: a
+   * cached surface must not show stale tribe tabs after the object was
+   * hidden/unhidden from the start view (dependency graph: hidden object
+   * = feature vanishes everywhere, also on re-focus). */
+  private tribesActiveAtTabBuild: boolean = false;
+  /** Bookmark gate at last render — ISL icons are built per note card;
+   * a hidden-objects flip needs a full re-render to apply to the live
+   * notes (the tab row alone isn't enough). */
+  private bookmarksGateAtRender: boolean = false;
+  private hiddenSubId: string | null = null;
 
   constructor() {
     super();
@@ -92,6 +105,21 @@ export class TimelineView extends View {
     // and the timeline stay untouched.
     this.eventBus.on('tribe:updated', () => {
       void this.refreshTabRow();
+    });
+
+    // Hidden-objects gate flipped while this view is LIVE (workspace
+    // switch from the top bar while the surface stays focused): tribes
+    // flip rebuilds the tab row in place; the bookmark flip rebuilds the
+    // whole view (the ISL bookmark icons are baked into the rendered
+    // note cards). Both gates re-read fresh on every rebuild.
+    this.hiddenSubId = this.eventBus.on('focus:objects-hidden-changed', () => {
+      const tribesChanged = isTribesUiActive() !== this.tribesActiveAtTabBuild;
+      const bookmarksChanged =
+        isBookmarksUiActive() !== this.bookmarksGateAtRender;
+      if (!tribesChanged && !bookmarksChanged) return;
+      this.bookmarksGateAtRender = isBookmarksUiActive();
+      if (bookmarksChanged) this.rerender();
+      else void this.refreshTabRow();
     });
   }
 
@@ -162,6 +190,7 @@ export class TimelineView extends View {
     this.container.appendChild(titleRow);
 
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
+    this.bookmarksGateAtRender = isBookmarksUiActive();
     await this.buildTabs();
 
     // The tab bar always carries at least Timeline + Last notes per follow.
@@ -214,8 +243,9 @@ export class TimelineView extends View {
 
     tabsContainer.appendChild(tabsWrapper);
 
-    // Edit link — only meaningful when the Tribes addon is on.
-    if (isTribesEnabled()) {
+    // Edit link — only meaningful when the Tribes addon is on (and, in
+    // the Focus UI, the Tribes object not hidden).
+    if (isTribesUiActive()) {
       const editLink = document.createElement('button');
       editLink.className =
         'timeline-view__edit-link btn btn--mini btn--passive';
@@ -293,8 +323,10 @@ export class TimelineView extends View {
       name: _('Last notes per follow'),
     });
 
-    // Add tribe tabs (only if addon enabled)
-    if (isTribesEnabled()) {
+    // Add tribe tabs (addon on AND Tribes object not hidden — hidden
+    // means no tabs AND no lists/tribes load, RAM principle).
+    this.tribesActiveAtTabBuild = isTribesUiActive();
+    if (this.tribesActiveAtTabBuild) {
       const tribes = await import('../../lists/tribes');
       const tribeFolders = tribes.getFoldersInRootOrder();
 
@@ -350,7 +382,7 @@ export class TimelineView extends View {
     } else {
       // Tribe tab (explicit members) or the main following feed.
       let filterPubkeys: string[] | undefined;
-      if (this.currentTabId !== 'timeline' && isTribesEnabled()) {
+      if (this.currentTabId !== 'timeline' && isTribesUiActive()) {
         const tribes = await import('../../lists/tribes');
         filterPubkeys = tribes.getMemberPubkeysInFolder(this.currentTabId);
       }
@@ -388,6 +420,10 @@ export class TimelineView extends View {
       this.eventBus.off(this.userLoginSubscriptionId);
       this.userLoginSubscriptionId = null;
     }
+    if (this.hiddenSubId) {
+      this.eventBus.off(this.hiddenSubId);
+      this.hiddenSubId = null;
+    }
 
     if (this.timeline) {
       this.timeline.destroy();
@@ -406,11 +442,17 @@ export class TimelineView extends View {
   }
 
   /**
-   * Resume timeline when navigating back
+   * Resume timeline when navigating back. A cached surface re-focusing
+   * here may hold stale tribe tabs (the object was hidden/unhidden from
+   * the start view while this surface was paused) — rebuild the tab row
+   * when the gate flipped.
    */
   public override resume(): void {
     if (this.timeline) {
       this.timeline.resume();
+    }
+    if (this.tribesActiveAtTabBuild !== isTribesUiActive()) {
+      void this.refreshTabRow();
     }
   }
 

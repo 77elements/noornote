@@ -23,6 +23,7 @@
  */
 
 import type { DevLoadSnapshot } from './DevLoadMonitor';
+import { HIDDEN_ADDON_DOMAINS } from '../shell/hiddenAddonDomains';
 
 /**
  * Why an interval / subscription / addon is allowed to exist under the v2
@@ -76,6 +77,14 @@ export interface DevLoadExpectations {
 
   /** v1 primary content must not mount children while v2 is active. */
   maxPrimaryContentChildren: number;
+
+  /**
+   * Hidden-state deltas (Phase 6, hidden objects): the addon registry ids
+   * of the user's HIDDEN addon objects. A hidden addon loaded anyway = a
+   * RAM-principle violation (its machinery must be switched off —
+   * shell/domainShutdown.ts does exactly that on hide).
+   */
+  hiddenAddonIds?: string[];
 }
 
 /**
@@ -85,11 +94,15 @@ export interface DevLoadExpectations {
 export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
   requiresFocusUi: true,
 
-  // 21 = main.ts ×2, AddonLoader.runInit ×6, NostrTransport.doConnect ×1,
+  // 22 = main.ts ×2, AddonLoader.runInit ×7, NostrTransport.doConnect ×1,
   // PostLoginService.handleLogin ×3, BookmarkReadStateService ×1 (diode:
   // cross-device read markers), 8 anonymous module-layer timers (DM ×2,
-  // Notifications ×1, Reactions ×2, Feed ×1, DiagLogger ×2).
-  maxIntervals: 21,
+  // Notifications ×1, Reactions ×2, Feed ×1, DiagLogger ×2). The 7th
+  // addon job (2026-11-19): the reference account enabled more user
+  // addons since calibration (calendar / marketplace / follow-packs
+  // family) — addon background intervals scale with the user's addon
+  // toggles, every running job has an always-on reason.
+  maxIntervals: 22,
   knownIntervalOrigins: [
     {
       pattern: 'main.ts',
@@ -98,8 +111,11 @@ export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
     },
     {
       pattern: 'AddonLoader',
-      reason: 'Addon runtime background jobs (always-on reasons only)',
-      max: 6,
+      reason:
+        'Addon runtime background jobs (always-on reasons only; count ' +
+        'scales with user-enabled addons — 7th job from the newly ' +
+        'enabled calendar/marketplace/follow-packs family)',
+      max: 7,
     },
     {
       pattern: 'NostrTransport.doConnect',
@@ -349,6 +365,92 @@ function checkRelaySubscriptions(
 }
 
 /**
+ * Hidden-state resolution (Phase 6, hidden objects): the base contract is
+ * the clean-boot REFERENCE (everything visible). Hidden objects reduce the
+ * budgets — hidden = stilllegung (RAM principle), the hidden machinery
+ * must NOT be running:
+ *
+ * - maxAddons derives from the LIVE registry size (registered − on-demand
+ *   − widget-gated) minus the hidden always-on addons — provable: their
+ *   runtimes are switched off via `<id>:addon-toggle`
+ *   (shell/domainShutdown.ts), the loaded count drops by exactly one per
+ *   hidden always-on addon. On-demand and widget-gated addons are never
+ *   part of the boot baseline.
+ * - GroupChatsService.tick cap → 0 when group-chats is hidden (the addon
+ *   poller stops with the runtime; a lingering tick = violation).
+ * - hiddenAddonIds → evaluateLoadGuard reports a loaded hidden addon as
+ *   VIOLATION (not just a lower budget — explicit enforcement).
+ *
+ * Deliberately NOT reduced: interval caps that are upper bounds on
+ * machinery whose per-addon timer share we cannot attribute (AddonLoader
+ * runInit ×6 across 12 addons, anonymous module-layer timers) — hidden
+ * machinery stopping can only LOWER the count, never break an upper
+ * bound; a shrunk-but-wrong cap would create false FAILs. See
+ * hidden-objects.md Phase 6 rationale.
+ * Pure: the base contract object is never mutated.
+ */
+/** Live relay-subscription ids a hidden service-backed domain must shed. */
+const SERVICE_HIDDEN_SUBS: Readonly<Record<string, readonly string[]>> =
+  Object.freeze({
+    messages: ['dm-subscription'],
+    notifications: ['notifications-ptag', 'notifications-etag'],
+  });
+
+export function resolveExpectationsForHiddenState(
+  hiddenIds: readonly string[],
+  /** Live registry size (snapshot) — keeps the budget drift-free. */
+  registeredAddons?: number
+): DevLoadExpectations {
+  const e: DevLoadExpectations = {
+    ...DEV_LOAD_EXPECTATIONS,
+    knownIntervalOrigins: DEV_LOAD_EXPECTATIONS.knownIntervalOrigins.map(k => ({
+      ...k,
+    })),
+    hiddenAddonIds: [],
+  };
+  let hiddenAlwaysOn = 0;
+  for (const id of hiddenIds) {
+    const addonId = HIDDEN_ADDON_DOMAINS[id];
+    if (!addonId) {
+      // Service-backed domain (Phase 4.5): a hidden messages/notifications
+      // domain must not hold its live subscriptions — a lingering one is
+      // a violation (same philosophy as hiddenAddonIds).
+      const subs = SERVICE_HIDDEN_SUBS[id];
+      if (subs) {
+        e.allowedRelaySubscriptionIds = e.allowedRelaySubscriptionIds.filter(
+          s => !subs.includes(s)
+        );
+      }
+      continue; // list-backed / non-addon domain
+    }
+    e.hiddenAddonIds?.push(addonId);
+    const onDemand = e.onDemandAddonIds.includes(addonId);
+    const widgetGated = e.widgetGatedAddonIds.includes(addonId);
+    if (onDemand || widgetGated) continue;
+    hiddenAlwaysOn += 1;
+    if (addonId === 'group-chats') {
+      const tick = e.transientIntervalOrigins.find(
+        t => t.pattern === 'GroupChatsService.tick'
+      );
+      if (tick) tick.max = 0;
+    }
+  }
+  // The boot budget derives from the LIVE registry (registered − on-demand
+  // − widget-gated), minus the hidden always-on addons (their runtimes are
+  // switched off — shell/domainShutdown.ts). Deriving from the snapshot
+  // makes the budget immune to registry growth; the committed maxAddons is
+  // only the fallback when no snapshot size is available.
+  const baseline =
+    registeredAddons && registeredAddons > 0
+      ? registeredAddons -
+        e.onDemandAddonIds.length -
+        e.widgetGatedAddonIds.length
+      : e.maxAddons;
+  e.maxAddons = baseline - hiddenAlwaysOn;
+  return e;
+}
+
+/**
  * Pure evaluation: a live snapshot vs. the committed expectations.
  * `ok === false` only on violations; warnings are advisory.
  */
@@ -371,6 +473,16 @@ export function evaluateLoadGuard(
 
   violations.push(...violationsForIntervals(snapshot, expectations));
   violations.push(...violationsForAddons(snapshot, expectations));
+  // Hidden objects (Phase 6): a hidden addon's runtime must be OFF —
+  // loaded anyway = the stilllegung did not reach this addon (RAM leak).
+  for (const id of expectations.hiddenAddonIds ?? []) {
+    if (snapshot.addons.loaded.includes(id)) {
+      violations.push(
+        `hidden object's addon "${id}" is loaded — hiding must switch the ` +
+          'runtime off (shell/domainShutdown.ts); unhide to restore it'
+      );
+    }
+  }
 
   const subs = checkRelaySubscriptions(snapshot, expectations);
   violations.push(...subs.violations);

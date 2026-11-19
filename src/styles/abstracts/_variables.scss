@@ -84,11 +84,11 @@ $marble-gradient: linear-gradient(
 // ========================================
 // Double ring of the FS domain circles: one hue, darkened purely via alpha
 // (the dark page behind does the darkening). Inner ring = border, outer
-// ring = outline; hover lifts both.
-$ring-inner: color-mix(in srgb, var(--color-3) 60%, transparent);
-$ring-outer: color-mix(in srgb, var(--color-3) 40%, transparent);
-$ring-inner-hover: var(--color-3);
-$ring-outer-hover: color-mix(in srgb, var(--color-3) 75%, transparent);
+// ring = outline; hover lifts both. --color-4 is the "click me" hue.
+$ring-inner: color-mix(in srgb, var(--color-4) 60%, transparent);
+$ring-outer: color-mix(in srgb, var(--color-4) 40%, transparent);
+$ring-inner-hover: var(--color-4);
+$ring-outer-hover: color-mix(in srgb, var(--color-4) 75%, transparent);
 
 // Radial glow of the circle fill: dome feel, lit toward the top right.
 $focus-glow: radial-gradient(

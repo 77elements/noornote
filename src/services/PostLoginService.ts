@@ -11,7 +11,10 @@ import { Router } from './Router';
 import { AppState } from './AppState';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ViewMountingService } from './ViewMountingService';
-import { isFocusUiEnabled } from '../helpers/focusUiSetting';
+import {
+  isFocusUiEnabled,
+  isFocusDomainHidden,
+} from '../helpers/focusUiSetting';
 
 export class PostLoginService {
   private static instance: PostLoginService;
@@ -122,6 +125,10 @@ export class PostLoginService {
           await UserProfileService.getInstance().warmFromStore();
         }),
         this.startService('notifications', async () => {
+          // Focus UI (v2): hidden objects are stilllegung — a hidden
+          // domain starts no machinery at login (unhide starts it fresh
+          // via the module API, shell/domainShutdown.ts Phase 4.5).
+          if (isFocusDomainHidden('notifications')) return;
           const { NotificationsOrchestrator } = await import(
             './orchestration/NotificationsOrchestrator'
           );
@@ -138,6 +145,9 @@ export class PostLoginService {
         // Its runtime calls service.init() as part of the addon lifecycle —
         // no explicit bootstrap needed here anymore.
         this.startService('DM service', async () => {
+          // Focus UI (v2): hidden Messages = stilllegung (Phase 4.5) —
+          // no dm-subscription, no timers at login.
+          if (isFocusDomainHidden('messages')) return;
           const { DMService } = await import('./dm/DMService');
           await DMService.getInstance().start();
         }),
