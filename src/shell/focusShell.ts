@@ -263,16 +263,13 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
         Router.getInstance().navigate('/login');
       },
     });
-    // Font-size and account share one wrapping row — the account switcher
-    // starts beside the font switcher and wraps below only when the
-    // username is too long for the remaining width.
-    const row = document.createElement('div');
-    row.className = 'switch-bar__row';
-    row.replaceChildren(
+    // Three dropdowns as direct children: inline flow — they sit side
+    // by side and wrap naturally when the width runs out.
+    bar.replaceChildren(
+      themeSwitcher.getElement(),
       fontSizeSwitcher.getElement(),
       accountSwitcher.getElement()
     );
-    bar.replaceChildren(themeSwitcher.getElement(), row);
   };
 
   const user = AuthService.getInstance().getCurrentUser();
@@ -342,7 +339,6 @@ export function mountFocusShell(): void {
     },
   });
   const tempSwitchWrap = document.createElement('div');
-  tempSwitchWrap.className = 'focus-settings-sidebar__row';
   tempSwitchWrap.innerHTML = switchBack.render();
   switchBack.setupEventListeners(tempSwitchWrap);
 

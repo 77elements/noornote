@@ -17,7 +17,6 @@
 import type { FocusDomainSurface } from './focusDomains';
 import { FocusListDetailSurface } from './focusListDetailSurface';
 import { createFocusViewHeader } from '../helpers/focusViewHeader';
-import { delegateToFocusUi } from '../helpers/focusUiNavigation';
 import { _ } from '../i18n';
 
 export const mediaSurface = async (): Promise<FocusDomainSurface> => {
@@ -32,20 +31,13 @@ export const mediaSurface = async (): Promise<FocusDomainSurface> => {
         '../services/ViewNavigationController'
       );
 
-      // Header: h1 + Post button (same DOM as the social timeline's title
-      // row; the button routes through the focus nav seam like Write Note).
-      // The feed appends its .media-feed directly as the body grid's
-      // second row — no extra wrapper.
+      // Header: the bare h1 (Post Media lives in the stack's primary
+      // action row). The feed appends its .media-feed directly as the
+      // body grid's second row — no extra wrapper.
       const root = document.createElement('div');
       root.className = 'media-surface__body';
       root.appendChild(
-        createFocusViewHeader({
-          title: _('Media'),
-          actionLabel: _('Post Media'),
-          onAction: () => {
-            delegateToFocusUi('write-video');
-          },
-        })
+        createFocusViewHeader({ title: _('Media'), object: 'media' })
       );
 
       const feed = new SccMediaFeed(root, {

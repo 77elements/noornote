@@ -171,20 +171,12 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
-    // Page heading ("Social Media"): visible in v2 as the domain heading,
-    // screen-reader-only in v1 — the hiding is scoped per interface in
-    // SCSS (see .timeline-view__title in _timeline-view.scss), not via
-    // the .visually-hidden class (that would hide it in v2 as well).
-    // Shared focus-view-header row: h1 left, action button right. The
-    // Write Note button routes through the focus nav seam; classic v1
-    // hides it (the +New Post dropup owns note composition there).
+    // Shared heading: the bare h1, hooked via .fv.fv--social-media.
+    // Write Note lives ONCE — the side stack's primary action row (v2) /
+    // the +New Post dropup (v1).
     const titleRow = createFocusViewHeader({
       title: _('Social Media'),
-      titleClass: 'timeline-view__title',
-      actionLabel: _('Write Note'),
-      onAction: () => {
-        delegateToFocusUi('new-note');
-      },
+      object: 'social-media',
     });
 
     this.container.appendChild(titleRow);

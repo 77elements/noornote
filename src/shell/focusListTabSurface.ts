@@ -43,6 +43,8 @@ export interface FocusListTabSurfaceConfig {
   loadManager: () => Promise<FocusListTabManagerCtor | null>;
   /** Optional focus-view-header above the tab content (e.g. "Muted"). */
   headerTitle?: string;
+  /** Focus object name for the header's .fv.fv--<object> hook. */
+  headerObject?: string;
   /** Shown instead of the tab content when loadManager resolves null. */
   emptyState?: {
     /** Root class of the fallback content element. */
@@ -89,7 +91,12 @@ export const createListTabSurface = (
           return;
         }
         if (config.headerTitle !== undefined) {
-          header = createFocusViewHeader({ title: config.headerTitle });
+          header = config.headerObject
+            ? createFocusViewHeader({
+                title: config.headerTitle,
+                object: config.headerObject,
+              })
+            : createFocusViewHeader({ title: config.headerTitle });
           slot.appendChild(header);
         }
         content = buildContent(slot);

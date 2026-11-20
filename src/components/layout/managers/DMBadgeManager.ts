@@ -18,7 +18,12 @@ export class DMBadgeManager {
   private badgeElement: HTMLElement | null = null;
   private subscriptionIds: string[] = [];
 
-  constructor(badgeElement: HTMLElement) {
+  constructor(
+    badgeElement: HTMLElement,
+    // Spam state modifier — carrier atom supplies its own naming (v1
+    // default: .dm-badge).
+    private spamClass = 'dm-badge--spam'
+  ) {
     this.badgeElement = badgeElement;
     this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
@@ -64,11 +69,11 @@ export class DMBadgeManager {
       if (counts.known > 0) {
         this.badgeElement.textContent =
           counts.known > 99 ? '99+' : counts.known.toString();
-        this.badgeElement.classList.remove('dm-badge--spam');
+        this.badgeElement.classList.remove(this.spamClass);
         this.show();
       } else if (counts.unknown > 0 && !spamMuted) {
         this.badgeElement.textContent = 'SP'; // i18n-ok — language-neutral abbreviation, like the 99+ cap
-        this.badgeElement.classList.add('dm-badge--spam');
+        this.badgeElement.classList.add(this.spamClass);
         this.show();
       } else {
         this.hide();

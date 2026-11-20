@@ -28,7 +28,15 @@ export class NotificationsBadgeManager {
       ));
   }
 
-  constructor(badgeElement: HTMLElement) {
+  constructor(
+    badgeElement: HTMLElement,
+    // State modifier classes — the manager carries STATE, the carrier
+    // atom its own naming (v1 badge default; the v2 diode passes its own).
+    private stateClasses: { high: string; low: string } = {
+      high: 'notifications-badge--priority-high',
+      low: 'notifications-badge--hashtag-only',
+    }
+  ) {
     this.badgeElement = badgeElement;
     this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
@@ -78,8 +86,8 @@ export class NotificationsBadgeManager {
     const unreadCount = this.notificationsApi.getUnreadCount();
 
     this.badgeElement.classList.remove(
-      'notifications-badge--priority-high',
-      'notifications-badge--hashtag-only'
+      this.stateClasses.high,
+      this.stateClasses.low
     );
 
     if (unreadCount > 0) {
@@ -90,9 +98,9 @@ export class NotificationsBadgeManager {
       const highestPriority = this.notificationsApi.getHighestUnreadPriority();
 
       if (highestPriority === 1) {
-        this.badgeElement.classList.add('notifications-badge--priority-high');
+        this.badgeElement.classList.add(this.stateClasses.high);
       } else if (highestPriority === 3) {
-        this.badgeElement.classList.add('notifications-badge--hashtag-only');
+        this.badgeElement.classList.add(this.stateClasses.low);
       }
     } else {
       this.badgeElement.style.display = 'none';

@@ -8,17 +8,6 @@
 @use './skeleton' as *;
 @use '../molecules/messages' as *;
 
-// View child elements
-// (The old __header wrapper is the shared .focus-view-header row now —
-// see _focus-shell.scss.)
-
-.article-timeline-view__title {
-  @extend %h1;
-  font-weight: 600;
-  color: var(--color-5);
-  margin: 0 0 calc($gap / 4) 0;
-}
-
 // Timeline container
 // (empty/error message styling via %feed-state-messages)
 .article-timeline {

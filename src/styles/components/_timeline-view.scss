@@ -10,25 +10,18 @@
 
 // Child element styles only - container styles in _view-content.scss
 
-// Page heading ("Social Media") — mirrors the article view title. Visible
-// in the v2 Focus Shell as the domain heading; in classic v1 it stays a
-// screen-reader-only heading (the %visually-hidden recipe, scoped to
-// classic so the v2 surface keeps it rendered).
-.timeline-view__title {
-  @extend %h1;
-
-  font-weight: 600;
-  color: var(--color-5);
-  margin: 0 0 $gap 0;
-
-  html:not(.ui--focus) & {
-    @extend %visually-hidden;
-  }
-}
-
 .timeline-view__header {
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-2);
+
+  // Null-Kopf (phone, v2): the tabs row collapses — feed switching is a
+  // horizontal swipe, the feed name flashes as an overlay. v1 keeps the
+  // row (the tabs are its only switcher).
+  html.ui--focus & {
+    @include tablet-down {
+      display: none;
+    }
+  }
 }
 
 .timeline-view__tabs-container {

@@ -17,6 +17,7 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 @use '../abstracts/utilities' as *;
+@use '../molecules/buttons'; // %btn-outline (stack header/primary actions)
 
 html.ui--focus {
   // Classic chrome: fully out of the way while the shell is active.
@@ -140,8 +141,8 @@ html.ui--focus {
   // Focused state: the active object's column takes the focus. The
   // column template follows the FV mode (.focus-stage::after — keep in
   // sync): phone = the object alone (the stack lives in the nav
-  // sidebar), tablet = single stack + object (stack left; .is-stack-right
-  // swaps), desktop >=1100 = stack - object - stack. One full-height row
+  // sidebar), tablet/desktop >=768 = ONE stack column beside the object
+  // (side via .is-stack-right). One full-height row
   // — the focused column fills the stage, its inner view scrolls
   // (classic .timeline-view__timeline mechanics).
   &.is-focused {
@@ -155,7 +156,18 @@ html.ui--focus {
     grid-template-columns: 1fr;
     grid-template-rows: 100%;
 
+    // Focused: NO circles besides the active one. Navigation lives on
+    // the start view (X → grid → circle); the trio rows in the side
+    // stack are real .btn-v2 buttons — the circles never leave the
+    // grid, they hide in place (direct children only).
+    > .focus-object:not(.focus-object--active) {
+      display: none;
+    }
+
     @include tablet-big {
+      // Tablet/desktop: ONE stack column beside the object (left default;
+      // .is-stack-right swaps). The object keeps its internal
+      // surface+actions split (see .focus-object--active).
       grid-template-columns: 230px minmax(0, 1fr);
 
       &.is-stack-right {
@@ -164,10 +176,13 @@ html.ui--focus {
     }
 
     @media (min-width: 1100px) {
-      // Desktop: 230px stacks + 600px surface + base gap + 30px actions
-      // column (the object's internal two-column layout, see
-      // .focus-object--active).
-      grid-template-columns: 230px calc(600px + $gap + 30px) 230px;
+      // Desktop: the object column keeps the exact surface width
+      // (600px surface + base gap + 30px internal actions column).
+      grid-template-columns: 230px calc(600px + $gap + 30px);
+
+      &.is-stack-right {
+        grid-template-columns: calc(600px + $gap + 30px) 230px;
+      }
     }
   }
 }
@@ -353,15 +368,7 @@ html.ui--focus {
   }
 }
 
-// FV column drag: the lifted circle follows the cursor as a fixed overlay
-// (position/left/top set inline by focusStage.startColumnDrag) — it must
-// ride above the stack tools (sticky, $z-back-bar) in BOTH columns.
-.focus-object.is-column-drag {
-  z-index: $z-fullscreen-overlay;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-// Active drag: the source circle follows the cursor (transform set by
+// Active drag (SV order drag): the source circle follows the cursor (transform set by
 // focusStage) and must not shadow the drop target in elementFromPoint;
 // the hovered counterpart ring-lights as the drop target.
 .focus-object.is-drag-source {
@@ -378,31 +385,16 @@ html.ui--focus {
   outline-color: var(--color-3);
 }
 
-// Unread diodes (v1 nn-wheel parity): green counters on the notifications,
-// messages and bookmarks circles at ~5 o'clock — always rendered (no hover
-// gating), driven by the same badge managers as the classic nav. The
-// two-class selector out-specifies the v1 .notifications-badge chrome (its
-// 20px pill would otherwise win the cascade).
-.focus-object .focus-object__diode {
+// Unread diodes (v1 nn-wheel parity): the .diode atom (atoms/_badges.scss,
+// --big on the circles) placed at the circle's ~5 o'clock — always
+// rendered (no hover gating), driven by the same badge managers as the
+// classic nav. The consumer only positions it; the chrome lives in the
+// atom.
+.focus-object .diode {
   position: absolute;
   bottom: 5px;
   right: -5px;
-  min-width: 30px;
-  height: 30px;
-  padding: 0;
-  // The v1 badge is a padded text pill (line-height + padding centering);
-  // at the fixed 30px diode size flex centering is needed instead — the
-  // badge managers set display:inline-flex, so justify/align do the work.
-  justify-content: center;
-  align-items: center;
-  line-height: 1;
-  @include compact;
-  font-weight: 700;
-  color: var(--color-5);
-  text-shadow: $diode-text-shadow;
-  border-radius: $radius-full;
   z-index: $z-back-bar;
-  pointer-events: none; // never block the circle's click/hover
 }
 
 // Object action buttons: the second column of the active object's grid
@@ -434,17 +426,15 @@ html.ui--focus {
     display: flex;
   }
 
-  // Phone only: mirror the DOM order (close, back, scroll-top, settings)
-  // so the X sits at the row's right end. The desktop column keeps the
-  // DOM order (X on top).
+  // Phone: scroll-to-top lives in the top line (portaled) — an empty
+  // glass pill must not linger; only render while a visible button
+  // remains (the back action of an open detail view).
   @include tablet-down {
-    .focus-object__settings {
-      order: -3;
+    &:not(:has(> button:not([hidden]))) {
+      display: none;
     }
+
     .focus-object__scroll-top {
-      order: -2;
-    }
-    .focus-object__back {
       order: -1;
     }
   }
@@ -467,10 +457,8 @@ html.ui--focus {
   }
 }
 
-.focus-object__control,
 .focus-object__back,
-.focus-object__scroll-top,
-.focus-object__settings {
+.focus-object__scroll-top {
   // Phone: comfortable touch targets inside the floating glass pill —
   // border-free, the pill itself carries the contrast.
   width: 36px;
@@ -501,22 +489,18 @@ html.ui--focus {
 // applied to the whole family).
 .focus-object__move:hover,
 .focus-object__hide:hover,
-.focus-object__control:hover,
 .focus-object__back:hover,
 .focus-object__scroll-top:hover,
-.focus-object__settings:hover,
-.focus-side-stack__move:hover,
-.focus-side-stack__reset:hover,
-.focus-side-stack__compact:hover,
 .focus-side-stack__scroll-down:hover,
 .focus-side-stack__scroll-up:hover,
-.focus-widget-slot__move:hover,
+.focus-side-stack__settings:hover,
 .focus-object-compact__unhide:hover {
   color: var(--color-5);
 }
 
-// Settings is a toggle: active while its drawer content is mounted.
-.focus-object__settings.is-active {
+// The stack header's gear is a toggle: active while the object's ED-b
+// settings drawer is open (same contract the object gear had).
+.focus-side-stack__settings.is-active {
   background: var(--color-3);
   color: var(--color-1);
 }
@@ -527,21 +511,14 @@ html.ui--focus {
   transform: rotate(90deg);
 }
 
-// Arrange-positions gate (settings sidebar switch, default OFF): the layout
-// satellites — circle move/hide handles, the side-stack tool buttons,
-// the widget move handle — render only while the switch is ON. Diodes
-// (unread counters) and the active column's .focus-object__actions are
-// exempt: they are not layout tools. Visibility (not display) keeps the
-// sticky tools band at its height — no layout jump when toggling.
-.focus-stage:not(.is-arrange-on) {
+// FV: no layout satellites — the stack content is fixed (trio rows +
+// widgets), ordering and hiding live on the start view's grid. The
+// non-active circles are display:none anyway (see the grid rule below);
+// this covers the active column.
+.focus-stage__grid.is-focused .focus-object--active {
   .focus-object__move,
-  .focus-object__hide,
-  .focus-side-stack__move,
-  .focus-side-stack__reset,
-  .focus-side-stack__compact,
-  .focus-widget-slot__move {
-    visibility: hidden;
-    pointer-events: none;
+  .focus-object__hide {
+    display: none;
   }
 }
 
@@ -550,17 +527,12 @@ html.ui--focus {
 // circles pinned to the row top. Focused state: the stage is viewport-
 // fixed, so each stack scrolls its own overflow (230px rhythm preserved).
 .focus-side-stack {
-  position: relative; // anchor for the stack move handle
-  display: grid;
-  grid-template-columns: 230px;
-  justify-self: center;
+  position: relative;
   align-self: start;
-  gap: inherit; // mirror the responsive grid gap
-  // Packs rows at the natural top: the grid's default align-content
-  // (stretch) would otherwise spread rows over the full column height
-  // when the content is shorter (widgets-only stack) — widgets grew
-  // apart instead of stacking compactly.
-  align-content: start;
+  // Free document flow: rows stack naturally, one gap between neighbors.
+  > * {
+    margin-bottom: $gap;
+  }
 
   .focus-stage__grid.is-focused & {
     height: 100%;
@@ -663,10 +635,66 @@ html.ui--focus {
     -webkit-backdrop-filter: blur(10px) saturate(1.2);
     color: var(--color-4);
     cursor: pointer;
+    // The twins park the lasche out of the screen edge (less text
+    // overlap on the edge-to-edge feed); grabbing it slides it back in.
+    transition: transform 0.2s ease;
+
+    &:active,
+    &:hover {
+      transform: translateY(-50%);
+    }
   }
 }
 
-// Left twin: slides from the left edge, rounding on the right.
+// Phone FV top line: hamburger + the surface's refresh control + the
+// column's scroll-to-top — three scattered floats gathered on one row
+// (.l-spread owns the layout), one 44px height. Fixed on the stage root,
+// OUTSIDE the translated nav sidebar (position:fixed inside a
+// transformed ancestor would be contained by the transform).
+.focus-topline {
+  position: fixed;
+  top: calc($gap * 0.75);
+  left: calc($gap * 0.75);
+  right: calc($gap * 0.75);
+  z-index: calc(#{$z-fullscreen-overlay} - 2);
+  // The bar itself never blocks touches — only its controls do.
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+
+  // Refresh pill: matched to the row height (the base is content-sized).
+  .btn--refresh-new-notes {
+    height: 44px;
+    padding: 0 calc($gap * 0.75);
+  }
+
+  // Scroll-to-top: the round action, sized up to the row height.
+  .focus-object__scroll-top {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+// The hamburger: round glass button — the one always-visible navigation
+// anchor. Sits in the top line (see above); with the panel open, a tap
+// on it closes via overlay (it sits below the dismiss overlay).
+.focus-hamburger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-1) 88%, transparent);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  color: var(--color-4);
+  cursor: pointer;
+}
+
 .focus-nav-sidebar {
   left: 0;
   transform: translateX(-100%);
@@ -674,18 +702,6 @@ html.ui--focus {
   &__panel {
     border-radius: 0 $radius-xl $radius-xl 0;
     overflow: hidden;
-
-    // Every child spans the panel's full width — the side stack otherwise
-    // shrink-wraps (justify-self: center from the base stack styles).
-    > * {
-      width: 100%;
-      justify-self: stretch;
-    }
-  }
-
-  &__handle {
-    left: 100%;
-    border-radius: 0 $radius-xl $radius-xl 0;
   }
 }
 
@@ -694,6 +710,12 @@ html.ui--focus {
 .focus-settings-sidebar {
   right: 0;
   transform: translateX(100%);
+
+  // Focused: the content rides the side stack — the slide-in (and its
+  // handle) must not sit behind it as a second floating surface.
+  &.is-dormant {
+    display: none;
+  }
 
   &__panel {
     display: flex;
@@ -713,82 +735,16 @@ html.ui--focus {
   &__handle {
     right: 100%;
     border-radius: $radius-xl 0 0 $radius-xl;
-  }
+    // Parked 16px out of the screen edge (mirror of the left twin).
+    transform: translateY(-50%) translateX(16px);
 
-  &__section {
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap * 0.6);
-
-    // State-gated section (object sets = SV domain, hidden in FV) — the
-    // flex display above would override the hidden attribute otherwise.
-    &[hidden] {
-      display: none;
-    }
-  }
-
-  // Same trap for hidden rows/buttons (e.g. the restore-order action is
-  // hidden while the order matches the default).
-  .focus-settings-sidebar__row[hidden] {
-    display: none;
-  }
-
-  &__title {
-    // Real h2 in the outline (the focused views own the h1 level), h5
-    // optical size — the section titles are labels, not display headings.
-    @extend %h5;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-3);
-  }
-
-  &__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $gap;
-    min-height: 34px;
-  }
-
-  &__label {
-    color: var(--color-5);
-    @include compact;
-  }
-
-  // Text action row (restore default order): klick-mich color.
-  &__action {
-    justify-content: flex-start;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-4);
-    @include compact;
-    text-align: left;
-    cursor: pointer;
-
+    &:active,
     &:hover {
-      color: var(--color-5);
+      // Grabbed: full lasche back under the finger.
+      transform: translateY(-50%);
     }
   }
 
-  // Icon action (loadmon): same 30px circle chrome as the stack tools.
-  &__icon-action {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    border: 2px solid var(--color-4);
-    border-radius: 50%;
-    background: var(--color-1);
-    color: var(--color-4);
-    cursor: pointer;
-
-    &:hover {
-      color: var(--color-5);
-    }
-  }
 }
 
 // The single stack inside the phone sidebar: full height, internally
@@ -796,12 +752,6 @@ html.ui--focus {
 // circle column flexes with the panel (phone circles are width: 100%).
 .focus-side-stack--in-sidebar {
   height: 100%;
-  grid-template-columns: minmax(0, 1fr);
-  // The base stack mirrors the stage grid's gap via `gap: inherit` — after
-  // the reparent into the sidebar there is no parent grid gap to inherit
-  // (the sidebar defines none), so the stack fell back to 0 and circles +
-  // widgets sat flush on each other.
-  gap: $gap;
   overflow-y: auto;
   padding-bottom: $gap;
   scrollbar-width: none;
@@ -811,37 +761,24 @@ html.ui--focus {
   }
 }
 
-// Whole-stack move drag (FV): the column travels at the cursor tip
-// (transform set inline by focusStage.startStackDrag) — same feel as the
-// SV order drag. It must ride above the other stack's sticky tools and
-// drop-zone outline, and must not shadow the drop zone in elementFromPoint.
-.focus-side-stack.is-drag-source {
-  pointer-events: none;
-  z-index: $z-fullscreen-overlay;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-// Stack top tools: move handle (drag moves ALL circles) + reset (back to
-// the alternating 50/50 distribution), pinned ABOVE the circles — a sticky
-// first grid row, so it stays in place while the stack scrolls (circles
-// slide beneath it). Always visible (an empty stack must keep its handles
-// for the way back).
-.focus-side-stack__tools {
+// Stack header: the Start link (back to the SV grid — the FV carries no
+// navigation of its own) + the config accesses (gear → UI settings) and
+// the stack's scroll steps, pinned ABOVE the stack items — a sticky first
+// grid row, so it stays in place while the stack scrolls.
+.focus-side-stack__header {
   position: sticky;
   top: 0;
-  justify-self: center; // center of the 230px column
-  display: grid;
-  grid-auto-flow: column;
-  gap: 8px;
   z-index: $z-back-bar;
+  // Transparent backdrop: the stack scrolls beneath the row — a soft
+  // fade keeps the items readable without a hard band edge.
+  background: linear-gradient(var(--color-1) 70%, transparent);
+  padding-bottom: 4px;
 }
 
-.focus-side-stack__move,
-.focus-side-stack__reset,
-.focus-side-stack__compact,
 .focus-side-stack__scroll-down,
-.focus-side-stack__scroll-up {
-  display: grid;
+.focus-side-stack__scroll-up,
+.focus-side-stack__settings {
+  display: inline-grid;
   place-items: center;
   width: 30px;
   height: 30px;
@@ -851,219 +788,34 @@ html.ui--focus {
   background: var(--color-1);
   color: var(--color-4);
   cursor: pointer;
-  touch-action: none; // the pointer drag must not scroll the page
-
-  &.is-drag-source {
-    pointer-events: none; // never shadow the drop zone in elementFromPoint
-    cursor: grabbing;
-  }
 }
 
-.focus-side-stack__move {
-  cursor: grab;
-}
-
-// Scroll-up is removed from the row at the top ([hidden] — the tools row
-// re-centers); move/reset render hidden in single-stack mode (tablet/
-// phone — no second column to move to). scroll-down needs no state: at
-// the bottom end its click clamps, like the wheel.
-.focus-side-stack__scroll-up[hidden],
-.focus-side-stack__move[hidden],
-.focus-side-stack__reset[hidden] {
+// Scroll-up is removed from the row at the top ([hidden] — the header
+// re-centers); scroll-down needs no state: at the bottom end its click
+// clamps, like the wheel.
+.focus-side-stack__scroll-up[hidden] {
   display: none;
 }
 
-// Compact toggle state flip: compacted stacks point the arrows OUTWARD
-// (click = expand back to circles). The icon is point-symmetric, so a
-// rotation would map it onto itself — instead two symbols swap: the
-// closed state pulls inward (arrows toward the line), the active state
-// pushes outward (arrows away from the line).
-.focus-side-stack__compact-icon-out {
-  display: none;
-}
-
-.focus-side-stack__compact.is-active {
-  .focus-side-stack__compact-icon-in {
-    display: none;
-  }
-
-  .focus-side-stack__compact-icon-out {
-    display: block;
+// The persistent settings content rides the stack while an object is
+// focused (moved back into the slide-in on close) — plain document
+// flow, one gap between the label+element rows.
+.focus-settings-content {
+  > * + * {
+    margin-top: $gap;
   }
 }
 
-// Compact toggle (stack tools, leftmost): morphs every stack circle into
-// the ED-b chip shape (focusStage.toggleStackCompact, persisted per
-// account) — more objects visible in the column, less vertical rhythm.
-// The morph lives on these two rules ONLY: the explicit stack height
-// gives the transition an interpolable start value (the base circle's
-// height comes from aspect-ratio, which cannot animate), and keeping the
-// geometry transition out of the base class keeps the WAAPI-driven
-// grid/focus morphs untouched. The ACTIVE circle never compacts.
-.focus-side-stack .focus-object {
-  // The compact morph needs an interpolable start height (the base
-  // circle's height comes from aspect-ratio, which cannot animate).
-  // Phone circles flex with their column — only the fixed 230px
-  // tablet/desktop circle gets the explicit height.
-  @include tablet-big {
-    height: 230px;
-  }
-
-  transition:
-    border-color $transition-fast,
-    outline-color $transition-fast,
-    background-color $transition-fast,
-    height $transition-fast,
-    border-width $transition-fast,
-    outline-width $transition-fast,
-    outline-offset $transition-fast,
-    border-radius $transition-fast;
-}
-
-.focus-object.is-compact {
-  aspect-ratio: auto;
-  height: 48px;
-  // Double ring at HALF the circle's width, pulled in like the circles
-  // and the ED-b chips (outline directly inside the border).
-  border-width: 7px;
-  outline-width: 7px;
-  outline-offset: -14px;
-  border-radius: $radius-2xl;
-  // Flat chip: no dome glow.
-  background-image: none;
-  background-color: var(--color-1);
-
-  // Chip content: label only (no icon), centered like on the circles —
-  // the whole chip stays the click target. Inline padding keeps the text
-  // clear of the corner cluster (diode always, handles on hover).
-  .focus-object__icon {
-    display: none;
-  }
-
-  .focus-object__label {
-    @include scaled-font-size(16px); // standard text size, no display type
-    max-width: 100%;
-    padding-inline: 32px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  // Corner cluster on the top border: the unread diode sits flush right
-  // (same flush-right anchor as on the round circles), straddling the
-  // border band, always visible. Move + hide join its row on hover, to
-  // its left — opaque 30px buttons overlaying a long label's tail. Same
-  // specificity as the hover-show rules above — the later source order
-  // wins the tie.
-  .focus-object__diode {
-    bottom: auto;
-    top: -16px;
-    right: 0;
-  }
-
-  &:hover .focus-object__move,
-  &:hover .focus-object__hide:not([hidden]) {
-    display: grid;
-    top: -16px;
-  }
-
-  &:hover .focus-object__move {
-    right: 64px;
-  }
-
-  // Blocked domains have no hide button (hidden attribute) — the move
-  // handle slides into its slot instead of leaving a hover hole.
-  &:hover:has(> .focus-object__hide[hidden]) .focus-object__move {
-    right: 32px;
-  }
-
-  &:hover .focus-object__hide {
-    right: 32px;
-    left: auto;
-    transform: none;
-  }
-}
-
-// Drop zone while a stack handle is dragged: the opposite stack lights up
-// as the target (dash-outlined frame over the whole column).
-.focus-side-stack.is-dropzone {
-  outline: 1px dashed var(--color-3);
-  outline-offset: -1px;
-  border-radius: $radius-xl;
-  background: color-mix(in srgb, var(--color-3) 8%, transparent);
-}
-
-// Insertion line during a single-circle column drag (FV): absolutely
-// positioned at the drop boundary (top set inline by focusStage) — no grid
-// rows shift while it moves between positions.
-.focus-side-stack__drop-line {
-  position: absolute;
-  left: 15px;
-  right: 15px;
-  height: 2px;
-  border-radius: $radius-full;
-  background: var(--color-3);
-  pointer-events: none; // never shadow elementFromPoint
-  z-index: $z-back-bar;
-}
-
-// FV side-stack widget slot (v2): wraps a widget's DOM plus its move
-// handle; an item in the stack flow like the circles. Hidden entirely
-// while the widget has no content (the Live Streams widget renders
-// NOTHING when nobody followed is live) — no floating orphan handle.
+// FV side-stack widget slot (v2): wraps a widget's DOM — a plain item in
+// the stack flow, placement fixed (below the primary action row). Hidden
+// entirely while the widget has no content (the Live Streams widget
+// renders NOTHING when nobody followed is live).
 .focus-widget-slot {
-  position: relative; // anchor for the move handle
   display: none; // empty slot (widget has no content) shows NOTHING
 
   &:has(> .sidebar-widget) {
     display: grid;
   }
-}
-
-// v2 only: extra right padding keeps the widget content clear of the
-// move handle that appears top-right on hover.
-.ui--focus .sidebar-widget {
-  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
-}
-
-.focus-widget-slot__move {
-  position: absolute;
-  top: 5px;
-  right: 0;
-  display: none; // hover affordance only (see below)
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 2px solid var(--color-4);
-  border-radius: 50%;
-  background: var(--color-1);
-  color: var(--color-4);
-  cursor: grab;
-  touch-action: none; // the pointer drag must not scroll the page
-  z-index: $z-back-bar;
-
-  // Reorder affordance: shown while hovering the widget slot (during a
-  // drag the lifted host stays under the pointer → handle stays visible).
-  .focus-widget-slot:hover & {
-    display: grid;
-  }
-
-  // Grab cursor while the host is lifted (fixed overlay follows the
-  // pointer; pointer-events off so elementFromPoint sees the drop zone).
-  .focus-widget-slot.is-drag-source & {
-    pointer-events: none;
-    cursor: grabbing;
-  }
-}
-
-// Lifted widget slot during a drag: must not shadow the drop zone in
-// elementFromPoint (same as the circle column drag) — without this the
-// fixed overlay keeps resolving to its SOURCE stack and cross-column
-// drops are impossible. Rides above the sticky stack tools.
-.focus-widget-slot.is-drag-source {
-  pointer-events: none;
-  z-index: $z-fullscreen-overlay;
 }
 
 // Surface slot: the focused domain's view mounts here (after the morph).
@@ -1129,27 +881,10 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// Shared surface header: a .l-row--split row — title (h1) left, optional
-// action button right (button is a SIBLING of the h1; inside the h1 it
-// would inherit the heading's font size). The row owns the vertical
-// spacing — title classes drop their own margin here.
-// Classic v1 renders the same rows (Timeline, Articles) with the action
-// button hidden — composition comes from the +New Post dropup there.
-.focus-view-header {
-  margin-bottom: $gap;
-
-  h1 {
-    margin: 0;
-  }
-}
-
-// Focus UI, phone: the domain h1 steps aside — screen-reader-only (same
-// recipe classic uses). The view's own action button ("Write Note" & co.)
-// takes the row's left side, the floating action pill hovers right; the
-// surface gets the full width. Document outline keeps the h1.
-// Tablet/desktop: the heading is back (actions return to their column).
-.ui--focus .focus-view-header h1,
-.ui--focus .focus-object__content > h1 {
+// FV headings (helpers/focusViewHeader.ts): ONE unified style hook —
+// h1.fv.fv--<object-name>. Screen-reader-only by default (v1 + v2
+// phone); tablet/desktop shows the heading.
+.fv {
   @extend %visually-hidden;
 
   @include tablet-big {
@@ -1162,23 +897,6 @@ html.ui--focus {
     clip: auto;
     white-space: normal;
   }
-}
-
-// ...and the header's own action button takes the title's left spot:
-// the split row pins it right via margin-left:auto — with the h1 out of
-// flow that would park it at the right edge under the action pill.
-// (Extra head selector: molecules/layouts loads after this file and would
-// otherwise win the equal-specificity tie.)
-.ui--focus .focus-view-header .focus-view-header__action {
-  margin-left: 0;
-
-  @include tablet-big {
-    margin-left: auto; // restore the .l-row--split pin
-  }
-}
-
-html:not(.ui--focus) .focus-view-header__action {
-  display: none;
 }
 
 // Title-only headers (createFocusViewHeader without an action) render the
@@ -1333,32 +1051,22 @@ $focus-tab-overlap: 1px;
   }
 }
 
-// Switcher bar (ED-t content): theme / font-size / account switchers —
-// v1's .user-login-bar, renamed and centered in the panel row.
-// Switcher bar (settings sidebar): theme / font-size / account switchers
-// — v1's .user-login-bar, renamed. Vertical stack in the panel column
-// (it was a centered row in the old ED-t panel).
+// Switcher bar (settings content): theme / font-size / account switchers
+// — v1's .user-login-bar, renamed. Plain document flow: the three
+// dropdowns sit side by side and wrap naturally when the width runs out
+// (focusShell mounts them as direct children — no row wrapper).
 .switch-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: calc($gap * 0.6);
+  // Whitespace text nodes are absent between the mounted elements — the
+  // sibling margin carries the spacing.
+  > * + * {
+    margin-left: calc($gap * 0.6);
+  }
 
-  // Font-size + account in one wrapping row: the account switcher sits
-  // beside the font switcher and wraps to a second line only when the
-  // username does not fit the remaining width.
-  &__row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: calc($gap * 0.6);
-
-    // The account-switcher label truncates at 120px (100px mobile) for
-    // the classic layouts — this shell loads later, so the override wins
-    // the cascade and long usernames claim the width they need.
-    .account-switcher .nn-dropdown__label {
-      max-width: none;
-    }
+  // The account-switcher label truncates at 120px (100px mobile) for
+  // the classic layouts — this shell loads later, so the override wins
+  // the cascade and long usernames claim the width they need.
+  .account-switcher .nn-dropdown__label {
+    max-width: none;
   }
 }
 

@@ -23,5 +23,6 @@ export const mutesSurface = (): Promise<FocusDomainSurface> =>
   createListTabSurface({
     tabId: 'list-mutes',
     headerTitle: _('Muted'),
+    headerObject: 'muted',
     loadManager: async () => (await import('../lists/mutes')).MuteListManager,
   });
