@@ -79,17 +79,17 @@ export class HiddenFeaturesPanel implements FocusSettingsView {
     for (const def of FOCUS_DOMAINS) {
       if (!hidden.includes(def.id)) continue;
       const chip = document.createElement('div');
-      chip.className = 'focus-object-compact';
+      chip.className = 'focus-content-compact';
       chip.dataset.domainId = def.id;
       chip.innerHTML = `
-        <span class="focus-object-compact__label">${def.label}</span>
-        <button type="button" class="focus-object-compact__unhide" aria-label="${_('Unhide')}">
+        <span class="focus-content-compact__label">${def.label}</span>
+        <button type="button" class="focus-content-compact__unhide" aria-label="${_('Unhide')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-eye-open"/></svg>
         </button>
       `;
       // The chip itself stays inert; only the Unhide button restores.
       chip
-        .querySelector('.focus-object-compact__unhide')
+        .querySelector('.focus-content-compact__unhide')
         ?.addEventListener('click', e => {
           e.stopPropagation();
           unhideObject(def.id);

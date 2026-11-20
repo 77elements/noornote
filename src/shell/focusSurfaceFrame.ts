@@ -2,7 +2,7 @@
  * Focus surface frame (v2) — shared chrome for domain surfaces that swap
  * inner views inside the focus column (articles: list ↔ detail, social:
  * timeline ↔ note). The frame owns NO element of its own: it attaches to
- * the stage's column slot (.focus-object__content) and guarantees exactly
+ * the stage's column slot (.focus-content__content) and guarantees exactly
  * one content element in it. The visible back control lives in the
  * object's action-button stack (focusStage), so the frame only broadcasts
  * the detail state via 'focus:surface-back' (dispatched on the slot — it

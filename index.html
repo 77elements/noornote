@@ -55,16 +55,14 @@
       margin: 0;
     }
 
-    .nn-logo {
-      display: inline-block;
-      font-family: 'Saira', sans-serif;
-      font-size: 4rem;
-      font-weight: 700;
-      line-height: 1.2;
-      background: linear-gradient(135deg, #b45fd9, #5ef75e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    /* The N-mark (v1 wheel logo): sized to the old 4rem gradient
+       wordmark's visual height (the glyph fills ~half the 642 viewBox,
+       hence 6rem), tinted in the interactive accent color — theme-aware
+       via the boot script below (fallback = default theme Noor Jadid). */
+    .loading-logo svg {
+      width: 6rem;
+      height: 6rem;
+      color: var(--nn-boot-color-4, #e33796);
     }
 
     .loading-text {
@@ -74,13 +72,46 @@
       animation: pulsate 2.5s ease-in-out infinite;
     }
   </style>
+  <script>
+    // Boot tint: the loading screen reacts to the selected theme before
+    // the bundle has loaded — the theme's --color-4 is mirrored here
+    // (source: src/styles/abstracts/_themes.scss). Fallback = the
+    // default theme (Noor Jadid); storage failure keeps the fallback.
+    try {
+      var BOOT_COLOR_4 = {
+        'noor-jadid': '#e33796',
+        'default': '#dc85ad',
+        'bright-superman': '#2563eb',
+        'code-bunker': '#9cdcfe',
+        'soft-lilac': '#c2447e',
+        't-low': '#8757ad',
+        'dark-symbiote': '#b13d4c',
+        'neon-harley': '#ed3a96',
+        'wake-up-neo': '#00ff41'
+      };
+      var bootTheme = localStorage.getItem('noornote_theme');
+      document.documentElement.style.setProperty(
+        '--nn-boot-color-4',
+        BOOT_COLOR_4[bootTheme] || BOOT_COLOR_4['noor-jadid']
+      );
+    } catch (e) { /* storage unavailable — the CSS fallback applies */ }
+  </script>
 </head>
 <body>
+  <!-- Boot-only logo symbol: the JS sprite (#nn-logo) injects later, so
+  the pre-JS loading screen carries its own copy under a separate id. -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none" aria-hidden="true">
+    <symbol id="nn-logo-boot" viewBox="0 0 642 642">
+    <path d="M125.0 174.5 124.5 223.0 156.5 224.0 156.5 497.0 225.5 497.0 226.0 284.5 366.5 495.0 369.0 497.5 418.0 497.5 224.0 174.5 124.5 175.0 124.5 223.0 156.5 224.0 156.5 497.0 225.5 497.0 226.0 284.5 366.5 495.0 369.0 497.5 418.5 497.0 224.5 175.0Z M262.0 174.5 266.5 185.0 455.5 496.0 457.0 497.5 502.0 497.5 502.5 175.0 400.5 175.0 409.0 180.5 423.5 198.0 430.5 211.0 435.5 229.0 436.0 358.5 312.5 175.0 261.5 175.0 457.0 497.5 502.5 497.0 502.5 175.0 400.5 175.0 409.0 180.5 423.5 198.0 430.5 211.0 435.5 229.0 436.0 358.5 312.5 175.0Z" fill="currentColor" fill-rule="nonzero" />
+  </symbol>
+  </svg>
   <!-- SVG Sprite Sheet — icons defined once, referenced via <svg><use href="#icon-name"/></svg> -->
   <div id="app">
     <!-- App loading state -->
     <div id="loading" class="loading-screen">
-      <h1 class="loading-logo"><span class="nn-logo">NoorNote</span></h1>
+      <h1 class="loading-logo">
+        <svg class="nn-wheel__logo" aria-hidden="true"><use href="#nn-logo-boot"/></svg>
+      </h1>
       <p class="loading-text">Loading...</p>
     </div>
   </div>

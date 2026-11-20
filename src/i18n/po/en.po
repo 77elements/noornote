@@ -407,10 +407,10 @@ msgstr "Accounts and threads you have muted."
 #: src/addons/analytics/AnalyticsAddonView.ts:239
 #: src/components/layout/MainLayout.ts:2235
 #: src/components/settings/NotificationPrioritySection.ts:85
-#: src/components/views/ArticleTimelineView.ts:42
+#: src/components/views/ArticleTimelineView.ts:40
 #: src/components/views/ProfileView.ts:2373
 #: src/components/views/ProfileView.ts:746
-#: src/shell/focusDomains.ts:223
+#: src/shell/focusDomains.ts:237
 msgid "Articles"
 msgstr "Articles"
 
@@ -421,7 +421,7 @@ msgstr "Articles"
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4510
 #: src/lists/bookmarks.ts:4546
-#: src/shell/focusDomains.ts:265
+#: src/shell/focusDomains.ts:289
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
@@ -433,7 +433,8 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Curated public follow lists you subscribe to."
 
-#: src/components/views/TimelineView.ts:252
+#: src/components/views/TimelineView.ts:244
+#: src/components/views/TimelineView.ts:258
 msgid "Edit tribes"
 msgstr "Edit tribes"
 
@@ -458,7 +459,7 @@ msgstr "Export DiagLogs"
 #: src/components/layout/MainLayout.ts:110
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:285
+#: src/shell/focusDomains.ts:309
 msgid "Follows"
 msgstr "Follows"
 
@@ -466,7 +467,7 @@ msgstr "Follows"
 msgid "Key Signer"
 msgstr "Key Signer"
 
-#: src/components/views/TimelineView.ts:323
+#: src/components/views/TimelineView.ts:322
 msgid "Last notes per follow"
 msgstr "Last notes per follow"
 
@@ -477,15 +478,15 @@ msgstr "Lists"
 
 #: src/components/layout/MainLayout.ts:1959
 #: src/components/views/SettingsView.ts:46
-#: src/shell/focusDomains.ts:232
-#: src/shell/focusMediaSurface.ts:43
+#: src/shell/focusDomains.ts:252
+#: src/shell/focusMediaSurface.ts:40
 msgid "Media"
 msgstr "Media"
 
 #: src/components/layout/MainLayout.ts:111
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:296
+#: src/shell/focusDomains.ts:320
 #: src/shell/focusMutesSurface.ts:25
 msgid "Muted"
 msgstr "Muted"
@@ -516,9 +517,11 @@ msgstr "Saved notes, sorted into folders."
 
 #: src/components/layout/MainLayout.ts:2249
 #: src/components/views/SettingsView.ts:71
-#: src/shell/focusStage.ts:1145
-#: src/shell/focusStage.ts:2438
-#: src/shell/focusStage.ts:986
+#: src/shell/focusStage.ts:2032
+#: src/shell/focusStage.ts:2056
+#: src/shell/focusStage.ts:2082
+#: src/shell/focusStage.ts:2468
+#: src/shell/focusStage.ts:2510
 msgid "Settings"
 msgstr "Settings"
 
@@ -531,7 +534,7 @@ msgid "The accounts you follow, with outbox relays."
 msgstr "The accounts you follow, with outbox relays."
 
 #: src/components/layout/MainLayout.ts:2214
-#: src/components/views/TimelineView.ts:315
+#: src/components/views/TimelineView.ts:314
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -541,7 +544,7 @@ msgstr "Timeline"
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2385
 #: src/lists/tribes.ts:2402
-#: src/shell/focusDomains.ts:273
+#: src/shell/focusDomains.ts:297
 msgid "Tribes"
 msgstr "Tribes"
 
@@ -1515,7 +1518,7 @@ msgstr "Message options"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:178
 #: src/components/views/MessagesView.ts:950
-#: src/shell/focusDomains.ts:257
+#: src/shell/focusDomains.ts:281
 msgid "Messages"
 msgstr "Messages"
 
@@ -1695,8 +1698,8 @@ msgstr "auto-generated, change only if you know what you're doing"
 
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:340
-#: src/shell/focusStage.ts:1142
-#: src/shell/focusStage.ts:974
+#: src/shell/focusStage.ts:1051
+#: src/shell/focusStage.ts:919
 msgid "Back"
 msgstr "Back"
 
@@ -1903,7 +1906,7 @@ msgid "Upload image"
 msgstr "Upload image"
 
 #: src/components/views/ArticleEditorView.ts:339
-#: src/components/views/ArticleTimelineView.ts:44
+#: src/shell/focusDomains.ts:244
 msgid "Write Article"
 msgstr "Write Article"
 
@@ -1951,7 +1954,7 @@ msgstr "Award Badge"
 #: src/addons/badges/BadgesView.ts:49
 #: src/components/views/ProfileView.ts:2285
 #: src/components/views/ProfileView.ts:752
-#: src/shell/focusDomains.ts:477
+#: src/shell/focusDomains.ts:505
 msgid "Badges"
 msgstr "Badges"
 
@@ -1966,7 +1969,7 @@ msgstr "by"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2220
 #: src/components/views/ProfileView.ts:751
-#: src/shell/focusDomains.ts:399
+#: src/shell/focusDomains.ts:427
 msgid "Calendar"
 msgstr "Calendar"
 
@@ -2207,7 +2210,7 @@ msgstr "Added to private bookmarks"
 #: src/addons/analytics/AnalyticsAddonView.ts:334
 #: src/components/analytics/AnalyticsModal.ts:50
 #: src/components/ui/InteractionStatusLine.ts:288
-#: src/shell/focusDomains.ts:458
+#: src/shell/focusDomains.ts:486
 msgid "Analytics"
 msgstr "Analytics"
 
@@ -2225,8 +2228,7 @@ msgstr "Bookmark"
 #: src/components/ui/NoteMenu.ts:553
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:1141
-#: src/shell/focusStage.ts:969
+#: src/shell/focusStage.ts:2483
 msgid "Close"
 msgstr "Close"
 
@@ -2656,8 +2658,8 @@ msgstr "Loading…"
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:156
-#: src/shell/focusDomains.ts:359
-#: src/shell/focusMarketplaceSurface.ts:38
+#: src/shell/focusDomains.ts:383
+#: src/shell/focusMarketplaceSurface.ts:37
 msgid "Marketplace"
 msgstr "Marketplace"
 
@@ -4157,7 +4159,7 @@ msgstr "Keys: Your Identity"
 #: src/addons/bulk-delete/BulkDeleteView.ts:685
 #: src/components/onboarding/PublicTimelineComponent.ts:78
 #: src/components/relay-browser/RelayBrowser.ts:56
-#: src/components/timeline/Timeline.ts:170
+#: src/components/timeline/Timeline.ts:175
 msgid "Loading more notes..."
 msgstr "Loading more notes..."
 
@@ -5318,7 +5320,6 @@ msgid "Go Forward (Cmd+→)"
 msgstr "Go Forward (Cmd+→)"
 
 #: src/components/layout/MainLayout.ts:2161
-#: src/shell/focusStage.ts:2359
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -5346,7 +5347,7 @@ msgstr "Note"
 
 #: src/components/layout/MainLayout.ts:2228
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:249
+#: src/shell/focusDomains.ts:273
 msgid "Notifications"
 msgstr "Notifications"
 
@@ -5372,7 +5373,7 @@ msgstr "Product"
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:2221
-#: src/shell/focusDomains.ts:305
+#: src/shell/focusDomains.ts:329
 msgid "Profile"
 msgstr "Profile"
 
@@ -5381,7 +5382,7 @@ msgid "Profile: %s"
 msgstr "Profile: %s"
 
 #: src/components/layout/MainLayout.ts:1960
-#: src/shell/focusDomains.ts:240
+#: src/shell/focusDomains.ts:264
 #: src/shell/focusRecipesSurface.ts:29
 msgid "Recipes"
 msgstr "Recipes"
@@ -5396,17 +5397,17 @@ msgstr "Reload"
 #: src/components/layout/MainLayout.ts:2222
 #: src/components/layout/MainLayout.ts:2233
 #: src/components/layout/MainLayout.ts:2236
-#: src/shell/focusStage.ts:1143
-#: src/shell/focusStage.ts:979
+#: src/shell/focusStage.ts:1052
+#: src/shell/focusStage.ts:924
 msgid "Scroll to top"
 msgstr "Scroll to top"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:866
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:126
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:120
 #: src/components/layout/MainLayout.ts:2169
 #: src/components/layout/MainLayout.ts:2170
 #: src/components/layout/MainLayout.ts:2255
-#: src/shell/focusDomains.ts:316
+#: src/shell/focusDomains.ts:340
 #: src/shell/focusSearchSurface.ts:37
 msgid "Search"
 msgstr "Search"
@@ -5544,7 +5545,7 @@ msgstr "%s days"
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
 #: src/addons/group-chats/GroupChatsSettings.ts:105
 #: src/addons/group-chats/GroupChatsSettings.ts:118
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:67
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:63
 #: src/addons/live-streams/LiveStreamsAddonView.ts:79
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:182
 #: src/addons/note-taking/NoteTakingAddonView.ts:66
@@ -5573,7 +5574,7 @@ msgstr[1] ""
 #: src/addons/follow-packs/FollowPacksSettings.ts:38
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/group-chats/GroupChatsSettings.ts:104
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:62
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:61
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:181
 #: src/addons/note-taking/NoteTakingAddonView.ts:65
@@ -5789,11 +5790,11 @@ msgstr "all day"
 msgid "All day"
 msgstr "All day"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:187
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:181
 msgid "also %s"
 msgstr "also %s"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:186
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:180
 msgid "Also search for \"%s\" without #"
 msgstr "Also search for \"%s\" without #"
 
@@ -5974,7 +5975,7 @@ msgstr "Browse, create and share curated follow packs."
 #: src/addons/btc-price/BtcPriceAddonView.ts:55
 #: src/addons/btc-price/BtcPriceAddonView.ts:56
 #: src/addons/btc-price/BtcPriceAddonView.ts:66
-#: src/shell/focusDomains.ts:640
+#: src/shell/focusDomains.ts:668
 msgid "BTC Price"
 msgstr "BTC Price"
 
@@ -6225,7 +6226,7 @@ msgstr "Create your first product listing"
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:64
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:65
 #: src/addons/custom-emojis/CustomEmojisView.ts:37
-#: src/shell/focusDomains.ts:326
+#: src/shell/focusDomains.ts:350
 msgid "Custom Emojis"
 msgstr "Custom Emojis"
 
@@ -6610,7 +6611,7 @@ msgstr "Enter a dhikr"
 msgid "Enter a valid count"
 msgstr "Enter a valid count"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:118
 msgid "Enter hashtag (without #)"
 msgstr "Enter hashtag (without #)"
 
@@ -6796,7 +6797,7 @@ msgstr "Follow Pack updated"
 #: src/addons/addonI18n.ts:28
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:370
+#: src/shell/focusDomains.ts:398
 msgid "Follow Packs"
 msgstr "Follow Packs"
 
@@ -6842,7 +6843,7 @@ msgstr "going"
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/group-chats/GroupChatsAddonView.ts:35
-#: src/shell/focusDomains.ts:605
+#: src/shell/focusDomains.ts:633
 msgid "Group Chats"
 msgstr "Group Chats"
 
@@ -7299,7 +7300,7 @@ msgstr "No filter words yet."
 msgid "No follow packs found"
 msgstr "No follow packs found"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:175
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:169
 msgid "No hashtag subscriptions yet"
 msgstr "No hashtag subscriptions yet"
 
@@ -7413,7 +7414,7 @@ msgstr "Note saved"
 #: src/addons/note-taking/NoteTakingAddonView.ts:65
 #: src/addons/note-taking/NoteTakingAddonView.ts:66
 #: src/addons/note-taking/NoteTakingAddonView.ts:76
-#: src/shell/focusDomains.ts:420
+#: src/shell/focusDomains.ts:448
 msgid "Note taking"
 msgstr "Note taking"
 
@@ -7453,7 +7454,7 @@ msgstr "Notify me about my own posts"
 msgid "Notify on activity"
 msgstr "Notify on activity"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:229
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:223
 msgid "Now also searching for \"%s\" without #"
 msgstr "Now also searching for \"%s\" without #"
 
@@ -7469,7 +7470,7 @@ msgstr "npub or hex pubkey, comma-separated"
 msgid "Only applies to people you follow (not everyone you see)"
 msgstr "Only applies to people you follow (not everyone you see)"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:230
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:224
 msgid "Only searching for #%s"
 msgstr "Only searching for #%s"
 
@@ -7737,7 +7738,7 @@ msgstr "Recent changes (%s)"
 #: src/addons/analytics/AnalyticsAddonView.ts:416
 #: src/addons/analytics/AnalyticsAddonView.ts:796
 #: src/components/timeline/LastNotesPerFollow.ts:133
-#: src/components/timeline/Timeline.ts:413
+#: src/components/timeline/Timeline.ts:418
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -7939,7 +7940,7 @@ msgstr "Scheduled post cancelled"
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:55
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:56
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
-#: src/shell/focusDomains.ts:440
+#: src/shell/focusDomains.ts:468
 msgid "Scheduled Posts"
 msgstr "Scheduled Posts"
 
@@ -8216,7 +8217,7 @@ msgstr "Status"
 msgid "Submit"
 msgstr "Submit"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:79
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:73
 msgid ""
 "Subscribe to any hashtag or word and get notified when someone posts a note "
 "containing it."
@@ -8385,7 +8386,7 @@ msgstr "Unarchive"
 msgid "Unselect all visible"
 msgstr "Unselect all visible"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:201
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:195
 msgid "Unsubscribe"
 msgstr "Unsubscribe"
 
@@ -8451,7 +8452,7 @@ msgstr "Vacation to"
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:625
+#: src/shell/focusDomains.ts:653
 msgid "Wallet Balance"
 msgstr "Wallet Balance"
 
@@ -8491,7 +8492,7 @@ msgstr "When:"
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:32
-#: src/shell/focusDomains.ts:658
+#: src/shell/focusDomains.ts:686
 msgid "Word Filter"
 msgstr "Word Filter"
 
@@ -8555,7 +8556,7 @@ msgstr "Zaps earned"
 msgid "Zaps sent"
 msgstr "Zaps sent"
 
-#: src/components/timeline/Timeline.ts:537
+#: src/components/timeline/Timeline.ts:608
 msgid "Look for new notes"
 msgstr "Look for new notes"
 
@@ -10411,16 +10412,16 @@ msgid "%s new"
 msgstr "%s new"
 
 #: src/components/timeline/LastNotesPerFollow.ts:105
-#: src/components/timeline/Timeline.ts:447
+#: src/components/timeline/Timeline.ts:452
 msgid "Latest"
 msgstr "Latest"
 
 #: src/components/timeline/LastNotesPerFollow.ts:106
-#: src/components/timeline/Timeline.ts:448
+#: src/components/timeline/Timeline.ts:453
 msgid "Latest + Replies"
 msgstr "Latest + Replies"
 
-#: src/components/timeline/Timeline.ts:449
+#: src/components/timeline/Timeline.ts:454
 msgid "Time Range"
 msgstr "Time Range"
 
@@ -10649,7 +10650,7 @@ msgid "Follow pack not found"
 msgstr "Follow pack not found"
 
 #: src/components/timeline/LastNotesPerFollow.ts:146
-#: src/components/timeline/Timeline.ts:433
+#: src/components/timeline/Timeline.ts:438
 msgid "Follow some users or check your relay connections."
 msgstr "Follow some users or check your relay connections."
 
@@ -10694,7 +10695,7 @@ msgid "Loading follow pack..."
 msgstr "Loading follow pack..."
 
 #: src/components/timeline/LastNotesPerFollow.ts:141
-#: src/components/timeline/Timeline.ts:421
+#: src/components/timeline/Timeline.ts:426
 msgid "Loading more events..."
 msgstr "Loading more events..."
 
@@ -10755,7 +10756,7 @@ msgstr "Next image"
 msgid "No drafts yet"
 msgstr "No drafts yet"
 
-#: src/components/timeline/Timeline.ts:428
+#: src/components/timeline/Timeline.ts:433
 msgid "No events found"
 msgstr "No events found"
 
@@ -10768,7 +10769,7 @@ msgid "No media from your follows yet."
 msgstr "No media from your follows yet."
 
 #: src/components/timeline/LastNotesPerFollow.ts:145
-#: src/components/timeline/Timeline.ts:427
+#: src/components/timeline/Timeline.ts:432
 msgid "No notes found"
 msgstr "No notes found"
 
@@ -11357,7 +11358,7 @@ msgid "Enable Feedback Board"
 msgstr "Enable Feedback Board"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:116
-#: src/shell/focusDomains.ts:494
+#: src/shell/focusDomains.ts:522
 msgid "Feedback Board"
 msgstr "Feedback Board"
 
@@ -11774,7 +11775,7 @@ msgstr ""
 "Nostr users taking part in the meeting, they receive a private message "
 "about this booking."
 
-#: src/components/timeline/Timeline.ts:432
+#: src/components/timeline/Timeline.ts:437
 #: src/components/views/ProfileView.ts:2148
 msgid "Nothing published here yet, or not available on your relays."
 msgstr "Nothing published here yet, or not available on your relays."
@@ -12181,7 +12182,7 @@ msgstr "mentioned or replied to you in %s"
 msgid "(Author)"
 msgstr "(Author)"
 
-#: src/shell/focusShell.ts:341
+#: src/shell/focusShell.ts:346
 msgid "Classic interface active"
 msgstr "Classic interface active"
 
@@ -12242,7 +12243,7 @@ msgstr "Live"
 #: src/addons/live-streams/LiveStreamsAddonView.ts:78
 #: src/addons/live-streams/LiveStreamsAddonView.ts:79
 #: src/addons/live-streams/LiveStreamsAddonView.ts:89
-#: src/shell/focusDomains.ts:344
+#: src/shell/focusDomains.ts:368
 msgid "Live Streams"
 msgstr "Live Streams"
 
@@ -12389,16 +12390,16 @@ msgstr ""
 msgid "Bottom panel"
 msgstr "Bottom panel"
 
-#: src/shell/focusDomains.ts:557
+#: src/shell/focusDomains.ts:585
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
-#: src/components/views/TimelineView.ts:182
-#: src/shell/focusDomains.ts:214
+#: src/components/views/TimelineView.ts:178
+#: src/shell/focusDomains.ts:222
 msgid "Social Media"
 msgstr "Social Media"
 
-#: src/shell/focusDomains.ts:539
+#: src/shell/focusDomains.ts:567
 msgid "Bulk Delete"
 msgstr "Bulk Delete"
 
@@ -12419,11 +12420,6 @@ msgstr "Tablet Mode"
 msgid "Tablet mode (2 columns, centered)"
 msgstr "Tablet mode (2 columns, centered)"
 
-#: src/shell/focusStage.ts:2260
-#: src/shell/focusStage.ts:2749
-msgid "Distribute circles evenly"
-msgstr "Distribute circles evenly"
-
 #: src/components/settings/UISettingsSection.ts:232
 #: src/shell/focusSettings.ts:163
 msgid ""
@@ -12443,20 +12439,8 @@ msgstr "Hides reposts of users' own notes from your timeline."
 msgid "Long posts are always displayed in full, without \"Show More\" buttons."
 msgstr "Long posts are always displayed in full, without \"Show More\" buttons."
 
-#: src/shell/focusStage.ts:2746
-msgid "Move all circles"
-msgstr "Move all circles"
-
-#: src/shell/focusStage.ts:2257
-msgid "Move all circles to the left column"
-msgstr "Move all circles to the left column"
-
-#: src/shell/focusStage.ts:2256
-msgid "Move all circles to the right column"
-msgstr "Move all circles to the right column"
-
-#: src/shell/focusStage.ts:1134
-#: src/shell/focusStage.ts:953
+#: src/shell/focusStage.ts:1044
+#: src/shell/focusStage.ts:902
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -12482,7 +12466,7 @@ msgstr ""
 "Whose articles appear in the main article feed — higher degrees broaden the "
 "feed but take longer to build."
 
-#: src/components/views/TimelineView.ts:184
+#: src/shell/focusDomains.ts:229
 msgid "Write Note"
 msgstr "Write Note"
 
@@ -12525,18 +12509,13 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2304
 #: src/components/views/VideoEditorView.ts:125
-#: src/shell/focusMediaSurface.ts:44
+#: src/shell/focusDomains.ts:258
 msgid "Post Media"
 msgstr "Post Media"
 
-#: src/shell/focusMarketplaceSurface.ts:39
+#: src/shell/focusDomains.ts:390
 msgid "Post Listing"
 msgstr "Post Listing"
-
-#: src/shell/focusStage.ts:2015
-#: src/shell/focusStage.ts:2022
-msgid "Move widget"
-msgstr "Move widget"
 
 #: src/components/views/VideoEditorView.ts:279
 msgid "Click or drag & drop to upload video or image"
@@ -12599,7 +12578,7 @@ msgstr "Enable Live Streams in Timeline"
 msgid "Search notes, users and hashtags…"
 msgstr "Search notes, users and hashtags…"
 
-#: src/shell/focusStage.ts:956
+#: src/shell/focusStage.ts:905
 msgid "Hide"
 msgstr "Hide"
 
@@ -12623,13 +12602,12 @@ msgstr "Unhide all"
 msgid "Open edge drawer"
 msgstr "Open edge drawer"
 
-#: src/shell/focusStage.ts:2456
-#: src/shell/focusStage.ts:2457
-#: src/shell/focusStage.ts:2529
+#: src/shell/focusStage.ts:2003
+#: src/shell/focusStage.ts:2012
 msgid "Load Resource Monitor"
 msgstr "Load Resource Monitor"
 
-#: src/shell/focusShell.ts:331
+#: src/shell/focusShell.ts:336
 msgid "Switch to v1"
 msgstr "Switch to v1"
 
@@ -12637,8 +12615,7 @@ msgstr "Switch to v1"
 msgid "Social Media (minimal)"
 msgstr "Social Media (minimal)"
 
-#: src/shell/focusStage.ts:2446
-#: src/shell/focusStage.ts:2480
+#: src/shell/focusStage.ts:1945
 msgid "Workspace"
 msgstr "Workspace"
 
@@ -12646,16 +12623,7 @@ msgstr "Workspace"
 msgid "Everything"
 msgstr "Everything"
 
-#: src/shell/focusStage.ts:2249
-#: src/shell/focusStage.ts:2742
-msgid "Compact circles"
-msgstr "Compact circles"
-
-#: src/shell/focusStage.ts:2503
-msgid "Arrange positions"
-msgstr "Arrange positions"
-
-#: src/shell/focusStage.ts:1136
+#: src/shell/focusStage.ts:1046
 msgid ""
 "Hide feature, it will be hidden and unloaded from the app memory. All "
 "background requests are stopped. You can unhide it in the Edge Drawer at "
@@ -12685,17 +12653,21 @@ msgstr ""
 msgid "See what's happening on NoorNote"
 msgstr "See what's happening on NoorNote"
 
-#: src/shell/focusStage.ts:2443
+#: src/shell/focusStage.ts:1929
 msgid "Restore default order"
 msgstr "Restore default order"
 
-#: src/shell/focusStage.ts:2264
-#: src/shell/focusStage.ts:2752
+#: src/shell/focusStage.ts:2059
+#: src/shell/focusStage.ts:2099
+#: src/shell/focusStage.ts:2477
+#: src/shell/focusStage.ts:2527
 msgid "Scroll down"
 msgstr "Scroll down"
 
-#: src/shell/focusStage.ts:2268
-#: src/shell/focusStage.ts:2755
+#: src/shell/focusStage.ts:2062
+#: src/shell/focusStage.ts:2104
+#: src/shell/focusStage.ts:2480
+#: src/shell/focusStage.ts:2532
 msgid "Scroll up"
 msgstr "Scroll up"
 
@@ -12703,37 +12675,23 @@ msgstr "Scroll up"
 msgid "Close edge drawer"
 msgstr "Close edge drawer"
 
-#: src/shell/focusStage.ts:2370
-#: src/shell/focusStage.ts:2405
+#: src/shell/focusStage.ts:1793
 msgid "Close navigation"
 msgstr "Close navigation"
 
-#: src/shell/focusStage.ts:2360
-#: src/shell/focusStage.ts:2370
-#: src/shell/focusStage.ts:2405
+#: src/shell/focusStage.ts:1793
+#: src/shell/focusStage.ts:1807
 msgid "Open navigation"
 msgstr "Open navigation"
 
-#: src/shell/focusStage.ts:2450
-msgid "Appearance & account"
-msgstr "Appearance & account"
-
-#: src/shell/focusStage.ts:2554
-#: src/shell/focusStage.ts:2584
+#: src/shell/focusStage.ts:2180
+#: src/shell/focusStage.ts:2341
 msgid "Close settings"
 msgstr "Close settings"
 
-#: src/shell/focusStage.ts:2454
-msgid "Diagnostics"
-msgstr "Diagnostics"
-
-#: src/shell/focusStage.ts:2440
-msgid "Interface"
-msgstr "Interface"
-
-#: src/shell/focusStage.ts:2463
-#: src/shell/focusStage.ts:2554
-#: src/shell/focusStage.ts:2584
+#: src/shell/focusStage.ts:2033
+#: src/shell/focusStage.ts:2180
+#: src/shell/focusStage.ts:2341
 msgid "Open UI settings"
 msgstr "Open UI settings"
 
@@ -12741,7 +12699,7 @@ msgstr "Open UI settings"
 msgid "Enable Follower Alerts"
 msgstr "Enable Follower Alerts"
 
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:77
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:71
 msgid "Enable Hashtag Alerts"
 msgstr "Enable Hashtag Alerts"
 
@@ -12749,17 +12707,29 @@ msgstr "Enable Hashtag Alerts"
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:31
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:585
+#: src/shell/focusDomains.ts:613
 msgid "Follower Alerts"
 msgstr "Follower Alerts"
 
 #: src/addons/addonI18n.ts:32
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:62
-#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:67
-#: src/shell/focusDomains.ts:524
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:61
+#: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:63
+#: src/shell/focusDomains.ts:552
 msgid "Hashtag Alerts"
 msgstr "Hashtag Alerts"
+
+#: src/shell/focusStage.ts:2137
+msgid "Left"
+msgstr "Left"
+
+#: src/shell/focusStage.ts:2136
+msgid "Right"
+msgstr "Right"
+
+#: src/shell/focusStage.ts:2158
+msgid "Sidebar side"
+msgstr "Sidebar side"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

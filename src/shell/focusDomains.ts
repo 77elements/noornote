@@ -109,7 +109,7 @@ export interface FocusDomainSurfaceView {
 export interface FocusDomainSurface {
   /**
    * Mount the surface's content into the stage's column slot
-   * (.focus-object__content). The slot is the domain's content root —
+   * (.focus-content__content). The slot is the domain's content root —
    * surfaces own their content, the stage owns the slot.
    */
   attach(slot: HTMLElement): void;
