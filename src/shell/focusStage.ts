@@ -1765,7 +1765,7 @@ export class FocusStage {
     if (this.topline) return;
     const bar = document.createElement('div');
     bar.id = 'focus-topline';
-    bar.className = 'focus-topline l-spread';
+    bar.className = 'focus-topline';
     const burger = document.createElement('button');
     burger.type = 'button';
     burger.className = 'focus-hamburger';
@@ -1798,6 +1798,35 @@ export class FocusStage {
     ) as HTMLElement | null;
     for (const guest of [refresh, scrollTop]) {
       if (!guest || !guest.parentElement) continue;
+      this.toplineGuests.push({
+        el: guest,
+        parent: guest.parentElement,
+        next: guest.nextElementSibling,
+      });
+      this.topline.appendChild(guest);
+    }
+    this.syncToplineRefresh(host);
+  }
+
+  /** The surface's refresh controls ride the top line's middle column —
+   * the look-for-notes link first, morphing into the refresh pill when
+   * new notes wait (mutually exclusive states). Portaled as soon as
+   * they exist (async timeline build); already-ported ones skip via
+   * the parent check. */
+  private syncToplineRefresh(host: HTMLElement): void {
+    if (!this.topline) return;
+    for (const selector of [
+      '.btn--refresh-new-notes',
+      '.timeline-look-for-notes-link',
+    ]) {
+      const guest = host.querySelector(selector) as HTMLElement | null;
+      if (
+        !guest ||
+        !guest.parentElement ||
+        guest.parentElement === this.topline
+      ) {
+        continue;
+      }
       this.toplineGuests.push({
         el: guest,
         parent: guest.parentElement,
@@ -2031,9 +2060,13 @@ export class FocusStage {
     else section.appendChild(row);
     this.dropdownRow = row;
     this.syncSurfaceDropdowns(host);
-    this.dropdownMo = new MutationObserver(() =>
-      this.syncSurfaceDropdowns(host)
-    );
+    this.dropdownMo = new MutationObserver(() => {
+      this.syncSurfaceDropdowns(host);
+      // Phone: the timeline builds its refresh controls asynchronously,
+      // after the focus opened — the observer catches them whenever
+      // they show up.
+      this.syncToplineRefresh(host);
+    });
     this.dropdownMo.observe(host, { childList: true, subtree: true });
   }
 

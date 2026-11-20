@@ -24,9 +24,9 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import {
   isBookmarksUiActive,
+  isFocusUiActive,
   isTribesUiActive,
 } from '../../helpers/focusUiSetting';
-import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 
 type TabType = 'timeline' | 'last-notes' | 'tribe';
@@ -211,8 +211,7 @@ export class TimelineView extends View {
 
   /**
    * Build the tab-row header: the scrollable tabs plus the "Edit tribes"
-   * link (the link morphs to the Tribes object in the Focus UI via the
-   * navigation seam; the classic UI keeps the list tab).
+   * link (classic UI only — it opens the tribes list tab).
    */
   private buildHeader(): HTMLElement {
     const header = document.createElement('div');
@@ -235,20 +234,16 @@ export class TimelineView extends View {
 
     tabsContainer.appendChild(tabsWrapper);
 
-    // Edit link — only meaningful when the Tribes addon is on (and, in
-    // the Focus UI, the Tribes object not hidden).
-    if (isTribesUiActive()) {
+    // Edit link — only meaningful when the Tribes addon is on. Classic
+    // UI only: under the Focus UI the Tribes object is one grid circle
+    // away, the link is redundant there.
+    if (isTribesUiActive() && !isFocusUiActive()) {
       const editLink = document.createElement('button');
       editLink.className =
         'timeline-view__edit-link btn btn--mini btn--passive';
       editLink.textContent = _('Edit tribes');
       const openTribes = (): void => {
-        // Focus UI: the Tribes object owns the 'tribes' view type — the
-        // stage switches to it (same as clicking the circle). Classic:
-        // the list tab as before.
-        if (!delegateToFocusUi('tribes')) {
-          this.eventBus.emit('list:open', { listType: 'tribes' });
-        }
+        this.eventBus.emit('list:open', { listType: 'tribes' });
       };
       editLink.addEventListener('click', openTribes);
       tabsContainer.appendChild(editLink);
