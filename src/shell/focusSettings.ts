@@ -635,3 +635,84 @@ export const composePanels = (
     },
   };
 };
+
+/**
+ * Global settings panel (ED-b, opened by the SV gear): the settings that
+ * belong to no focus object — relays, media, zaps, cache (v1's
+ * /settings/* routes) — stacked, one v1 section per wrapper. Unlike the
+ * object panels above this one mounts the full v1 monoliths (user
+ * decision: global settings keep their complete v1 surface); the heavy
+ * sections lazy-load as chunks on first open and unmount with the drawer.
+ */
+export class GlobalSettingsPanel implements FocusSettingsView {
+  private host: HTMLElement | null = null;
+  private mounted: Array<{ unmount(): void }> = [];
+
+  mount(el: HTMLElement): void {
+    this.host = el;
+    // Wrapper sections carry the v1 content containers the sections
+    // mount into (SettingsSection.getContentContainer queries
+    // #<sectionId>-content within its parent).
+    el.innerHTML = `
+      <section class="relays" data-global-section="relays">
+        <h2 class="focus-settings__section-title">${_('Relays')}</h2>
+        <div id="relay-settings-content" class="settings-sub-page__content"></div>
+      </section>
+      <section class="media" data-global-section="media">
+        <h2 class="focus-settings__section-title">${_('Media')}</h2>
+        <div id="media-content" class="settings-sub-page__content"></div>
+      </section>
+      <section class="zaps" data-global-section="zaps">
+        <h2 class="focus-settings__section-title">${_('Zaps')}</h2>
+        <div id="zaps-content" class="settings-sub-page__content"></div>
+      </section>
+      <section class="cache" data-global-section="cache">
+        <h2 class="focus-settings__section-title">${_('Cache')}</h2>
+        <div id="cache-settings-content" class="settings-sub-page__content"></div>
+      </section>`;
+    void this.mountSections(el);
+  }
+
+  private async mountSections(host: HTMLElement): Promise<void> {
+    const [relays, media, zaps, cache] = await Promise.all([
+      import('../components/settings/RelaySettingsSection'),
+      import('../components/settings/MediaServerSection'),
+      import('../components/settings/NWCSettingsSection'),
+      import('../components/settings/CacheSettingsSection'),
+    ]);
+    // The drawer may have closed while the chunks were loading.
+    if (this.host !== host) return;
+    const defs: Array<
+      [
+        new () => {
+          mount(p: HTMLElement): Promise<void> | void;
+          unmount(): void;
+        },
+        string,
+      ]
+    > = [
+      [relays.RelaySettingsSection, '[data-global-section="relays"]'],
+      [media.MediaServerSection, '[data-global-section="media"]'],
+      [zaps.NWCSettingsSection, '[data-global-section="zaps"]'],
+      [cache.CacheSettingsSection, '[data-global-section="cache"]'],
+    ];
+    for (const [Ctor, selector] of defs) {
+      const wrap = host.querySelector(selector) as HTMLElement | null;
+      if (!wrap) continue;
+      const section = new Ctor();
+      await Promise.resolve(section.mount(wrap));
+      if (this.host !== host) {
+        section.unmount();
+        return;
+      }
+      this.mounted.push(section);
+    }
+  }
+
+  destroy(): void {
+    for (const section of this.mounted) section.unmount();
+    this.mounted = [];
+    if (this.host) this.host.innerHTML = '';
+    this.host = null;
+  }
+}

@@ -28,7 +28,7 @@ export class FollowerNotificationAddonView extends View {
     }
     this.container.innerHTML = `
       <div class="back-padder focus-flow-root">
-        <h1>${_('Follower Notification')}</h1>
+        <h1>${_('Follower Alerts')}</h1>
         <section class="section" id="follower-notification-settings-content"></section>
         <div data-addon-content="follower-notification"></div>
       </div>

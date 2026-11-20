@@ -741,7 +741,7 @@ export class ProfileView extends View {
 
       </div>
 
-      <div class="profile-tabs tabs tabs--scrollable">
+      <div class="profile-tabs tabs">
         <button class="tab tab--active" data-tab="notes" type="button">${_('Notes')}</button>
         <button class="tab" data-tab="articles" type="button">${_('Articles')}</button>
         <button class="tab" data-tab="videos" type="button">${_('Videos')}</button>

@@ -20,35 +20,11 @@
  */
 
 import type { FocusDomainSurface } from './focusDomains';
+import { createListTabSurface } from './focusListTabSurface';
 
-export const followsSurface = async (): Promise<FocusDomainSurface> => {
-  const { FollowListManager } = await import('../lists/follows');
-  let manager: InstanceType<typeof FollowListManager> | null = null;
-  let content: HTMLElement | null = null;
-
-  return {
-    attach(slot) {
-      if (content) {
-        slot.appendChild(content);
-        return;
-      }
-      content = document.createElement('div');
-      content.className = 'tab-content tab-content--active';
-      content.dataset.tabContent = 'list-follows';
-      slot.appendChild(content);
-      manager = new FollowListManager(slot);
-      void manager.renderListTab(content);
-    },
-    detach() {
-      // Content stays cached — the manager instance is preserved.
-      content?.remove();
-    },
-    view: {
-      destroy(): void {
-        manager?.destroy();
-        manager = null;
-        content = null;
-      },
-    },
-  };
-};
+export const followsSurface = (): Promise<FocusDomainSurface> =>
+  createListTabSurface({
+    tabId: 'list-follows',
+    loadManager: async () =>
+      (await import('../lists/follows')).FollowListManager,
+  });

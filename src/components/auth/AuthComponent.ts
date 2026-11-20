@@ -156,6 +156,9 @@ export class AuthComponent {
               🔑 ${_('Use Browser extension')}
             </button>
             <p class="auth-hint">${_('Extension handles signing')}</p>
+            <p class="auth-hint auth-hint--welcome">
+              <a href="#" data-action="welcome-link">${_('New to Nostr?')}</a>
+            </p>
           </div>
         </section>
 
@@ -353,6 +356,17 @@ export class AuthComponent {
         if ((e as KeyboardEvent).key === 'Enter') {
           void this.handleBunkerLogin();
         }
+      });
+    }
+
+    // Welcome link (rescued from the dissolved login sidebar): /welcome
+    const welcomeLink = primaryContent.querySelector(
+      '[data-action="welcome-link"]'
+    );
+    if (welcomeLink) {
+      welcomeLink.addEventListener('click', e => {
+        e.preventDefault();
+        this.router.navigate('/welcome');
       });
     }
 

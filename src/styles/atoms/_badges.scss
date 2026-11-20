@@ -9,6 +9,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
+@use '../abstracts/mixins' as *;
 
 // ========================================
 // Base Badge
@@ -46,6 +47,75 @@
   font-size: 0.625rem;
   padding: 0 calc($gap / 4);
   min-width: 16px;
+}
+
+// ========================================
+// Diode (unread counter pill)
+// ========================================
+// ATOM — context-independent: the green unread-count pill as its own
+// thing (v2). Pure appearance — the badge managers own visibility and
+// count (inline styles), the consumers only place it.
+.diode {
+  box-sizing: border-box;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: $radius-full;
+  background-color: var(--color-6);
+  color: var(--color-1);
+  @extend %small;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  pointer-events: none; // never block the carrier's click
+}
+
+// Large variant: the circle diodes (nn-wheel parity) — 30px, the count
+// centers via flex (the managers set display: inline-flex).
+.diode--big {
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  @include compact;
+  font-weight: 700;
+  color: var(--color-5);
+  text-shadow: $diode-text-shadow;
+}
+
+// High priority unread (replies, zaps): the pill pulses.
+.diode--prio-high {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+// Low priority unread (hashtags): hollow — no fill, green outline keeps
+// the count readable on the surface.
+.diode--prio-low {
+  background: transparent;
+  border: 1px solid var(--color-6);
+  color: var(--color-6);
+}
+
+// Spam hint ("SP"): smaller, deliberately low-key — a spam wave must
+// never look like important mail.
+.diode--spam {
+  font-size: 0.625rem;
+  padding: 0 calc($gap / 4);
+  min-width: 16px;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-6) 80%, transparent);
+  }
 }
 
 // Red (solid pill, status "bad" — e.g. "Has muted you"). Mirrors badge--green

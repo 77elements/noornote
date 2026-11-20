@@ -104,6 +104,15 @@ export class AddonLoader {
   private readonly entries = new Map<string, AddonLoaderEntry>();
   private currentPubkey: string | null = null;
   private currentNpub: string | null = null;
+  /**
+   * Bumped on every handleLogin run (login, account switch, interface
+   * switch). Boot-init ops carry the generation they were scheduled under;
+   * at execution time a stale generation means the interface/account state
+   * changed while this init sat in the queue — the op must not run (it
+   * would load an addon the CURRENT interface just decided against, the
+   * v1→v2 quick-switch relic race).
+   */
+  private loginGeneration = 0;
   // Subscription ids are intentionally not stored: AddonLoader is a singleton
   // for the lifetime of the app; we never unsubscribe the bootstrap listeners.
   private initialized = false;
@@ -296,26 +305,43 @@ export class AddonLoader {
     // widget on or a pinned background stream — otherwise pure on-demand).
     // For every loaded addon that was initialized for a different pubkey,
     // destroy and re-init.
+    //
+    // Interface-switch races (both directions, no reload): a previous
+    // handleLogin may have queued ops that have not run yet (dynamic
+    // imports take time). The gates below must decide from the QUEUED
+    // state, not only from `instance`:
+    //  - a queued init for an addon the current interface no longer
+    //    auto-loads must not execute → generation supersession in runInit;
+    //  - a queued destroy (on-demand release) must be followed by a fresh
+    //    init when the new interface DOES auto-load the addon.
+    const gen = ++this.loginGeneration;
     for (const entry of this.entries.values()) {
       const enabled =
         this.safeIsEnabled(entry) && (entry.bootLoad ? entry.bootLoad() : true);
 
       if (!enabled) {
-        if (entry.instance) {
+        if (entry.instance || entry.destroyQueued) {
           entry.destroyQueued = true;
           this.enqueue(entry, () => this.runDestroy(entry));
         }
         continue;
       }
-      if (entry.instance && entry.loadedForPubkey !== pubkey) {
+      if (entry.destroyQueued) {
+        // A destroy is queued (on-demand release or previous teardown):
+        // let it run, then bring the runtime up fresh for this interface.
+        this.enqueue(entry, async () => {
+          await this.runDestroy(entry);
+          await this.runInit(entry, gen);
+        });
+      } else if (entry.instance && entry.loadedForPubkey !== pubkey) {
         // Account switch: tear down, then bring up for the new pubkey.
         this.enqueue(entry, async () => {
           entry.destroyQueued = true;
           await this.runDestroy(entry);
-          await this.runInit(entry);
+          await this.runInit(entry, gen);
         });
       } else if (!entry.instance) {
-        this.enqueue(entry, () => this.runInit(entry));
+        this.enqueue(entry, () => this.runInit(entry, gen));
       }
     }
   }
@@ -379,7 +405,7 @@ export class AddonLoader {
       pubkey: this.currentPubkey,
     });
     entry.unloadPending = false;
-    this.enqueue(entry, () => this.runInit(entry));
+    this.enqueue(entry, () => this.runInit(entry, 0));
     return entry.opChain;
   }
 
@@ -414,9 +440,23 @@ export class AddonLoader {
     });
   }
 
-  private async runInit(entry: AddonLoaderEntry): Promise<void> {
+  /**
+   * `gen` carries the loginGeneration this boot-init was scheduled under —
+   * 0 = user-driven (ensureLoaded) and never superseded. A stale generation
+   * means a newer handleLogin re-decided the interface/account state while
+   * this op sat in the queue (quick v1↔v2 switch): skip instead of loading
+   * a relic the current interface explicitly turned down.
+   */
+  private async runInit(entry: AddonLoaderEntry, gen = 0): Promise<void> {
     if (entry.instance) {
       return; // idempotent
+    }
+    if (gen !== 0 && gen !== this.loginGeneration) {
+      diagLog('addons', 'addons_boot_init_superseded', {
+        id: entry.id,
+        reason: 'interface/account changed while init was queued',
+      });
+      return;
     }
     const loadStart = performance.now();
     diagLog('addons', 'addons_load_start', {
@@ -433,6 +473,15 @@ export class AddonLoader {
         error: String(
           err && (err as Error).message ? (err as Error).message : err
         ),
+      });
+      return;
+    }
+    // Supersession re-check after the async import: the dynamic import can
+    // take long enough for a newer handleLogin to have re-decided.
+    if (gen !== 0 && gen !== this.loginGeneration) {
+      diagLog('addons', 'addons_boot_init_superseded', {
+        id: entry.id,
+        reason: 'interface/account changed while runtime import was in flight',
       });
       return;
     }
@@ -455,6 +504,20 @@ export class AddonLoader {
         ),
         stack: (err as Error)?.stack ?? null,
       });
+      return;
+    }
+    // Superseded while runtime.init() was in flight: the machinery is up —
+    // tear it down immediately instead of registering it as a relic.
+    if (gen !== 0 && gen !== this.loginGeneration) {
+      diagLog('addons', 'addons_boot_init_superseded', {
+        id: entry.id,
+        reason: 'interface/account changed while runtime init was in flight',
+      });
+      try {
+        await runtime.destroy();
+      } catch {
+        // destroy failure must not mask the supersession
+      }
       return;
     }
     entry.instance = runtime;

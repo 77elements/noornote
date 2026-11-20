@@ -124,6 +124,13 @@ export const StorageKeys = {
   // FV side stacks rendered as compact chips instead of full circles
   // (the top-bar tools' compact toggle). Per-account view preference.
   FOCUS_UI_STACK_COMPACT: 'noornote_focus_ui_stack_compact_map',
+  // Which side the sidebar occupies — ONE synced preference for every
+  // sidebar surface: the FV wide grid columns, the phone FV drawer edge
+  // and the SV slide-in edge ('right' default — content first, sidebar
+  // right of it; 'left' mirrors all of them, e.g. for left-handed use on
+  // mobile). Applied via the .is-sidebar-left class on the stage root;
+  // the switch lives in section.ui-settings (rides SV ↔ FV).
+  FOCUS_UI_STACK_SIDE: 'noornote_focus_ui_stack_side_map',
   // Top-bar "Arrange positions" switch: while OFF (default) the layout
   // satellites (circle move/hide, stack tools, widget move) render
   // hidden. Per-account view preference.

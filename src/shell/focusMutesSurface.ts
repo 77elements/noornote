@@ -16,44 +16,13 @@
  */
 
 import type { FocusDomainSurface } from './focusDomains';
-import { createFocusViewHeader } from '../helpers/focusViewHeader';
+import { createListTabSurface } from './focusListTabSurface';
 import { _ } from '../i18n';
 
-export const mutesSurface = async (): Promise<FocusDomainSurface> => {
-  const { MuteListManager } = await import('../lists/mutes');
-  let manager: InstanceType<typeof MuteListManager> | null = null;
-  let header: HTMLElement | null = null;
-  let content: HTMLElement | null = null;
-
-  return {
-    attach(slot) {
-      if (header) {
-        slot.appendChild(header);
-        slot.appendChild(content as HTMLElement);
-        return;
-      }
-      // Header: h1 (no action — the muted list has no composer).
-      header = createFocusViewHeader({ title: _('Muted') });
-      slot.appendChild(header);
-      content = document.createElement('div');
-      content.className = 'tab-content tab-content--active';
-      content.dataset.tabContent = 'list-mutes';
-      slot.appendChild(content);
-      manager = new MuteListManager(slot);
-      void manager.renderListTab(content);
-    },
-    detach() {
-      // Content stays cached — the manager instance is preserved.
-      header?.remove();
-      content?.remove();
-    },
-    view: {
-      destroy(): void {
-        manager?.destroy();
-        manager = null;
-        header = null;
-        content = null;
-      },
-    },
-  };
-};
+export const mutesSurface = (): Promise<FocusDomainSurface> =>
+  createListTabSurface({
+    tabId: 'list-mutes',
+    headerTitle: _('Muted'),
+    headerObject: 'muted',
+    loadManager: async () => (await import('../lists/mutes')).MuteListManager,
+  });

@@ -13,6 +13,7 @@
  */
 
 import { _ } from '../i18n';
+import { delegateToFocusUi } from '../helpers/focusUiNavigation';
 import type { FocusUrlState } from './focusUrlState';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
@@ -108,7 +109,7 @@ export interface FocusDomainSurfaceView {
 export interface FocusDomainSurface {
   /**
    * Mount the surface's content into the stage's column slot
-   * (.focus-object__content). The slot is the domain's content root —
+   * (.focus-content__content). The slot is the domain's content root —
    * surfaces own their content, the stage owns the slot.
    */
   attach(slot: HTMLElement): void;
@@ -198,6 +199,13 @@ export interface FocusDomainDef {
    */
   createSettings?: () => FocusSettingsView;
   /**
+   * Primary object action (Write Note / Write Article): shown as a row
+   * in the FV side panel (the phone header row is retired — the action
+   * belongs to the object, so it rides the object's panel). Routed
+   * through the focus navigation seam.
+   */
+  primaryAction?: { label: string; run: () => void };
+  /**
    * Addon-backed domain: the object is provided by an AddonLoader addon.
    * Marked now, rendered differently later (docs/todos/v2-focus-ui.md).
    */
@@ -217,6 +225,12 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     viewTypes: ['single-note', 'new-note'],
     createSurface: socialSurface,
     createSettings: socialSettings,
+    primaryAction: {
+      label: _('Write Note'),
+      run: () => {
+        delegateToFocusUi('new-note');
+      },
+    },
   },
   {
     id: 'articles',
@@ -226,6 +240,12 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     viewTypes: ['article', 'write-article'],
     createSurface: articlesSurface,
     createSettings: articlesSettings,
+    primaryAction: {
+      label: _('Write Article'),
+      run: () => {
+        delegateToFocusUi('write-article');
+      },
+    },
   },
   {
     id: 'media',
@@ -234,6 +254,10 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/media',
     viewTypes: ['write-video'],
     createSurface: mediaSurface,
+    primaryAction: {
+      label: _('Post Media'),
+      run: () => delegateToFocusUi('write-video'),
+    },
   },
   {
     id: 'recipes',
@@ -362,6 +386,10 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/marketplace',
     viewTypes: ['listing', 'write-listing', 'edit-listing'],
     createSurface: marketplaceSurface,
+    primaryAction: {
+      label: _('Post Listing'),
+      run: () => delegateToFocusUi('write-listing'),
+    },
     // list = the listing feed, detail = a listing (/listing/:naddr),
     // secondary = the listing composer (/marketplace/post).
   },
@@ -521,7 +549,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   },
   {
     id: 'hashtag-subscriptions',
-    label: _('Hashtag Subscriptions'),
+    label: _('Hashtag Alerts'),
     icon: 'icon-tag',
     addon: true,
     route: '/hashtag-subscriptions',
@@ -582,7 +610,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   },
   {
     id: 'follower-notification',
-    label: _('Follower Notification'),
+    label: _('Follower Alerts'),
     icon: 'icon-bell',
     addon: true,
     route: '/follower-notification',

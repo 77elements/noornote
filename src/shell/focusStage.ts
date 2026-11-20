@@ -17,16 +17,15 @@
  * border-radius 50% → column radius only on the active object.
  * `prefers-reduced-motion` skips the animation.
  *
- * Under the morph breakpoint (1100px) there is no FLIP: a simple full-
- * width column takeover (mobile behavior).
- *
  * Only one domain can be focused at a time (PoC). Surfaces are cached per
  * domain: closing pauses the view, reopening re-mounts and resumes it.
  */
 
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
-import { Switch } from '../components/ui/Switch';
+import { GlobalSettingsPanel } from './focusSettings';
+import { diagLog } from '../services/DiagnosticLogger';
+import { PlatformService } from '../services/PlatformService';
 import { Router } from '../services/Router';
 import { NavigationDispatcher } from '../services/NavigationDispatcher';
 import { AddonLoader, type AddonRuntime } from '../addons/AddonLoader';
@@ -59,7 +58,6 @@ import {
   type FocusSettingsView,
 } from './focusDomains';
 import { loadHiddenObjectIds, hideObject } from './hiddenObjectsStore';
-import { diagLog } from '../services/DiagnosticLogger';
 import { NnDropdown } from '../components/ui/NnDropdown';
 import {
   FOCUS_OBJECT_SETS,
@@ -82,12 +80,22 @@ const HOME_ROUTE = '/';
 /** Morph duration/easing — single source for open and close. */
 const MORPH_MS = 380;
 const MORPH_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
-/** Below this viewport width: column takeover instead of FLIP morph. */
-const MORPH_MIN_WIDTH = 1100;
-/** Media query mirroring the SCSS takeover breakpoint (must stay in sync). */
-const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
+
+/**
+ * FV layout mode. Source of truth is CSS: the .focus-stage::after
+ * pseudo-element (media-query-driven — the same CSS-as-truth technique as
+ * html::after/LayoutService, but with the FV's own boundaries, since the
+ *  - phone (<768px): the focused object alone fills the column; the side
+ *    stack (a permanent grid child) is turned into the left slide-in
+ *    drawer purely by CSS.
+ *  - tablet (768px+): the side stack sits beside the focused object
+ *    (2 columns) — tablet IS desktop, there is no third tier.
+ */
+/** Two layouts only: phone (under 768) turns the stack aside into the
+ * slide-in drawer via CSS, wide (768+) keeps it as a grid column. */
+type FocusStageMode = 'phone' | 'tablet';
 
 /**
  * Widgets mounted into the FV side stacks (v2). Only ids listed here get
@@ -122,13 +130,21 @@ interface FocusHandoff {
  * classic nav drive them (wired in mount), shown whenever unread exists —
  * always rendered, no hover gating like the move handle.
  */
+/**
+ * The always-on trio: the three domains the user must see in every
+ * object (unread diodes = passive badges, content loads on open — RAM
+ * principle). They ride the side stack as compact rows; everything
+ * else lives on the start view.
+ */
+const TRIO_DOMAIN_IDS = ['notifications', 'messages', 'bookmarks'] as const;
+
 const DIODES: Record<string, string> = {
   notifications:
-    '<span class="notifications-badge focus-object__diode" data-focus-diode="notifications"></span>',
+    '<span class="diode diode--big" data-focus-diode="notifications"></span>',
   messages:
-    '<span class="badge badge--green dm-badge focus-object__diode" data-focus-diode="dm" style="display: none"></span>',
+    '<span class="diode diode--big" data-focus-diode="dm" style="display: none"></span>',
   bookmarks:
-    '<span class="notifications-badge focus-object__diode" data-focus-diode="bookmarks" data-list-unread="bookmarks"></span>',
+    '<span class="diode diode--big" data-focus-diode="bookmarks" data-list-unread="bookmarks"></span>',
 };
 
 export class FocusStage {
@@ -143,27 +159,10 @@ export class FocusStage {
    * the side-stack distribution (see reparentSideStacks).
    */
   private order: string[] = [];
-  /**
-   * Circle arrangement in the focused layout (FV), explicit per-column
-   * positions. null = alternating distribution derived from the SV order.
-   * Independent of `order` (SV grid) — FV drags never touch the SV.
-   * Persisted per account (FOCUS_UI_COLUMN_LAYOUT); later secondary
-   * objects (widgets) join the same lists.
-   */
-  private columnLayout: { left: string[]; right: string[] } | null =
-    this.loadColumnLayout();
-  /**
-   * Widget placement in the focused layout (FV): { [widgetId]: { side,
-   * index } }, index into the side stack's item flow (0 = above all
-   * circles). Unlisted widgets render at the default spot (right stack,
-   * top). Persisted per account (FOCUS_UI_WIDGET_LAYOUT); set by drag &
-   * drop on the widgets' move handles. Separate from columnLayout —
-   * domain ids collide with widget ids ('live-streams' is both).
-   */
-  private widgetLayout: Record<
-    string,
-    { side: 'left' | 'right'; index: number }
-  > = this.loadWidgetLayout();
+  /** Side stacks while a domain is focused (see reparentSideStacks).
+   * Tablet/phone single-stack mode stores the SAME element in both slots —
+   * every [left, right] consumer degrades gracefully (drop targets, widget
+   * placement); dual-only affordances guard on the two slots being equal. */
   /** Widget hosts currently mounted in the side stacks (see placeWidgets). */
   private widgetHosts = new Map<
     string,
@@ -180,15 +179,6 @@ export class FocusStage {
    * 'focus:objects-hidden-changed' subscription (live grid update).
    */
   private hiddenIds: string[] = [];
-  /** Side stacks render their circles as compact chips (the stack tools'
-   * compact toggle). Per-account view preference; the active circle and
-   * the home grid always render round. */
-  private stackCompact = false;
-  /** Top-bar "Arrange positions" gate (default OFF): while OFF the layout
-   * satellites (circle move/hide, stack tools, widget move) render hidden
-   * — the shell stays calm for users who never rearrange. Diodes and the
-   * active column's actions are exempt (not layout tools). */
-  private arrangeOn = false;
   /** focus:objects-hidden-changed subscription (mount → destroy contract). */
   private hiddenSubId: string | null = null;
   /** live-streams:widget-toggle subscription (mount → destroy contract). */
@@ -203,10 +193,50 @@ export class FocusStage {
   private walletSubId: string | null = null;
   /** Tooltip disposers for the persistent 30px controls (destroy contract). */
   private tooltipDisposers: Array<() => void> = [];
-  /** Side stacks while a domain is focused (see reparentSideStacks). */
+  /** Panel gesture disposers (drag-to-close + outside-click, destroy
+   * contract) — one per slide-in sidebar, re-created on remount. */
+  private stackDismiss: (() => void) | null = null;
+  private settingsPanelGestures: (() => void) | null = null;
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
   private morphing = false;
+  /** FV mode the stacks were built for (stageMode); re-built on change. */
+  private lastStageMode: FocusStageMode = 'phone';
+  /** The stack drawer (phone): the aside itself IS the slide-in — CSS
+   * turns the permanent grid child into a fixed panel under 768px; JS
+   * only toggles .is-open. */
+  private stackAside: HTMLElement | null = null;
+  private sidebarOpen = false;
+  /** The floating hamburger (phone): toggles the stack drawer; lives on
+   * the stage root, OUTSIDE the translated aside (fixed containment). */
+  private hamburgerBtn: HTMLElement | null = null;
+  /** The stack header's gear (active object's settings): opens the ED-b
+   * drawer. Re-created per focus; carries the is-active drawer state. */
+  private stackSettingsBtn: HTMLElement | null = null;
+  /** Phone FV top line: hamburger + the surface's refresh control + the
+   * column's scroll-to-top — three scattered floats, one row (l-spread),
+   * one height. Lives on the stage root, OUTSIDE the translated sidebar
+   * (fixed containment). */
+  private topline: HTMLElement | null = null;
+  /** Portaled guests with their original DOM spots (restore contract). */
+  private toplineGuests: Array<{
+    el: HTMLElement;
+    parent: HTMLElement;
+    next: Element | null;
+  }> = [];
+  /** The object-specific dropdown row: the surface's tab selector (the
+   * collapsed .tabs row carries it) + the Latest filter — portaled under
+   * the write action; the surfaces keep owning their machinery. */
+  private dropdownRow: HTMLElement | null = null;
+  private dropdownGuests: Array<{
+    el: HTMLElement;
+    parent: HTMLElement;
+    next: Element | null;
+  }> = [];
+  private dropdownMo: MutationObserver | null = null;
+  /** Right settings sidebar (absorbed the top bar + the ED-t drawer). */
+  private settingsSidebar: HTMLElement | null = null;
+  private settingsOpen = false;
   /** Per-object scroll-to-top action state (button + last scroll source). */
   private scrollTopState = new Map<
     string,
@@ -230,6 +260,16 @@ export class FocusStage {
   /** Top-bar object-set selector (destroy contract: NnDropdown portals
    * its menu to <body> — must be torn down with the stage). */
   private setDropdown: NnDropdown | null = null;
+  /** The sidebar-side switch (rides ui-settings, SV panel ↔ FV aside). */
+  private sideSwitchEl: HTMLElement | null = null;
+  /** The SV panel's gear (opens the global settings in the ED-b). */
+  private svSettingsBtn: HTMLElement | null = null;
+  /** The meta footer (download, version, About) — rides SV ↔ FV. */
+  private metaEl: HTMLElement | null = null;
+  /** Which side the sidebar occupies — one synced preference (see
+   * StorageKeys.FOCUS_UI_STACK_SIDE); the .is-sidebar-left class on the
+   * stage root drives every surface via CSS. */
+  private sidebarSide: 'left' | 'right' = 'right';
   /** Flattened system-log panel (tab-open ED-b in a FV) — same contract. */
   private logPanelView: FocusLogPanel | null = null;
   private logPanelHost: HTMLElement | null = null;
@@ -253,21 +293,19 @@ export class FocusStage {
     // Height-only resizes (devtools docked bottom, window grow) must keep
     // the focused column — only WIDTH changes matter for the layout mode.
     if (!this.activeId || this.morphing) return;
+    // Mode change (CSS pseudo-element is the truth): rebuild the stack
+    // arrangement — phone drawer ↔ wide sidebar beside the object —
+    // without losing the focus. teardownStacks also rides the shared
+    // content home; reparentSideStacks re-mounts for the new mode (and
+    // re-sets the columns).
+    const mode = this.stageMode();
+    if (mode === this.lastStageMode) return;
     const def = FOCUS_DOMAINS.find(d => d.id === this.activeId);
-    const el = def ? this.objects.get(def.id) : undefined;
-    if (!def || !el) return;
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
-    if (takeOver) {
-      // Crossed DOWN into takeover: drop the FLIP artifacts (inline
-      // placement, side stacks) — the takeover CSS holds the column alone.
-      el.style.gridColumn = '';
-      this.restoreSideCircles();
-    } else if (!this.sideStacks) {
-      // Crossed UP into FLIP mode: re-place the column and re-parent the
-      // side stacks (takeover left the circles flat in the grid).
-      el.style.gridColumn = '2';
-      this.reparentSideStacks(def.id);
-    }
+    if (!def) return;
+    this.teardownStacks();
+    const el = this.objects.get(def.id) as HTMLElement;
+    el.style.gridColumn = '';
+    this.reparentSideStacks(def.id);
     // Same-mode width changes: pure CSS reflow, nothing to do.
   };
 
@@ -293,89 +331,18 @@ export class FocusStage {
 
   /** Build the FS grid into the stage element. */
   mount(): void {
-    // SV top bar: permanent header row above the grid (placeholder for
-    // future controls). Today it holds the v1 switch (injected by the
-    // shell into the slot — it used to live in the ED-t panel, whose tab
-    // covered the top circles) and the load-resource-monitor button.
-    const topBar = document.createElement('div');
-    topBar.className = 'top-bar';
-    topBar.innerHTML = `
-      <div class="top-bar__switch" data-sv-v1-switch-slot></div>
-      <div class="top-bar__arrange" data-sv-arrange-slot></div>
-      <button type="button" class="top-bar__loadmon" data-sv-loadmon aria-label="${_('Load Resource Monitor')}">
-        <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
-      </button>
-    `;
-    // Object-set selector: named bundles of visible objects, applied in
-    // one step (everything not in the set is hidden — the same save →
-    // event → shutdown-diff path as the per-object hide button). The
-    // trigger label shows the active set; a custom mixed state shows the
-    // neutral placeholder.
-    const setOptions = [
-      { value: '', label: _('Workspace') },
-      ...FOCUS_OBJECT_SETS.map(set => ({ value: set.id, label: set.label })),
-    ];
-    this.setDropdown = new NnDropdown({
-      options: setOptions,
-      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
-      onChange: value => {
-        if (!value) {
-          this.syncObjectSetDropdown();
-          return;
-        }
-        applyObjectSet(value);
-      },
-      className: 'top-bar__set',
-    });
-    const setDropdownEl = this.setDropdown.getElement();
-    // Arrange-positions gate: the layout satellites render only while the
-    // switch is ON (persisted per account, default OFF).
-    this.arrangeOn =
-      PerAccountLocalStorage.getInstance().get<boolean>(
-        StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
-        false
-      ) === true;
-    this.applyArrangeGate();
-    const arrangeSwitch = new Switch({
-      label: _('Arrange positions'),
-      checked: this.arrangeOn,
-      onChange: checked => {
-        this.arrangeOn = checked;
-        PerAccountLocalStorage.getInstance().set(
-          StorageKeys.FOCUS_UI_ARRANGE_POSITIONS,
-          checked
-        );
-        this.applyArrangeGate();
-        diagLog('system', 'focus_arrange_positions_toggled', { on: checked });
-      },
-    });
-    const arrangeWrap = topBar.querySelector(
-      '[data-sv-arrange-slot]'
-    ) as HTMLElement;
-    arrangeWrap.innerHTML = arrangeSwitch.render();
-    arrangeSwitch.setupEventListeners(arrangeWrap);
-    const loadmonBtn = topBar.querySelector('[data-sv-loadmon]') as HTMLElement;
-    topBar.insertBefore(setDropdownEl, loadmonBtn);
-    loadmonBtn.addEventListener('click', () => {
-      // Same boot-path discipline as the typed trigger: dynamic import.
-      void import('./loadHud').then(m => m.openLoadHud());
-    });
-    this.tooltipDisposers.push(
-      Tooltip.attach(loadmonBtn, _('Load Resource Monitor'), {
-        placement: 'bottom',
-      })
-    );
-    this.root.appendChild(topBar);
+    // The right settings sidebar: absorbed the SV top bar AND the ED-t
+    // drawer (both removed). The lasche handles are the only triggers —
+    // one entry point per concern: circles left (FV), settings right.
+    this.mountSettingsSidebar();
 
     this.grid = document.createElement('div');
-    this.grid.className = 'focus-stage__grid';
+    this.grid.className = 'focus-main-layout';
     this.order = this.loadOrder();
+    // The settings sidebar mounted before the order existed (it is built
+    // first) — now that the order is known, gate the reset button.
+    this.syncResetOrderVisibility();
     this.hiddenIds = loadHiddenObjectIds();
-    this.stackCompact =
-      PerAccountLocalStorage.getInstance().get<boolean>(
-        StorageKeys.FOCUS_UI_STACK_COMPACT,
-        false
-      ) === true;
     for (const id of this.order) {
       if (this.hiddenIds.includes(id)) continue;
       const def = FOCUS_DOMAINS.find(d => d.id === id);
@@ -441,9 +408,16 @@ export class FocusStage {
     const dm = this.grid.querySelector(
       '[data-focus-diode="dm"]'
     ) as HTMLElement | null;
-    if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
-    if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
-    this.badgeManagers.push(new ListsCountManager(this.grid));
+    if (notif) {
+      this.badgeManagers.push(
+        new NotificationsBadgeManager(notif, {
+          high: 'diode--prio-high',
+          low: 'diode--prio-low',
+        })
+      );
+    }
+    if (dm) this.badgeManagers.push(new DMBadgeManager(dm, 'diode--spam'));
+    this.badgeManagers.push(new ListsCountManager(this.root));
   }
 
   /**
@@ -639,98 +613,6 @@ export class FocusStage {
     return [...valid, ...ids.filter(id => !valid.includes(id))];
   }
 
-  /** Registry defs in the user's stored order. */
-  private orderedDefs(): FocusDomainDef[] {
-    return this.order
-      .map(id => FOCUS_DOMAINS.find(d => d.id === id))
-      .filter((d): d is FocusDomainDef => !!d);
-  }
-
-  /**
-   * The persisted FV column layout, validated against the registry: stale
-   * ids dropped, duplicates removed, an id listed in BOTH columns kept
-   * only in 'left'. Null when nothing (or a broken shape) is stored —
-   * callers derive the alternating default.
-   */
-  private loadColumnLayout(): { left: string[]; right: string[] } | null {
-    const ids = FOCUS_DOMAINS.map(d => d.id);
-    const stored = PerAccountLocalStorage.getInstance().get<{
-      left: string[];
-      right: string[];
-    } | null>(StorageKeys.FOCUS_UI_COLUMN_LAYOUT, null);
-    if (
-      !stored ||
-      !Array.isArray(stored.left) ||
-      !Array.isArray(stored.right)
-    ) {
-      return null;
-    }
-    const clean = (list: string[], skip: string[]): string[] => [
-      ...new Set(list.filter(id => ids.includes(id) && !skip.includes(id))),
-    ];
-    const left = clean(stored.left, []);
-    const right = clean(stored.right, left);
-    if (left.length === 0 && right.length === 0) return null;
-    return { left, right };
-  }
-
-  /**
-   * The persisted FV widget placement, sanitized against WIDGET_IDS:
-   * unknown ids dropped, malformed spots fall back to the default,
-   * indexes clamped to ≥ 0.
-   */
-  private loadWidgetLayout(): Record<
-    string,
-    { side: 'left' | 'right'; index: number }
-  > {
-    const stored = PerAccountLocalStorage.getInstance().get<Record<
-      string,
-      { side: 'left' | 'right'; index: number }
-    > | null>(StorageKeys.FOCUS_UI_WIDGET_LAYOUT, null);
-    if (!stored) return {};
-    const clean: Record<string, { side: 'left' | 'right'; index: number }> = {};
-    for (const id of WIDGET_IDS) {
-      const spot = stored[id];
-      if (!spot || (spot.side !== 'left' && spot.side !== 'right')) continue;
-      clean[id] = {
-        side: spot.side,
-        index:
-          typeof spot.index === 'number' && Number.isFinite(spot.index)
-            ? Math.max(0, Math.floor(spot.index))
-            : 0,
-      };
-    }
-    return clean;
-  }
-
-  private persistWidgetLayout(): void {
-    PerAccountLocalStorage.getInstance().set(
-      StorageKeys.FOCUS_UI_WIDGET_LAYOUT,
-      this.widgetLayout
-    );
-  }
-
-  /**
-   * The arrangement to render RIGHT NOW: the persisted column layout or,
-   * when none is stored, alternating 50/50 — with registry additions since
-   * the layout was saved interleaved by their SV position (even index →
-   * left), so every circle always has a home and the default derivation
-   * stays stable. Always returns fresh arrays (callers mutate the result).
-   */
-  private effectiveLayout(): { left: string[]; right: string[] } {
-    const base = this.columnLayout ?? {
-      left: [] as string[],
-      right: [] as string[],
-    };
-    const left = [...base.left];
-    const right = [...base.right];
-    this.orderedDefs().forEach((def, i) => {
-      if (left.includes(def.id) || right.includes(def.id)) return;
-      (i % 2 === 0 ? left : right).push(def.id);
-    });
-    return { left, right };
-  }
-
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
@@ -776,8 +658,17 @@ export class FocusStage {
     this.scrollTopState.clear();
     for (const mgr of this.badgeManagers) mgr.destroy();
     this.badgeManagers = [];
+    for (const mgr of this.focusBadgeManagers) mgr.destroy();
+    this.focusBadgeManagers = [];
+    for (const mgr of this.svBadgeManagers) mgr.destroy();
+    this.svBadgeManagers = [];
     for (const dispose of this.tooltipDisposers) dispose();
     this.tooltipDisposers = [];
+    this.stackDismiss?.();
+    this.stackDismiss = null;
+    this.stackAside = null;
+    this.sidebarOpen = false;
+    this.removeSettingsSidebar();
     this.grid?.remove();
   }
 
@@ -921,15 +812,36 @@ export class FocusStage {
     btn.classList.add('is-active');
   }
 
+  /** The SV gear: the ED-b carries the GLOBAL settings — the v1 routes
+   * that belong to no focus object (relays, media, zaps, cache), one
+   * section each, stacked. Same drawer, same close lifecycle as the
+   * object settings (toggleSettings), just def-free. */
+  private toggleGlobalSettings(btn: HTMLElement): void {
+    if (!this.drawer) return;
+    if (this.settingsView) {
+      this.drawer.close();
+      return;
+    }
+    this.unmountTabPanels();
+    diagLog('system', 'focus_global_settings_open', { via: 'sv-gear' });
+    const host = document.createElement('div');
+    host.className = 'focus-settings';
+    this.settingsHost = host;
+    this.settingsDef = null;
+    this.settingsFromSecondary = false;
+    this.settingsView = new GlobalSettingsPanel();
+    this.drawer.panel.appendChild(host);
+    this.settingsView.mount(host);
+    this.drawer.open();
+    btn.classList.add('is-active');
+  }
+
   /** Drawer closed (any way): tear the settings panel down. */
   private onSettingsClosed(): void {
     this.unmountTabPanels();
-    if (this.settingsDef) {
-      this.objects
-        .get(this.settingsDef.id)
-        ?.querySelector("[data-focus-action='settings']")
-        ?.classList.remove('is-active');
-    }
+    this.stackSettingsBtn?.classList.remove('is-active');
+    this.svSettingsBtn?.classList.remove('is-active');
+    this.svSettingsBtn = null;
     this.settingsView?.destroy();
     this.settingsView = null;
     this.settingsHost?.remove();
@@ -984,18 +896,18 @@ export class FocusStage {
   }
 
   private createObject(def: FocusDomainDef): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'focus-object';
+    const el = document.createElement('main');
+    el.className = 'focus-content';
     el.dataset.domainId = def.id;
     el.innerHTML = `
-      <button type="button" class="focus-object__hit">
-        ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
-        <span class="focus-object__label">${def.label}</span>
+      <button type="button" class="focus-content__hit">
+        ${def.icon ? `<svg class="focus-content__icon"><use href="#${def.icon}"/></svg>` : ''}
+        <span class="focus-content__label">${def.label}</span>
       </button>
-      <button type="button" class="focus-object__move" data-focus-action="move" aria-label="${_('Reorder')}">
+      <button type="button" class="focus-content__move" data-focus-action="move" aria-label="${_('Reorder')}">
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
       </button>
-      <button type="button" class="focus-object__hide" data-focus-action="hide" aria-label="${_('Hide')}"${
+      <button type="button" class="focus-content__hide" data-focus-action="hide" aria-label="${_('Hide')}"${
         canHideObject(
           def.id,
           FOCUS_DOMAINS.map(d => d.id),
@@ -1006,33 +918,20 @@ export class FocusStage {
       }>
         <svg width="15" height="15" aria-hidden="true"><use href="#icon-eye-closed"/></svg>
       </button>
-      <div class="focus-object__actions">
-        <button type="button" class="focus-object__control" data-focus-action="close"
-          aria-label="${_('Close')}">
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
-        </button>
-        <button type="button" class="focus-object__back" data-focus-action="back"
+      <div class="focus-content__actions">
+        <button type="button" class="focus-content__back" data-focus-action="back"
           hidden
           aria-label="${_('Back')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
         </button>
-        <button type="button" class="focus-object__scroll-top" data-focus-action="scroll-top"
+        <button type="button" class="focus-content__scroll-top" data-focus-action="scroll-top"
           hidden
           aria-label="${_('Scroll to top')}">
-          <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
+          <svg width="15" height="15" aria-hidden="true" class="focus-content__scroll-top-icon"><use href="#icon-back"/></svg>
         </button>
-        ${
-          def.createSettings
-            ? `
-        <button type="button" class="focus-object__settings" data-focus-action="settings"
-          aria-label="${_('Settings')}">
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-settings"/></svg>
-        </button>`
-            : ''
-        }
       </div>
       ${DIODES[def.id] ?? ''}
-      <div class="focus-object__content focus-object__content--${def.id}" data-focus-slot></div>
+      <div class="focus-content__content focus-content__content--${def.id}" data-focus-slot></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def));
     // Move handle: pointer drag reorders the circles (drop on another
@@ -1044,12 +943,9 @@ export class FocusStage {
     moveBtn.addEventListener('click', e => e.stopPropagation());
     moveBtn.addEventListener('pointerdown', e => {
       if (this.morphing) return;
-      if (this.activeId) {
-        // Focused (FV): only side-stack circles drag — the active one keeps
-        // its slot in the center column.
-        if (def.id !== this.activeId) this.startColumnDrag(e, def.id, el);
-        return;
-      }
+      // Focused (FV): no circle drag — the stack content is fixed (trio +
+      // widgets), ordering lives on the SV grid.
+      if (this.activeId) return;
       this.startOrderDrag(e, def.id, el);
     });
     // Hide affordance (docs/todos/hidden-objects.md): removes the circle
@@ -1063,18 +959,6 @@ export class FocusStage {
       e.stopPropagation();
       if (this.morphing || def.id === this.activeId) return;
       hideObject(def.id);
-    });
-    const control = el.querySelector(
-      "[data-focus-action='close']"
-    ) as HTMLElement;
-    control.addEventListener('click', e => {
-      // The control only exists on the active object (hidden in grid state
-      // via CSS) and always means "close"; never re-trigger "open".
-      e.stopPropagation();
-      if (this.activeId === def.id && !this.morphing) {
-        e.stopPropagation();
-        this.close();
-      }
     });
     // Action-button stack: the surface reports detail state via the frame
     // (focusSurfaceFrame.setBackVisible bubbles 'focus:surface-back') —
@@ -1158,17 +1042,6 @@ export class FocusStage {
     });
 
     // Settings action (gear): opens the ED-b bottom drawer with THIS
-    // object's settings panel (def.createSettings decides visibility).
-    if (def.createSettings) {
-      const settingsBtn = el.querySelector(
-        "[data-focus-action='settings']"
-      ) as HTMLElement;
-      settingsBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        if (this.activeId !== def.id || this.morphing) return;
-        void this.toggleSettings(def, settingsBtn);
-      });
-    }
     // Tooltips on every 30px control (nn-tooltip, shared popup portalled
     // to <body>). The aria-label texts already describe the actions —
     // reuse them. Disposers tracked for the destroy contract.
@@ -1180,15 +1053,8 @@ export class FocusStage {
         ),
         hideBtn,
       ],
-      [_('Close'), control],
       [_('Back'), backBtn],
       [_('Scroll to top'), scrollTopBtn],
-      [
-        _('Settings'),
-        el.querySelector(
-          "[data-focus-action='settings']"
-        ) as HTMLElement | null,
-      ],
     ];
     for (const [text, btn] of tips) {
       if (btn) this.tooltipDisposers.push(Tooltip.attach(btn, text));
@@ -1279,7 +1145,7 @@ export class FocusStage {
 
     this.morphing = true;
     this.activeId = def.id;
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
+    this.syncSettingsState();
 
     // Surface mounts BEFORE the morph: in document flow the column height
     // is its content height — the FLIP needs the laid-out final geometry.
@@ -1331,8 +1197,8 @@ export class FocusStage {
     }
 
     // Measure the TRUE before-geometry: the old object is still the
-    // column, the new one still a circle.
-    const first = takeOver ? null : this.measureAll();
+    // column, the new one still a circle. FLIP runs in every mode.
+    const first = this.measureAll();
 
     // Mutation phase (one task — no paint in between): swap the focus.
     if (oldId) {
@@ -1361,24 +1227,24 @@ export class FocusStage {
         oldSt.btn.hidden = true;
       }
       if (oldEl) {
-        oldEl.classList.remove('focus-object--active');
+        oldEl.classList.remove('focus-content--active');
         oldEl.style.gridColumn = '';
       }
-      this.restoreSideCircles();
+      this.teardownStacks();
     }
 
     const slot = el.querySelector('[data-focus-slot]') as HTMLElement;
     surface.attach(slot);
     surface.view?.resume?.();
-    el.classList.add('focus-object--active');
+    el.classList.add('focus-content--active');
     this.grid.classList.add('is-focused');
-    if (!takeOver) {
-      // The side circles re-parent into per-side stacks so their rows
-      // stay compact while the active column's content height stretches
-      // the middle row (in flow → the page scrolls the column).
-      el.style.gridColumn = '2';
-      this.reparentSideStacks(def.id);
-    }
+    // The side circles re-parent into their stacks so their rows stay
+    // compact while the active column's content height stretches (in
+    // flow → the page scrolls the column). FLIP in every mode; the mode
+    // decides the column placement (desktop/tablet = beside the single
+    // stack, set inside reparentSingleStack; phone = the stack lives in
+    // the nav sidebar, the object owns the only column).
+    this.reparentSideStacks(def.id);
     // A reopened (cached) surface may already be scrolled — sync the
     // scroll-to-top action to the restored state.
     const st = this.scrollTopState.get(def.id);
@@ -1418,15 +1284,14 @@ export class FocusStage {
     if (!def || !el) return;
     // A detached detail (Phase 5) dies with its host column.
     this.closeDetachedDetail();
-    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
     // Object settings (ED-b) die with their object.
     if (this.settingsView) this.drawer?.close();
 
     // Capture the focused geometry FIRST (content still mounted): in
     // document flow the column height is its content — after the surface
     // detaches, the box collapses and the morph-back would start from a
-    // sliver.
-    const first = animate && !takeOver ? this.measureAll() : null;
+    // sliver. FLIP runs in every mode.
+    const first = animate ? this.measureAll() : null;
 
     // Detach the surface first: the view pauses, its element is kept
     // cached so reopening does not refetch everything. The surface
@@ -1452,15 +1317,16 @@ export class FocusStage {
       st.btn.hidden = true;
     }
 
-    el.classList.remove('focus-object--active');
+    el.classList.remove('focus-content--active');
     this.grid.classList.remove('is-focused');
     el.style.gridColumn = '';
     this.activeId = null;
+    this.syncSettingsState();
     // Back to the home grid URL (no-op when already there). PUSH: the
     // grid is a state of its own — back from it returns to the object.
     pushFocusUrl(HOME_ROUTE);
-    this.restoreSideCircles();
-    if (!first) return; // takeover / no-animate: plain class flip
+    this.teardownStacks();
+    if (!first) return; // no-animate: plain class flip
 
     // FLIP back: focused geometry → circle geometry.
     this.morphing = true;
@@ -1477,16 +1343,36 @@ export class FocusStage {
    * order and persists it. A few pixels of dead zone keep a shaky click
    * from becoming a drag.
    */
-  private startOrderDrag(
-    e: PointerEvent,
-    dragId: string,
-    el: HTMLElement
-  ): void {
-    if (this.activeId || this.morphing) return;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
-    const startX = e.clientX;
-    const startY = e.clientY;
+  /**
+   * Shared translate-drag mechanics (SV order drag ↔ whole-stack drag):
+   * pointerdown → 6px dead zone → the element rides the cursor via
+   * transform (its grid slot stays occupied — no mid-drag reflow); the
+   * hit test drives the drop highlight; pointerup commits via `onDrop`.
+   * Listeners live on window (move/up/cancel) and are removed in cleanup.
+   */
+  private startTranslateDrag(opts: {
+    e: PointerEvent;
+    /** The translated element. */
+    el: HTMLElement;
+    /** Once when the dead zone is crossed (drag classes on). */
+    onDragStart: () => void;
+    /** Cleanup side of `onDragStart` (classes off). */
+    onDragEnd: () => void;
+    /** Drop target under the pointer, or null. */
+    hitTest: (x: number, y: number) => HTMLElement | null;
+    /** Highlight handoff: next replaces prev (also null/null at cleanup). */
+    onTargetChange?: (
+      next: HTMLElement | null,
+      prev: HTMLElement | null
+    ) => void;
+    /** Drop commit — called after cleanup with the last target. */
+    onDrop: (target: HTMLElement | null) => void;
+  }): void {
+    const el = opts.el;
+    opts.e.stopPropagation();
+    opts.e.preventDefault(); // no text selection / native drag while moving
+    const startX = opts.e.clientX;
+    const startY = opts.e.clientY;
     let dragging = false;
     let target: HTMLElement | null = null;
 
@@ -1494,17 +1380,15 @@ export class FocusStage {
       if (!dragging) {
         if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
         dragging = true;
-        // pointer-events off: the translated circle must not shadow the
+        // pointer-events off: the translated element must not shadow the
         // drop target in elementFromPoint.
-        el.classList.add('is-drag-source');
+        opts.onDragStart();
       }
       el.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
       const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
-      const next = obj && obj !== el && obj.dataset.domainId ? obj : null;
+      const next = hit ? opts.hitTest(ev.clientX, ev.clientY) : null;
       if (next !== target) {
-        target?.classList.remove('is-drop-target');
-        next?.classList.add('is-drop-target');
+        opts.onTargetChange?.(next, target);
         target = next;
       }
     };
@@ -1512,219 +1396,11 @@ export class FocusStage {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cleanup);
-      el.classList.remove('is-drag-source');
       el.style.transform = '';
-      target?.classList.remove('is-drop-target');
-    };
-    const onUp = (): void => {
-      const dropId = target?.dataset.domainId;
-      cleanup();
-      if (dropId) this.swapOrder(dragId, dropId);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', cleanup);
-  }
-
-  /**
-   * Pointer drag on a side stack's move handle (focused state only).
-   * The WHOLE column rides at the cursor tip (same feel as the SV order
-   * drag) — transform only, so its grid slot stays occupied and the stage
-   * does not reflow mid-drag. Dragging it toward the OPPOSITE stack
-   * highlights that stack as the drop zone; dropping there moves ALL
-   * circles into it — in the user's stored order — and persists the side
-   * (the source column empties as the future secondary-widget area). Same
-   * dead-zone mechanics as startOrderDrag.
-   */
-  private startStackDrag(e: PointerEvent, side: 'left' | 'right'): void {
-    if (this.morphing || !this.sideStacks) return;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
-    const targetEl = side === 'left' ? this.sideStacks[1] : this.sideStacks[0];
-    const sourceEl = this.sideStacks[side === 'left' ? 0 : 1];
-    const startX = e.clientX;
-    const startY = e.clientY;
-    let dragging = false;
-    let over = false;
-
-    const onMove = (ev: PointerEvent): void => {
-      if (!dragging) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
-        dragging = true;
-        // pointer-events off: the translated column must not shadow the
-        // drop zone in elementFromPoint.
-        sourceEl.classList.add('is-drag-source');
-        targetEl.classList.add('is-dropzone');
-      }
-      sourceEl.style.transform = `translate(${ev.clientX - startX}px, ${ev.clientY - startY}px)`;
-      const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-      over = !!hit && hit.closest('[data-focus-stack]') === targetEl;
-    };
-    const cleanup = (): void => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', cleanup);
-      sourceEl.classList.remove('is-drag-source');
-      sourceEl.style.transform = '';
-      targetEl.classList.remove('is-dropzone');
-    };
-    const onUp = (): void => {
-      const drop = over;
-      cleanup();
-      if (drop) this.moveAllCircles(side === 'left' ? 'right' : 'left');
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', cleanup);
-  }
-
-  /**
-   * Pointer drag on a side-stack circle's move handle (focused state).
-   * The circle is lifted OUT of its stack (position: fixed — the stack's
-   * overflow clipping would otherwise cut the visual mid-flight) and
-   * follows the cursor; its slot closes up and an insertion line marks the
-   * exact drop position in BOTH columns: above all circles (column top,
-   * later the widget slot) or between two circles. Dropping writes the new
-   * per-column arrangement to FOCUS_UI_COLUMN_LAYOUT — the SV grid order
-   * is untouched — and re-distributes. Same dead-zone mechanics as
-   * startOrderDrag.
-   */
-  private startColumnDrag(
-    e: PointerEvent,
-    dragId: string,
-    el: HTMLElement
-  ): void {
-    this.startStackItemDrag({
-      e,
-      el,
-      dragClasses: ['is-drag-source', 'is-column-drag'],
-      itemsIn: stack =>
-        (
-          [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
-        ).filter(c => !c.classList.contains('is-column-drag')),
-      dropTarget: (x, y) => this.columnDropTarget(x, y),
-      onDrop: t => {
-        if (!t || !this.sideStacks) return;
-        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
-        this.moveCircleTo(dragId, side, t.index);
-      },
-    });
-  }
-
-  /**
-   * Shared drag mechanics for side-stack items (circle drag ↔ widget
-   * drag): the item is lifted OUT of its stack (position: fixed — the
-   * stack's overflow clipping would otherwise cut the visual mid-flight)
-   * and follows the cursor; its slot closes up and an insertion line
-   * marks the exact drop position in BOTH stacks. Dead-zone activation
-   * (6px), pointerup/pointercancel cleanup, `onDrop` persists.
-   */
-  private startStackItemDrag(opts: {
-    e: PointerEvent;
-    el: HTMLElement;
-    /** Classes toggled while dragging (e.g. is-drag-source). */
-    dragClasses: string[];
-    /** Droppable items of a stack (excluding the dragged element). */
-    itemsIn: (stack: HTMLElement) => HTMLElement[];
-    dropTarget: (
-      x: number,
-      y: number
-    ) => { stack: HTMLElement; index: number } | null;
-    onDrop: (t: { stack: HTMLElement; index: number } | null) => void;
-  }): void {
-    const el = opts.el;
-    if (this.morphing || !this.sideStacks) return;
-    const e = opts.e;
-    e.stopPropagation();
-    e.preventDefault(); // no text selection / native drag while moving
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const rect = el.getBoundingClientRect();
-    const grabX = e.clientX - rect.left;
-    const grabY = e.clientY - rect.top;
-    let dragging = false;
-    let line: HTMLElement | null = null;
-    let target: { stack: HTMLElement; index: number } | null = null;
-
-    // Insertion line into the target stack at the boundary of `index`
-    // (0 = above the first visible item). Absolute inside the stack, so
-    // no grid rows shift while it moves; coordinates are content-space
-    // (scroll-aware).
-    const placeLine = (t: { stack: HTMLElement; index: number }): void => {
-      const stackRect = t.stack.getBoundingClientRect();
-      const scrollTop = t.stack.scrollTop;
-      const items = opts.itemsIn(t.stack);
-      const halfGap = parseFloat(getComputedStyle(t.stack).rowGap) / 2 || 0;
-      let y: number;
-      if (items.length === 0) {
-        const tools = t.stack.querySelector(
-          '[data-focus-stack-tools]'
-        ) as HTMLElement | null;
-        y = tools
-          ? tools.getBoundingClientRect().bottom -
-            stackRect.top +
-            scrollTop +
-            halfGap
-          : halfGap;
-      } else if (t.index >= items.length) {
-        const last = items[items.length - 1];
-        if (!last) return;
-        const r = last.getBoundingClientRect();
-        y = r.bottom - stackRect.top + scrollTop + halfGap;
-      } else {
-        const next = items[t.index];
-        if (!next) return;
-        const r = next.getBoundingClientRect();
-        y = r.top - stackRect.top + scrollTop - halfGap;
-      }
-      if (!line) {
-        line = document.createElement('div');
-        line.className = 'focus-side-stack__drop-line';
-      }
-      line.style.top = `${y - 1}px`; // -1: center the 2px line on the boundary
-      if (line.parentElement !== t.stack) t.stack.appendChild(line);
-    };
-
-    const onMove = (ev: PointerEvent): void => {
-      if (!dragging) {
-        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return;
-        dragging = true;
-        // Fixed lift: escapes the stack's overflow clipping; the hole in
-        // the source column closes (the insertion line takes its place).
-        el.classList.add(...opts.dragClasses);
-        el.style.position = 'fixed';
-        el.style.left = `${rect.left}px`;
-        el.style.top = `${rect.top}px`;
-        el.style.width = `${rect.width}px`;
-        el.style.height = `${rect.height}px`;
-      }
-      el.style.left = `${ev.clientX - grabX}px`;
-      el.style.top = `${ev.clientY - grabY}px`;
-      const next = opts.dropTarget(ev.clientX, ev.clientY);
-      if (
-        !!next !== !!target ||
-        (next &&
-          target &&
-          (next.stack !== target.stack || next.index !== target.index))
-      ) {
-        line?.remove();
-        line = null;
-        if (next) placeLine(next);
-        target = next;
-      }
-    };
-    const cleanup = (): void => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', cleanup);
-      el.classList.remove(...opts.dragClasses);
-      el.style.position = '';
-      el.style.left = '';
-      el.style.top = '';
-      el.style.width = '';
-      el.style.height = '';
-      line?.remove();
-      line = null;
+      opts.onDragEnd();
+      // Clear the last target's highlight (same job the per-drag cleanup
+      // did before the helper existed).
+      opts.onTargetChange?.(null, target);
     };
     const onUp = (): void => {
       const t = target;
@@ -1736,124 +1412,31 @@ export class FocusStage {
     window.addEventListener('pointercancel', cleanup);
   }
 
-  /** Move ALL circles into the given stack (SV order), persist. */
-  private moveAllCircles(side: 'left' | 'right'): void {
-    if (!this.sideStacks || !this.activeId) return;
-    const svOrder = this.orderedDefs().map(d => d.id);
-    this.columnLayout = {
-      left: side === 'left' ? svOrder : [],
-      right: side === 'right' ? svOrder : [],
-    };
-    PerAccountLocalStorage.getInstance().set(
-      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
-      this.columnLayout
-    );
-    this.distributeSideCircles(
-      this.sideStacks[0],
-      this.sideStacks[1],
-      this.activeId
-    );
-    this.reapplyWidgets();
-  }
-
-  /**
-   * Which side stack the pointer is over and at which VISIBLE position the
-   * drop would insert (0 = above all circles of that column, circles.length
-   * = below the last). Null when the pointer is outside both stacks. The
-   * active circle never counts — it is not rendered in the stacks.
-   */
-  private columnDropTarget(
-    x: number,
-    y: number
-  ): { stack: HTMLElement; index: number } | null {
-    if (!this.sideStacks) return null;
-    const hit = document.elementFromPoint(x, y);
-    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
-    if (
-      !stack ||
-      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
-    )
-      return null;
-    // The lifted circle is still a DOM child of its source stack (fixed
-    // positioning) — exclude it, it holds no drop position.
-    const circles = (
-      [...stack.querySelectorAll('[data-domain-id]')] as HTMLElement[]
-    ).filter(c => !c.classList.contains('is-column-drag'));
-    for (let i = 0; i < circles.length; i++) {
-      const circle = circles[i];
-      if (!circle) continue;
-      const r = circle.getBoundingClientRect();
-      if (y < r.top + r.height / 2) return { stack, index: i };
-    }
-    return { stack, index: circles.length };
-  }
-
-  /**
-   * Move ONE circle to an exact position in a column (visible index,
-   * 0 = above all circles of the target column) and persist. The index
-   * counts the circles VISIBLE in the column — the active circle is skipped
-   * when mapping it onto the underlying id lists (it holds its own slot).
-   */
-  private moveCircleTo(
+  private startOrderDrag(
+    e: PointerEvent,
     dragId: string,
-    side: 'left' | 'right',
-    index: number
+    el: HTMLElement
   ): void {
-    if (!this.sideStacks || !this.activeId) return;
-    const activeId = this.activeId;
-    const layout = this.effectiveLayout();
-    const source = layout.left.includes(dragId) ? 'left' : 'right';
-    const target = layout[side].filter(id => id !== dragId);
-    // Map the visible insertion index onto the full id list (active slot
-    // skipped): first position whose visible rank equals `index`.
-    let insertAt = target.length;
-    let seen = 0;
-    for (let i = 0; i < target.length; i++) {
-      if (target[i] === activeId) continue;
-      if (seen === index) {
-        insertAt = i;
-        break;
-      }
-      seen++;
-    }
-    target.splice(insertAt, 0, dragId);
-    if (source === side) {
-      layout[side] = target;
-    } else {
-      layout[source] = layout[source].filter(id => id !== dragId);
-      layout[side] = target;
-    }
-    this.columnLayout = { left: layout.left, right: layout.right };
-    PerAccountLocalStorage.getInstance().set(
-      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
-      this.columnLayout
-    );
-    this.distributeSideCircles(
-      this.sideStacks[0],
-      this.sideStacks[1],
-      activeId
-    );
-    this.reapplyWidgets();
-  }
-
-  /**
-   * Reset the column layout to the default alternating 50/50 (derived
-   * from the SV order, starting LEFT) and clear the persisted layout.
-   * Wired to the reset button next to each stack's move handle.
-   */
-  private resetStackSide(): void {
-    if (!this.sideStacks || !this.activeId) return;
-    this.columnLayout = null;
-    PerAccountLocalStorage.getInstance().set(
-      StorageKeys.FOCUS_UI_COLUMN_LAYOUT,
-      null
-    );
-    this.distributeSideCircles(
-      this.sideStacks[0],
-      this.sideStacks[1],
-      this.activeId
-    );
-    this.reapplyWidgets();
+    if (this.activeId || this.morphing) return;
+    this.startTranslateDrag({
+      e,
+      el,
+      onDragStart: () => el.classList.add('is-drag-source'),
+      onDragEnd: () => el.classList.remove('is-drag-source'),
+      hitTest: (x, y) => {
+        const hit = document.elementFromPoint(x, y);
+        const obj = hit?.closest('[data-domain-id]') as HTMLElement | null;
+        return obj && obj !== el && obj.dataset.domainId ? obj : null;
+      },
+      onTargetChange: (next, prev) => {
+        prev?.classList.remove('is-drop-target');
+        next?.classList.add('is-drop-target');
+      },
+      onDrop: t => {
+        const dropId = t?.dataset.domainId;
+        if (dropId) this.swapOrder(dragId, dropId);
+      },
+    });
   }
 
   // ========== FV side-stack widgets (v2) ==========
@@ -1879,9 +1462,9 @@ export class FocusStage {
    * stacks exist. Without stacks the next focus picks the state up.
    */
   private setWidgetAvailable(id: string, available: boolean): void {
-    if (!this.sideStacks) return;
     if (available) {
-      this.placeWidgets(this.sideStacks[0], this.sideStacks[1]);
+      const home = this.widgetsHome();
+      if (home) this.placeWidgets(home);
       return;
     }
     const entry = this.widgetHosts.get(id);
@@ -1955,178 +1538,56 @@ export class FocusStage {
         : (runtime.widget ?? null);
     }
     void loader.ensureLoaded(addonId).then(() => {
-      if (this.sideStacks) this.reapplyWidgets();
+      this.reapplyWidgets();
     });
     return null;
   }
 
   /**
-   * Mount the activated widgets into the freshly built side stacks:
-   * persisted FOCUS_UI_WIDGET_LAYOUT spot or the default (right stack,
-   * top — above all circles). Each host wraps the widget's DOM plus its
-   * move handle.
+   * Mount the activated widgets into the side stack, at the default
+   * spot (below the object's primary action row).
    */
-  private placeWidgets(left: HTMLElement, right: HTMLElement): void {
+  private placeWidgets(section: HTMLElement): void {
     for (const id of WIDGET_IDS) {
       const widget = this.widgetFor(id);
       if (!widget || this.widgetHosts.has(id)) continue;
       const host = this.createWidgetHost(id);
-      const spot = this.widgetLayout[id] ?? {
-        side: 'right' as const,
-        index: 0,
-      };
-      this.insertWidgetAt(
-        spot.side === 'left' ? left : right,
-        host,
-        spot.index,
-        host
-      );
+      section.appendChild(host);
       this.widgetHosts.set(id, { widget, host });
       widget.setFocusHost(host);
     }
   }
 
-  /** Re-insert the mounted hosts per their stored spot (circles moved). */
+  /** Re-insert the mounted hosts at their default spot. */
   private reapplyWidgets(): void {
-    if (!this.sideStacks) return;
-    const [left, right] = this.sideStacks;
-    for (const [id, entry] of this.widgetHosts) {
-      const spot = this.widgetLayout[id] ?? {
-        side: 'right' as const,
-        index: 0,
-      };
-      this.insertWidgetAt(
-        spot.side === 'left' ? left : right,
-        entry.host,
-        spot.index,
-        entry.host
-      );
+    const home = this.widgetsHome();
+    if (!home) return;
+    for (const [, entry] of this.widgetHosts) {
+      home.appendChild(entry.host);
     }
     // Mount widgets that became available in the meantime (widgetFor
     // fires ensureLoaded on the first miss; its guard skips ids that
     // already have a host).
-    this.placeWidgets(left, right);
+    this.placeWidgets(home);
   }
 
-  /** The widget's stage slot: move handle (drag) + the widget's DOM. */
+  /** Where widget hosts currently live: the FV stack's widgets section
+   * while focused, the SV slide-in's otherwise. */
+  private widgetsHome(): HTMLElement | null {
+    const stack = this.sideStacks?.[1];
+    if (stack) return this.stackSection(stack, 'widgets');
+    return this.settingsSidebar
+      ? this.stackSection(this.settingsSidebar, 'widgets')
+      : null;
+  }
+
+  /** The widget's stage slot: a plain wrapper — the widget mounts its
+   * DOM via setFocusHost; placement is fixed (no drag handles). */
   private createWidgetHost(id: string): HTMLElement {
     const host = document.createElement('div');
     host.className = 'focus-widget-slot';
     host.dataset.focusWidget = id;
-    const move = document.createElement('button');
-    move.type = 'button';
-    move.className = 'focus-widget-slot__move';
-    move.setAttribute('data-focus-widget-move', '');
-    move.setAttribute('aria-label', _('Move widget'));
-    move.innerHTML =
-      '<svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>';
-    move.addEventListener('pointerdown', ev =>
-      this.startWidgetDrag(ev, id, host)
-    );
-    move.addEventListener('click', ev => ev.stopPropagation());
-    Tooltip.attach(move, _('Move widget'));
-    host.appendChild(move);
     return host;
-  }
-
-  /** The stack's item flow: circles + widget slots, in DOM order. */
-  private stackItems(stack: HTMLElement, exclude?: HTMLElement): HTMLElement[] {
-    return ([...stack.children] as HTMLElement[]).filter(
-      el =>
-        el !== exclude &&
-        (el.hasAttribute('data-domain-id') ||
-          el.hasAttribute('data-focus-widget'))
-    );
-  }
-
-  /**
-   * Insert a widget host at the given position in the stack's item flow
-   * (index 0 = directly under the tools). `exclude` keeps the dragged
-   * host from holding a position in its own target calculation.
-   */
-  private insertWidgetAt(
-    stack: HTMLElement,
-    host: HTMLElement,
-    index: number,
-    exclude?: HTMLElement
-  ): void {
-    const items = this.stackItems(stack, exclude);
-    const ref = items[index] ?? null;
-    if (ref) stack.insertBefore(host, ref);
-    else stack.appendChild(host);
-  }
-
-  /**
-   * Drag a widget to another position: fixed lift (escapes the stack's
-   * overflow clipping), a drop-line marks the exact insertion point in
-   * BOTH stacks (between any two items — circles and widget slots), the
-   * drop persists FOCUS_UI_WIDGET_LAYOUT and re-inserts. Same dead-zone
-   * mechanics as startColumnDrag.
-   */
-  private startWidgetDrag(
-    e: PointerEvent,
-    id: string,
-    host: HTMLElement
-  ): void {
-    this.startStackItemDrag({
-      e,
-      el: host,
-      dragClasses: ['is-drag-source'],
-      itemsIn: stack => this.stackItems(stack, host),
-      dropTarget: (x, y) => this.widgetDropTarget(x, y, host),
-      onDrop: t => {
-        if (!t || !this.sideStacks) return;
-        const side = t.stack === this.sideStacks[0] ? 'left' : 'right';
-        this.moveWidgetTo(id, side, t.index);
-      },
-    });
-  }
-
-  /**
-   * Which side stack the pointer is over and at which position the drop
-   * would insert (0 = above all items of that column). Null outside both
-   * stacks. The dragged host holds no drop position.
-   */
-  private widgetDropTarget(
-    x: number,
-    y: number,
-    dragHost: HTMLElement
-  ): { stack: HTMLElement; index: number } | null {
-    if (!this.sideStacks) return null;
-    const hit = document.elementFromPoint(x, y);
-    const stack = hit?.closest('[data-focus-stack]') as HTMLElement | null;
-    if (
-      !stack ||
-      (stack !== this.sideStacks[0] && stack !== this.sideStacks[1])
-    )
-      return null;
-    const items = this.stackItems(stack, dragHost);
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (!item) continue;
-      const r = item.getBoundingClientRect();
-      if (y < r.top + r.height / 2) return { stack, index: i };
-    }
-    return { stack, index: items.length };
-  }
-
-  /** Move ONE widget to an exact position in a column and persist. */
-  private moveWidgetTo(
-    id: string,
-    side: 'left' | 'right',
-    index: number
-  ): void {
-    if (!this.sideStacks) return;
-    this.widgetLayout[id] = { side, index };
-    this.persistWidgetLayout();
-    const entry = this.widgetHosts.get(id);
-    if (!entry) return;
-    this.insertWidgetAt(
-      side === 'left' ? this.sideStacks[0] : this.sideStacks[1],
-      entry.host,
-      index,
-      entry.host
-    );
   }
 
   /** Swap two ids in the stored order, persist, re-apply the grid order. */
@@ -2145,6 +1606,35 @@ export class FocusStage {
       this.order
     );
     this.applyOrderToGrid();
+    // Any persisted order deviates from the default by definition.
+    this.syncResetOrderVisibility();
+  }
+
+  /**
+   * "Restore default order" only earns its place while the current order
+   * actually deviates from the registry default — hidden while identical
+   * (the button would be a no-op there).
+   */
+  /** Find a settings control across the loose pieces (a piece can be
+   * the control itself). */
+  private settingsPiece(selector: string): HTMLElement | null {
+    for (const piece of this.settingsPieces) {
+      if (piece.matches(selector)) return piece;
+      const found = piece.querySelector(selector);
+      if (found) return found as HTMLElement;
+    }
+    return null;
+  }
+
+  private syncResetOrderVisibility(): void {
+    const btn = this.settingsPiece('[data-settings-reset-order]');
+    if (!btn) return;
+    // SV-only link: the circle order is grid state — hidden while an
+    // object is focused (the FV panel carries no restore-order link),
+    // the function stays available in the SV's settings slide-in.
+    btn.hidden =
+      this.activeId !== null ||
+      this.order.join(',') === FOCUS_DOMAINS.map(d => d.id).join(',');
   }
 
   /** Mirror the stored order into the grid DOM (grid state only). */
@@ -2157,181 +1647,1053 @@ export class FocusStage {
   }
 
   /**
-   * Re-parent the non-active circles into two per-side stacks (grid
-   * columns 1 and 3). In one flat grid the active object's content height
-   * would be distributed across all spanned rows (circles spread over
-   * thousands of px); inside the stacks they keep their compact 230px
-   * rhythm while the middle column stretches in document flow.
+   * ONE stack in every mode, holding all non-active circles + widgets —
+   * ONE aside element, permanently a grid child: wide (768+) places it
+   * right of the focused object (fixed layout), phone leaves it in
+   * place and CSS alone turns it into the slide-in drawer. Navigation
+   * lives on the start view, the FV carries one widget column only.
    */
   private reparentSideStacks(activeId: string): void {
-    const left = document.createElement('div');
-    left.className = 'focus-side-stack';
-    left.dataset.focusStack = '';
-    left.style.gridColumn = '1';
-    const right = document.createElement('div');
-    right.className = 'focus-side-stack';
-    right.dataset.focusStack = '';
-    right.style.gridColumn = '3';
-    left.innerHTML = this.stackToolsHtml('left');
-    right.innerHTML = this.stackToolsHtml('right');
-    for (const [stack, side] of [
-      [left, 'left'],
-      [right, 'right'],
-    ] as const) {
-      // The buttons must never open an object underneath.
-      const tools = stack.querySelector(
-        '[data-focus-stack-tools]'
-      ) as HTMLElement;
-      tools.addEventListener('click', ev => ev.stopPropagation());
-      const move = tools.querySelector(
-        '[data-focus-stack-move]'
-      ) as HTMLElement;
-      move.addEventListener('pointerdown', ev => this.startStackDrag(ev, side));
-      tools
-        .querySelector('[data-focus-stack-compact]')
-        ?.addEventListener('click', () => this.toggleStackCompact());
-      tools
-        .querySelector('[data-focus-stack-reset]')
-        ?.addEventListener('click', () => this.resetStackSide());
-      // Stack tools live only while their stack exists (recreated per
-      // focus, removed on close) — their listeners die with the elements,
-      // so no disposer tracking is needed here. The move tooltip states
-      // the drop DIRECTION: dragging it toward the other column.
-      const stackTips: Array<[string, HTMLElement]> = [
-        [
-          _('Compact circles'),
-          tools.querySelector('[data-focus-stack-compact]') as HTMLElement,
-        ],
-        [
-          side === 'left'
-            ? _('Move all circles to the right column')
-            : _('Move all circles to the left column'),
-          move,
-        ],
-        [
-          _('Distribute circles evenly'),
-          tools.querySelector('[data-focus-stack-reset]') as HTMLElement,
-        ],
-      ];
-      for (const [text, btn] of stackTips) Tooltip.attach(btn, text);
+    const mode = this.stageMode();
+    this.lastStageMode = mode;
+    this.reparentSingleStack(activeId, mode);
+  }
+
+  /**
+   * Single-stack mode (every mode): ONE side stack — header (Start link),
+   * the object's primary action, widgets, the trio rows (compact rows
+   * with their unread diodes, the active domain's row skipped), then the
+   * settings content riding in. All other circles stay in the grid,
+   * hidden by CSS while focused — navigation lives on the start view
+   * (X → grid → circle). Wide places the stack RIGHT of the focused
+   * object (fixed layout); phone turns the same aside into the
+   * left-edge slide-in drawer via CSS.
+   */
+  /** The stack's fundamental sections, in fixed order. */
+  private mountStackSections(stack: HTMLElement): void {
+    for (const name of [
+      'object-specific',
+      'widgets',
+      'notifiers',
+      'ui-settings',
+      'inspectors',
+      'meta',
+    ]) {
+      const section = document.createElement('section');
+      section.className = name;
+      section.dataset.stackSection = name;
+      stack.appendChild(section);
     }
-    this.distributeSideCircles(left, right, activeId);
-    this.placeWidgets(left, right);
-    const active = this.objects.get(activeId) as HTMLElement;
-    this.grid.insertBefore(left, active);
-    this.grid.insertBefore(right, active.nextSibling);
-    this.sideStacks = [left, right];
-    this.applyStackCompact();
   }
 
-  /** Toggle the side-stack compact rendering (circles → ED-b chips) and
-   * persist the preference per account. */
-  private toggleStackCompact(): void {
-    this.stackCompact = !this.stackCompact;
-    PerAccountLocalStorage.getInstance().set(
-      StorageKeys.FOCUS_UI_STACK_COMPACT,
-      this.stackCompact
+  /** A fundamental section of the stack by name. */
+  private stackSection(stack: HTMLElement, name: string): HTMLElement {
+    return stack.querySelector(`[data-stack-section="${name}"]`) as HTMLElement;
+  }
+
+  private reparentSingleStack(activeId: string, mode: FocusStageMode): void {
+    const stack = document.createElement('aside');
+    stack.className = 'focus-sidebar';
+    stack.dataset.focusStack = '';
+    // The stack's fundamental sections, in fixed order — free flow:
+    // empty ones collapse into their neighbors' margins (no gaps).
+    this.mountStackSections(stack);
+    const objectSection = this.stackSection(stack, 'object-specific');
+    // The header (Start + gear/scroll) is the object-specific section's
+    // first row — above the write action.
+    objectSection.innerHTML = this.stackHeaderHtml(activeId);
+    this.wireStackHeader(stack, activeId);
+    this.appendPrimaryAction(objectSection, activeId);
+    this.mountSurfaceDropdowns(objectSection, activeId);
+    this.placeWidgets(this.stackSection(stack, 'widgets'));
+    this.mountTrioRows(
+      this.stackSection(stack, 'notifiers'),
+      activeId,
+      this.focusBadgeManagers
     );
-    this.applyStackCompact();
-    diagLog('system', 'focus_stack_compact_toggled', {
-      on: this.stackCompact,
-    });
+    this.rideSettingsIntoStack(stack);
+    const active = this.objects.get(activeId) as HTMLElement;
+    // Wide placement follows the sidebar-side preference (content first,
+    // sidebar right of it by default). On phone it is cleared again
+    // below — the aside is out of flow there (fixed drawer) and stale
+    // inline columns would leak into the single-column grid.
+    stack.style.gridColumn = this.sidebarSide === 'right' ? '2' : '1';
+    active.style.gridColumn = this.sidebarSide === 'right' ? '1' : '2';
+    if (this.sidebarSide === 'right') {
+      this.grid.insertBefore(stack, active.nextSibling);
+    } else {
+      this.grid.insertBefore(stack, active);
+    }
+    if (mode === 'phone') {
+      stack.style.gridColumn = '';
+      active.style.gridColumn = '';
+      this.mountTopline();
+      this.portalToplineControls(activeId);
+      // The drawer chrome rides the aside itself: overlay at the stage
+      // root (the aside lives inside the grid — no sibling slot there),
+      // swipe dismiss bound for this stack's lifetime.
+      this.stackDismiss?.();
+      this.sidebarOpen = false;
+      this.stackDismiss = this.attachSidebarDismiss(
+        stack,
+        () => this.sidebarSide,
+        () => this.sidebarOpen,
+        () => {
+          if (this.sidebarOpen) this.toggleStackDrawer();
+        },
+        this.root
+      );
+      this.stackAside = stack;
+    }
+    this.sideStacks = [stack, stack];
+    this.syncStackScrollButtons();
   }
 
-  /** Apply the compact state to every live circle. The ACTIVE circle is
-   * never compact — it is the focused column, not a stack item; the home
-   * grid renders round again on close (restoreSideCircles clears the
-   * class). The tools' compact buttons mirror the state (icon flips to
-   * outward arrows via .is-active). */
-  private applyStackCompact(): void {
-    for (const [id, circle] of this.objects) {
-      circle.classList.toggle(
-        'is-compact',
-        this.stackCompact && id !== this.activeId
+  /**
+   * The FV layout mode, read from the stage's own CSS pseudo-element
+   * (.focus-stage::after — media-query-driven, see FocusStageMode). CSS
+   * is the single source of truth; JS never measures the viewport itself.
+   */
+  private stageMode(): FocusStageMode {
+    const content = getComputedStyle(this.root, '::after').content.replace(
+      /['"]/g,
+      ''
+    );
+    return content === 'tablet' ? 'tablet' : 'phone';
+  }
+
+  /** Sidebar side switched (ui-settings): the stage-root class drives
+   * every surface via CSS — FV grid columns, phone drawer edge, SV
+   * slide-in edge, section alignment. Only the wide grid's inline
+   * columns need a DOM re-place while a focus is open. */
+  private applySidebarSide(side: 'left' | 'right'): void {
+    this.sidebarSide = side;
+    this.root.classList.toggle('is-sidebar-left', side === 'left');
+    const stack = this.sideStacks?.[1];
+    if (!stack || this.stageMode() !== 'tablet' || !this.activeId) return;
+    const active = this.objects.get(this.activeId) as HTMLElement;
+    stack.style.gridColumn = side === 'right' ? '2' : '1';
+    active.style.gridColumn = side === 'right' ? '1' : '2';
+    if (side === 'right') this.grid.insertBefore(stack, active.nextSibling);
+    else this.grid.insertBefore(stack, active);
+  }
+
+  /**
+   * The phone-era nav sidebar: a fixed slide-in panel at the left screen
+   * edge holding the single side stack (round 1: handle click toggles —
+   * no drag-to-close; the EdgeDrawer marble painter is vertical-only, a
+   * left-edge variant is fine-tuning). Mounted lazily while a focus is
+   * active in phone mode, removed with the stacks on close. Listeners
+   * die with the element (same lifecycle as the stack tools).
+   */
+  /** Phone drawer: the aside IS the slide-in (CSS mode switch, see
+   * aside.focus-sidebar tablet-down) — the hamburger only toggles the
+   * state class. */
+  private toggleStackDrawer(): void {
+    if (!this.stackAside) return;
+    this.sidebarOpen = !this.sidebarOpen;
+    this.stackAside.classList.toggle('is-open', this.sidebarOpen);
+    this.hamburgerBtn?.setAttribute('aria-expanded', String(this.sidebarOpen));
+    this.hamburgerBtn?.setAttribute(
+      'aria-label',
+      this.sidebarOpen ? _('Close navigation') : _('Open navigation')
+    );
+  }
+
+  /** Mount the phone top line (idempotent): the hamburger lives here. */
+  private mountTopline(): void {
+    if (this.topline) return;
+    const bar = document.createElement('div');
+    bar.id = 'focus-topline';
+    bar.className = 'focus-topline';
+    const burger = document.createElement('button');
+    burger.type = 'button';
+    burger.className = 'focus-hamburger';
+    burger.setAttribute('data-nav-hamburger', '');
+    burger.setAttribute('aria-label', _('Open navigation'));
+    burger.setAttribute('aria-expanded', 'false');
+    burger.innerHTML = `<svg width="18" height="18" aria-hidden="true"><use href="#icon-hamburger"/></svg>`;
+    burger.addEventListener('click', () => this.toggleStackDrawer());
+    bar.appendChild(burger);
+    this.hamburgerBtn = burger;
+    this.root.appendChild(bar);
+    this.topline = bar;
+  }
+
+  /**
+   * Move the focused surface's scattered top controls into the top line:
+   * the scroll-to-top action and — when the surface has one — the
+   * refresh control (the timeline's new-notes pill). Element moves keep
+   * every listener wired; the originals are remembered for teardown.
+   */
+  private portalToplineControls(activeId: string): void {
+    if (!this.topline) return;
+    const host = this.objects.get(activeId);
+    if (!host) return;
+    const refresh = host.querySelector(
+      '.btn--refresh-new-notes'
+    ) as HTMLElement | null;
+    const scrollTop = host.querySelector(
+      "[data-focus-action='scroll-top']"
+    ) as HTMLElement | null;
+    for (const guest of [refresh, scrollTop]) {
+      if (!guest || !guest.parentElement) continue;
+      this.toplineGuests.push({
+        el: guest,
+        parent: guest.parentElement,
+        next: guest.nextElementSibling,
+      });
+      this.topline.appendChild(guest);
+    }
+    this.syncToplineRefresh(host);
+  }
+
+  /** The surface's refresh controls ride the top line's middle column —
+   * the look-for-notes link first, morphing into the refresh pill when
+   * new notes wait (mutually exclusive states). Portaled as soon as
+   * they exist (async timeline build); already-ported ones skip via
+   * the parent check. */
+  private syncToplineRefresh(host: HTMLElement): void {
+    if (!this.topline) return;
+    for (const selector of [
+      '.btn--refresh-new-notes',
+      '.timeline-look-for-notes-link',
+    ]) {
+      const guest = host.querySelector(selector) as HTMLElement | null;
+      if (
+        !guest ||
+        !guest.parentElement ||
+        guest.parentElement === this.topline
+      ) {
+        continue;
+      }
+      this.toplineGuests.push({
+        el: guest,
+        parent: guest.parentElement,
+        next: guest.nextElementSibling,
+      });
+      this.topline.appendChild(guest);
+    }
+  }
+
+  /** Guests back to their original spots, top line removed. */
+  private unmountTopline(): void {
+    for (const { el, parent, next } of this.toplineGuests) {
+      parent.insertBefore(el, next);
+    }
+    this.toplineGuests = [];
+    this.topline?.remove();
+    this.topline = null;
+    this.hamburgerBtn = null;
+  }
+
+  /**
+   * The right settings slide-in (mirrored twin of the nav sidebar): full
+   * height, glass, its lasche at the right screen rim — closed the
+   * lasche pokes out at the screen edge, open it sits on the panel's
+   * inner rim. Start-view host of the persistent settings content (the
+   * FV carries ONE panel — while focused the content rides the side
+   * stack and this sidebar goes dormant, see rideSettingsIntoStack).
+   * Listeners die with the element (stage destroy removes the root).
+   */
+  /**
+   * The persistent settings content (Interface / Workspace / Appearance
+   * & account / Diagnostics). Built ONCE — the shell injects the v1
+   * switch + switcher bar into its slots right after stage mount, so
+   * re-creating the DOM per panel build would orphan those injections.
+   * While an object is focused the element re-parents INTO the side
+   * stack (the user's one system panel); on close it moves back into
+   * the settings slide-in that hosts it on the start view.
+   */
+  /** The persistent settings pieces (no wrapper element): restore-order
+   * link + Workspace slot — plain document flow, permanent residents of
+   * the slide-in panel (SV-only controls; re-creating per panel build
+   * would orphan the Workspace dropdown injection). */
+  private settingsPieces: HTMLElement[] = [];
+  /** The guests riding the stack's two settings sections between the
+   * slide-in panel (start view) and their sections (focused). Two
+   * lifecycles: the stage's own inspector button (boot, permanent) and
+   * the shell's elements — replaced wholesale via mountSettingsGuests
+   * (the shell mounts on login, clears on logout; no isConnected
+   * pruning: at shell-boot time the shell root is not in the document
+   * yet, so isConnected lies). */
+  private loadmonBtn: HTMLElement | null = null;
+  /** The inspectors row (l-row--split): the shell's v1 switch left, the
+   * loadmon button right — one traveling element between the slide-in
+   * panel and the stack's inspectors section. */
+  private inspectorsRow: HTMLElement | null = null;
+  private shellUiGuests: HTMLElement[] = [];
+
+  private buildSettingsPieces(): HTMLElement[] {
+    // Label + element, plain document flow — no section headings: the
+    // controls carry their own labels (switch), placeholders (dropdown)
+    // or tooltips (icon actions).
+    const resetOrderBtn = document.createElement('button');
+    resetOrderBtn.type = 'button';
+    resetOrderBtn.className = 'btn-v2';
+    resetOrderBtn.dataset.settingsResetOrder = '';
+    resetOrderBtn.textContent = _('Restore default order');
+
+    const setsSlot = document.createElement('div');
+    setsSlot.dataset.settingsSetsSlot = '';
+
+    // Object-set selector: named bundles of visible objects, applied in
+    // one step (everything not in the set is hidden — the same save →
+    // event → shutdown-diff path as the per-object hide button). Auto
+    // width, no label — the "Workspace" placeholder identifies it.
+    const setOptions = FOCUS_OBJECT_SETS.map(set => ({
+      value: set.id,
+      label: set.label,
+    }));
+    this.setDropdown = new NnDropdown({
+      options: setOptions,
+      selectedValue: matchingObjectSet(loadHiddenObjectIds())?.id ?? '',
+      placeholder: _('Workspace'),
+      onChange: value => {
+        if (!value) {
+          this.syncObjectSetDropdown();
+          return;
+        }
+        applyObjectSet(value);
+      },
+    });
+    setsSlot.appendChild(this.setDropdown.getElement());
+
+    // "Restore default order": drop the persisted circle order — the next
+    // loadOrder() falls back to the registry order — and mirror it into
+    // the grid (no-op while an object is active or morphing, same guard
+    // as swapOrder).
+    resetOrderBtn.addEventListener('click', () => {
+      PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
+      this.order = this.loadOrder();
+      this.applyOrderToGrid();
+      // Default order restored — the button hides itself.
+      this.syncResetOrderVisibility();
+    });
+
+    return [resetOrderBtn, setsSlot];
+  }
+
+  /** The shell hands over its mounted elements (the switchers, the v1
+   * switch) — REPLACE per section: the shell owns their lifecycle. They
+   * are placed into the section's current home — the section while
+   * focused, the slide-in panel otherwise. */
+  mountSettingsGuests(
+    section: 'ui-settings' | 'inspectors',
+    els: HTMLElement[]
+  ): void {
+    if (section === 'ui-settings') {
+      this.shellUiGuests = els;
+      const home = this.sideStacks
+        ? this.stackSection(this.sideStacks[1], 'ui-settings')
+        : (this.settingsSidebar?.querySelector(
+            '[data-settings-panel]'
+          ) as HTMLElement | null);
+      if (home) for (const el of els) home.appendChild(el);
+    } else {
+      // The inspectors row travels as one element — its left side takes
+      // the shell's guests (v1 switch).
+      const left = this.inspectorsRow?.firstElementChild as HTMLElement;
+      for (const el of els) left.appendChild(el);
+    }
+  }
+
+  /** The inspector: tooling that watches the app itself — the loadmon
+   * button rides the stack's inspectors section (a guest, like the
+   * shell's v1 switch beside it). */
+  private buildLoadmonButton(): HTMLElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-icon';
+    btn.dataset.settingsLoadmon = '';
+    btn.setAttribute('aria-label', _('Load Resource Monitor'));
+    btn.innerHTML =
+      '<svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>';
+
+    // Same boot-path discipline as the typed trigger: dynamic import.
+    btn.addEventListener('click', () => {
+      void import('./loadHud').then(m => m.openLoadHud());
+    });
+    this.tooltipDisposers.push(
+      Tooltip.attach(btn, _('Load Resource Monitor'), {
+        placement: 'bottom',
+      })
+    );
+
+    return btn;
+  }
+
+  /**
+   * The right settings slide-in: hosts the persistent settings content
+   * on the start view (grid state lives here — object sets, order, v1
+   * switch). While an object is focused the content rides the side
+   * stack instead and the slide-in goes dormant (no floating lasche —
+   * the FV carries ONE panel).
+   */
+  private mountSettingsSidebar(): void {
+    const root = document.createElement('div');
+    root.id = 'focus-settings-sidebar';
+    root.className = 'focus-settings-sidebar';
+    root.innerHTML = `
+      <div class="focus-settings-sidebar__panel" data-settings-panel role="region" aria-label="${_('Settings')}"></div>
+      <button type="button" class="focus-settings-sidebar__handle" data-settings-handle aria-label="${_('Open UI settings')}" aria-expanded="false">
+        <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
+      </button>`;
+
+    // The SV panel mirrors the FV aside's section structure. Its
+    // object-specific section carries the SV header tools (gear toggles
+    // this slide-in, scroll steps drive the panel) — a close button
+    // would duplicate the lasche.
+    const panel = root.querySelector('[data-settings-panel]') as HTMLElement;
+    for (const name of [
+      'object-specific',
+      'widgets',
+      'notifiers',
+      'ui-settings',
+      'inspectors',
+      'meta',
+    ]) {
+      const section = document.createElement('section');
+      section.className = name;
+      section.dataset.stackSection = name;
+      panel.appendChild(section);
+    }
+    const objectSection = this.stackSection(root, 'object-specific');
+    objectSection.innerHTML = `<div class="l-row--right" data-focus-stack-header>
+      <button type="button" class="focus-sidebar__settings" data-focus-stack-settings aria-label="${_('Settings')}">
+        <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
+      </button>
+      <button type="button" class="focus-sidebar__scroll-down" data-focus-stack-scroll-down aria-label="${_('Scroll down')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+      </button>
+      <button type="button" class="focus-sidebar__scroll-up" data-focus-stack-scroll-up aria-label="${_('Scroll up')}" hidden>
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-up"/></svg>
+      </button>
+    </div>`;
+    const header = objectSection.querySelector(
+      '[data-focus-stack-header]'
+    ) as HTMLElement;
+    header.addEventListener('click', ev => ev.stopPropagation());
+    const gear = header.querySelector(
+      '[data-focus-stack-settings]'
+    ) as HTMLElement | null;
+    if (gear) {
+      gear.addEventListener('click', () => {
+        this.svSettingsBtn = gear;
+        // The ED-b opens OVER the slide-in (lower z-index) — close it so
+        // the drawer is reachable and the two surfaces don't stack.
+        if (this.settingsOpen) this.toggleSettingsSidebar();
+        this.toggleGlobalSettings(gear);
+      });
+      this.tooltipDisposers.push(
+        Tooltip.attach(gear, _('Settings'), { placement: 'bottom' })
       );
     }
-    for (const stack of this.sideStacks ?? []) {
-      stack
-        .querySelector('[data-focus-stack-compact]')
-        ?.classList.toggle('is-active', this.stackCompact);
+    const down = header.querySelector(
+      '[data-focus-stack-scroll-down]'
+    ) as HTMLElement | null;
+    down?.addEventListener('click', () =>
+      panel.scrollBy({ top: panel.clientHeight, behavior: 'smooth' })
+    );
+    const up = header.querySelector(
+      '[data-focus-stack-scroll-up]'
+    ) as HTMLElement | null;
+    up?.addEventListener('click', () =>
+      panel.scrollBy({ top: -panel.clientHeight, behavior: 'smooth' })
+    );
+    if (down) {
+      this.tooltipDisposers.push(
+        Tooltip.attach(down, _('Scroll down'), { placement: 'bottom' })
+      );
+    }
+    if (up) {
+      this.tooltipDisposers.push(
+        Tooltip.attach(up, _('Scroll up'), { placement: 'bottom' })
+      );
+    }
+    panel.addEventListener('scroll', () => this.syncStackScrollButtons(), {
+      passive: true,
+    });
+    this.settingsPieces = this.buildSettingsPieces();
+    this.loadmonBtn = this.buildLoadmonButton();
+    // Split row per the layout contract: each side wrapped in its own
+    // <div> — the v1 switch (shell, left) fills the empty left side.
+    this.inspectorsRow = document.createElement('div');
+    this.inspectorsRow.className = 'l-row--split';
+    const inspectorLeft = document.createElement('div');
+    const inspectorRight = document.createElement('div');
+    inspectorRight.appendChild(this.loadmonBtn);
+    this.inspectorsRow.appendChild(inspectorLeft);
+    this.inspectorsRow.appendChild(inspectorRight);
+    // Sidebar side: ONE synced preference — the stage-root class drives
+    // the FV grid columns, the phone drawer edge and this panel's edge
+    // via CSS. The switch rides ui-settings (SV panel ↔ FV aside).
+    this.sidebarSide = PerAccountLocalStorage.getInstance().get<
+      'left' | 'right'
+    >(StorageKeys.FOCUS_UI_STACK_SIDE, 'right');
+    this.root.classList.toggle('is-sidebar-left', this.sidebarSide === 'left');
+
+    // Grid tools above the switcher guests: workspace, sidebar-side
+    // switch, then the restore-order button (only shows with a custom
+    // order). The restore-order button stays in the panel (SV-only).
+    const ui = this.stackSection(root, 'ui-settings');
+    const [resetOrderBtn, setsSlot] = this.settingsPieces;
+    const sideDropdown = new NnDropdown({
+      options: [
+        { value: 'right', label: _('Right') },
+        { value: 'left', label: _('Left') },
+      ],
+      selectedValue: this.sidebarSide,
+      onChange: value => {
+        if (value !== 'left' && value !== 'right') {
+          sideDropdown.setValue(this.sidebarSide);
+          return;
+        }
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.FOCUS_UI_STACK_SIDE,
+          value
+        );
+        this.applySidebarSide(value);
+      },
+    });
+    // Own container with a leading label — the font-size-switcher
+    // pattern (label names the control, the dropdown shows the value).
+    const sideEl = sideDropdown.getElement();
+    const sideWrap = document.createElement('div');
+    sideWrap.className = 'sidebar-side-switcher';
+    sideWrap.dataset.settingsSidebarSide = '';
+    sideWrap.innerHTML = `<span class="sidebar-side-switcher__label">${_('Sidebar side')}</span>`;
+    sideWrap.appendChild(sideEl);
+    this.sideSwitchEl = sideWrap;
+    if (setsSlot) ui.appendChild(setsSlot);
+    ui.appendChild(this.sideSwitchEl);
+    if (resetOrderBtn) ui.appendChild(resetOrderBtn);
+    this.stackSection(root, 'inspectors').appendChild(this.inspectorsRow);
+    // SV navigation: the trio rows for ALL domains (no activeId to
+    // skip) — permanent diode managers, they die with the stage.
+    this.mountTrioRows(
+      this.stackSection(root, 'notifiers'),
+      null,
+      this.svBadgeManagers
+    );
+    // Widgets live in the SV panel when not riding the FV stack.
+    this.placeWidgets(this.stackSection(root, 'widgets'));
+    // Meta footer: the object-less v1 sidebar-bottom trio — download
+    // action, release version, About link. Built once, rides SV ↔ FV.
+    this.metaEl = this.buildMetaEl();
+    this.stackSection(root, 'meta').appendChild(this.metaEl);
+
+    const handle = root.querySelector('[data-settings-handle]') as HTMLElement;
+    handle.addEventListener('click', () => this.toggleSettingsSidebar());
+    this.tooltipDisposers.push(
+      Tooltip.attach(
+        handle,
+        () => (this.settingsOpen ? _('Close settings') : _('Open UI settings')),
+        { placement: 'bottom' }
+      )
+    );
+
+    this.root.appendChild(root);
+    this.settingsSidebar = root;
+    this.settingsOpen = false;
+    this.settingsPanelGestures?.();
+    this.settingsPanelGestures = this.attachSidebarDismiss(
+      root,
+      'right',
+      () => this.settingsOpen,
+      () => {
+        if (this.settingsOpen) this.toggleSettingsSidebar();
+      }
+    );
+    this.syncSettingsState();
+  }
+
+  /** Move the settings content into the given stack (focus opened). */
+  /**
+   * The surface's two feed dropdowns ride the stack: the tab selector
+   * (the .tabs row itself — its collapsed state IS the dropdown, the
+   * Tabs component keeps managing it in place) and the Latest filter.
+   * Portaled with a restore contract; the row sits one line below the
+   * write action. The observer catches late surfaces (buildTabs is
+   * async) and rebuilds (tribe edits): a fresh .tabs replaces the
+   * portaled one (detaching the old one cleans up its Tabs wiring).
+   */
+  private mountSurfaceDropdowns(section: HTMLElement, activeId: string): void {
+    const host = this.objects.get(activeId);
+    if (!host) return;
+    const row = document.createElement('div');
+    row.setAttribute('data-focus-dropdown-row', '');
+    const write = section.querySelector('[data-focus-stack-write]');
+    if (write) write.insertAdjacentElement('afterend', row);
+    else section.appendChild(row);
+    this.dropdownRow = row;
+    this.syncSurfaceDropdowns(host);
+    this.dropdownMo = new MutationObserver(() => {
+      this.syncSurfaceDropdowns(host);
+      // Phone: the timeline builds its refresh controls asynchronously,
+      // after the focus opened — the observer catches them whenever
+      // they show up.
+      this.syncToplineRefresh(host);
+    });
+    this.dropdownMo.observe(host, { childList: true, subtree: true });
+  }
+
+  private syncSurfaceDropdowns(host: HTMLElement): void {
+    const row = this.dropdownRow;
+    if (!row) return;
+    const tabs = host.querySelector('.tabs') as HTMLElement | null;
+    const latest = host.querySelector(
+      '.timeline-view-dropdown'
+    ) as HTMLElement | null;
+    // Order = split placement: Latest LEFT, tab selector RIGHT.
+    if (latest && latest.parentElement !== row) {
+      this.portalDropdownGuest(latest);
+    }
+    const portaledTabs = row.querySelector('.tabs');
+    if (tabs && tabs !== portaledTabs) {
+      portaledTabs?.remove();
+      this.portalDropdownGuest(tabs);
+    }
+    // Both ride the row → split (tab selector left, Latest right);
+    // Latest alone → right-aligned.
+    const wanted = row.children.length > 1 ? 'l-row--split' : 'l-row--right';
+    if (row.className !== wanted) row.className = wanted;
+  }
+
+  /** Move one dropdown into the row, remembering its original spot. */
+  private portalDropdownGuest(el: HTMLElement): void {
+    if (!this.dropdownRow || !el.parentElement) return;
+    this.dropdownGuests.push({
+      el,
+      parent: el.parentElement,
+      next: el.nextElementSibling,
+    });
+    this.dropdownRow.appendChild(el);
+  }
+
+  /** Dropdowns back to the surface, observer off, row gone. */
+  private unmountSurfaceDropdowns(): void {
+    this.dropdownMo?.disconnect();
+    this.dropdownMo = null;
+    for (const { el, parent, next } of this.dropdownGuests) {
+      parent.insertBefore(el, next);
+    }
+    this.dropdownGuests = [];
+    this.dropdownRow?.remove();
+    this.dropdownRow = null;
+  }
+
+  private rideSettingsIntoStack(stack: HTMLElement): void {
+    if (!this.settingsSidebar) return;
+    const settingsSection = this.stackSection(stack, 'ui-settings');
+    // The workspace dropdown and the sidebar-side switch ride first —
+    // above the switcher guests (workspace, sidebar switch, then the
+    // switchers). Insertion order: the side switch first, the workspace
+    // in front of it.
+    if (this.sideSwitchEl) {
+      settingsSection.insertBefore(
+        this.sideSwitchEl,
+        settingsSection.firstChild
+      );
+    }
+    const setsSlot = this.settingsPiece('[data-settings-sets-slot]');
+    if (setsSlot) {
+      settingsSection.insertBefore(setsSlot, settingsSection.firstChild);
+    }
+    for (const guest of this.shellUiGuests) {
+      settingsSection.appendChild(guest);
+    }
+    if (this.inspectorsRow) {
+      this.stackSection(stack, 'inspectors').appendChild(this.inspectorsRow);
+    }
+    if (this.metaEl) {
+      this.stackSection(stack, 'meta').appendChild(this.metaEl);
+    }
+    // Widget hosts ride with their widget (one host per widget, moves
+    // keep every listener wired).
+    const widgetSection = this.stackSection(stack, 'widgets');
+    for (const [, entry] of this.widgetHosts) {
+      widgetSection.appendChild(entry.host);
+    }
+    this.settingsSidebar.classList.add('is-dormant');
+  }
+
+  /** Move the riding elements back into the slide-in (focus closed). */
+  private restoreSettingsContent(): void {
+    if (!this.settingsSidebar) return;
+    const panel = this.settingsSidebar.querySelector(
+      '[data-settings-panel]'
+    ) as HTMLElement;
+    const ui = this.stackSection(panel, 'ui-settings');
+    const resetAnchor = ui.querySelector('[data-settings-reset-order]');
+    // Panel order: workspace, sidebar-side switch, restore-order button,
+    // switcher guests — both riders back in front of the anchor.
+    const setsSlot = this.settingsPiece('[data-settings-sets-slot]');
+    if (setsSlot) ui.insertBefore(setsSlot, resetAnchor);
+    if (this.sideSwitchEl) ui.insertBefore(this.sideSwitchEl, resetAnchor);
+    for (const guest of this.shellUiGuests) ui.appendChild(guest);
+    if (this.inspectorsRow) {
+      this.stackSection(panel, 'inspectors').appendChild(this.inspectorsRow);
+    }
+    if (this.metaEl) {
+      this.stackSection(panel, 'meta').appendChild(this.metaEl);
+    }
+    const widgetSection = this.stackSection(panel, 'widgets');
+    for (const [, entry] of this.widgetHosts) {
+      widgetSection.appendChild(entry.host);
+    }
+    this.settingsSidebar.classList.remove('is-dormant');
+  }
+
+  /** The meta footer content — v1 sidebar-bottom parity, minus the
+   * date/time display: the download action (system browser on desktop,
+   * store-app route on web), the release version and the About link. */
+  private buildMetaEl(): HTMLElement {
+    const meta = document.createElement('div');
+    meta.className = 'focus-meta';
+    meta.innerHTML = `
+      <div class="focus-meta__row">
+        <button type="button" class="btn-v2 btn-v2--outline focus-meta__download" data-meta-download>
+          <svg width="16" height="16" aria-hidden="true"><use href="#icon-download"/></svg>
+          ${_('Download')}
+        </button>
+      </div>
+      <div class="focus-meta__row">
+        <span class="focus-meta__version">v${__APP_VERSION__}</span>
+      </div>
+      <div class="focus-meta__row">
+        <a href="/about" class="focus-meta__about" data-meta-about>${_('About')}</a>
+      </div>`;
+    meta
+      .querySelector('[data-meta-download]')
+      ?.addEventListener('click', () => void this.openDownloadPage());
+    meta.querySelector('[data-meta-about]')?.addEventListener('click', e => {
+      e.preventDefault();
+      Router.getInstance().navigate('/about');
+    });
+    return meta;
+  }
+
+  /** v1 download parity: system browser on desktop, new tab on Android,
+   * the static download page on web. */
+  private async openDownloadPage(): Promise<void> {
+    const url = 'https://noornote.app/download/';
+    const platform = PlatformService.getInstance();
+    if (platform.isElectron) {
+      await window.electronAPI!.openExternal(url);
+    } else if (platform.isCapacitor) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = '/download/';
     }
   }
 
-  /** Apply the arrange gate: the root class keys the CSS that hides the
-   * layout satellites while OFF (visibility, not display — the sticky
-   * tools band keeps its height, no layout jump on toggle). */
-  private applyArrangeGate(): void {
-    this.root.classList.toggle('is-arrange-on', this.arrangeOn);
+  private toggleSettingsSidebar(): void {
+    if (!this.settingsSidebar) return;
+    this.settingsOpen = !this.settingsOpen;
+    this.settingsSidebar.classList.toggle('is-open', this.settingsOpen);
+    const handle = this.settingsSidebar.querySelector(
+      '[data-settings-handle]'
+    ) as HTMLElement;
+    handle.setAttribute('aria-expanded', String(this.settingsOpen));
+    handle.setAttribute(
+      'aria-label',
+      this.settingsOpen ? _('Close settings') : _('Open UI settings')
+    );
   }
 
-  /** The stack's top tools: compact toggle (leftmost), move handle (drag
-   * moves ALL circles) + reset (even distribution). */
-  private stackToolsHtml(side: 'left' | 'right'): string {
-    return `<div class="focus-side-stack__tools" data-focus-stack-tools>
-      <button type="button" class="focus-side-stack__compact${
-        this.stackCompact ? ' is-active' : ''
-      }" data-focus-stack-compact aria-label="${_('Compact circles')}">
-        <svg class="focus-side-stack__compact-icon-in" width="15" height="15" aria-hidden="true"><use href="#icon-compact"/></svg>
-        <svg class="focus-side-stack__compact-icon-out" width="15" height="15" aria-hidden="true"><use href="#icon-compact-open"/></svg>
+  private removeSettingsSidebar(): void {
+    this.settingsPanelGestures?.();
+    this.settingsPanelGestures = null;
+    this.settingsSidebar?.remove();
+    this.settingsSidebar = null;
+    this.settingsOpen = false;
+  }
+
+  /**
+   * Panel mechanics shared by both slide-in sidebars — the same pattern
+   * as the classic mobile sidebar (MainLayout.setupMobileSidebar):
+   *  1. Dismiss overlay — a full-screen backdrop under the panel eats the
+   *     outside tap/click; clicking it closes the panel (outside taps
+   *     never reach the content behind it, exactly like v1).
+   *  2. Swipe-to-close — document touchstart/touchend with the v1
+   *     thresholds (50px minimum, horizontal-dominant): a swipe toward
+   *     the panel's closed edge closes it.
+   * The overlay shows via :has() on the sibling state class, so the
+   * toggle methods need no overlay wiring. Returns the disposer — the
+   * document listeners and the overlay element outlive the sidebar
+   * otherwise (destroy contract).
+   */
+  private attachSidebarDismiss(
+    root: HTMLElement,
+    dir: 'left' | 'right' | (() => 'left' | 'right'),
+    isOpen: () => boolean,
+    close: () => void,
+    overlayHost?: HTMLElement
+  ): () => void {
+    // Overlay as the previous sibling of the panel root — the sibling
+    // :has() rule in the stylesheet couples its visibility to the panel
+    // state. The stack drawer's aside lives inside the grid (no sibling
+    // slot there): its overlay hangs off the given host (stage root)
+    // instead, matched by the ancestor :has() rule.
+    const overlay = document.createElement('div');
+    overlay.className = 'focus-sidebar-overlay';
+    if (overlayHost) overlayHost.appendChild(overlay);
+    else root.parentElement?.insertBefore(overlay, root);
+    overlay.addEventListener('click', () => {
+      if (isOpen()) close();
+    });
+
+    // v1 swipe: threshold-based, no 1:1 follow — close-direction swipe
+    // over the panel closes it. The direction may follow the sidebar-side
+    // preference (getter), resolved per gesture.
+    const MIN_SWIPE_DISTANCE = 50;
+    let startX = 0;
+    let startY = 0;
+    const onTouchStart = (e: TouchEvent): void => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+    };
+    const onTouchEnd = (e: TouchEvent): void => {
+      if (!isOpen()) return;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const CLOSE_SIGN =
+        (typeof dir === 'function' ? dir() : dir) === 'left' ? -1 : 1;
+      const dx = (touch.clientX - startX) * CLOSE_SIGN; // > 0 = closed-ward
+      const dy = touch.clientY - startY;
+      // v1 semantics: close-direction only (the open-direction swipe is
+      // ignored — the panel is already open), horizontal-dominant, 50px.
+      if (
+        dx <= 0 ||
+        Math.abs(dx) <= Math.abs(dy) ||
+        Math.abs(dx) < MIN_SWIPE_DISTANCE
+      ) {
+        return;
+      }
+      close();
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      overlay.remove();
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }
+
+  private syncSettingsState(): void {
+    this.syncResetOrderVisibility();
+  }
+
+  /**
+   * Sync the stack scroll buttons with each stack's scroll position:
+   * scroll-up exists only while scrolled away from the top (appears to
+   * the right of scroll-down). Driven by the stacks' scroll events (the
+   * only way scrollTop leaves 0 — wheel, drag or these buttons), after
+   * mount and after the compact morph (which clamps scrollTop without a
+   * user gesture). Scroll-down needs no state: at the bottom end its
+   * click simply clamps, like the wheel.
+   */
+  private syncStackScrollButtons(): void {
+    for (const stack of this.sideStacks ?? []) {
+      const up = stack.querySelector(
+        '[data-focus-stack-scroll-up]'
+      ) as HTMLElement | null;
+      if (!up) continue;
+      up.hidden = stack.scrollTop <= 1;
+    }
+    // The SV panel carries the same header tools — its scroll-up lives
+    // by the panel's own scroll position.
+    const panel = this.settingsSidebar?.querySelector(
+      '[data-settings-panel]'
+    ) as HTMLElement | null;
+    const up = panel?.querySelector(
+      '[data-focus-stack-scroll-up]'
+    ) as HTMLElement | null;
+    if (panel && up) up.hidden = panel.scrollTop <= 1;
+  }
+
+  /** The stack's header: the Start link (back to the SV grid — the FV
+   * carries no navigation of its own) + the stack's scroll steps
+   * (PageDown/PageUp). Scroll-up only exists while scrolled. The object
+   * settings live further down the stack (the persistent settings
+   * content rides in) — no gear here anymore. */
+  private stackHeaderHtml(activeId: string): string {
+    const def = FOCUS_DOMAINS.find(d => d.id === activeId);
+    const gear = def?.createSettings
+      ? `<button type="button" class="focus-sidebar__settings" data-focus-stack-settings aria-label="${_('Settings')}">
+          <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
+        </button>`
+      : '';
+    // l-row--right (molecules/_layouts.scss): the icon tools right-aligned
+    // — gear, scroll steps, and the X as the far-right close (Start's
+    // replacement: same effect, one less button).
+    return `<div class="l-row--right" data-focus-stack-header>
+      ${gear}
+      <button type="button" class="focus-sidebar__scroll-down" data-focus-stack-scroll-down aria-label="${_('Scroll down')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
       </button>
-      <button type="button" class="focus-side-stack__move" data-stack-side="${side}" data-focus-stack-move aria-label="${_('Move all circles')}">
-        <svg width="15" height="15" aria-hidden="true"><use href="#icon-move"/></svg>
+      <button type="button" class="focus-sidebar__scroll-up" data-focus-stack-scroll-up aria-label="${_('Scroll up')}" hidden>
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-up"/></svg>
       </button>
-      <button type="button" class="focus-side-stack__reset" data-focus-stack-reset aria-label="${_('Distribute circles evenly')}">
-        <svg width="15" height="15" aria-hidden="true"><use href="#icon-pull-refresh"/></svg>
+      <button type="button" class="focus-sidebar__close" data-focus-stack-close aria-label="${_('Close')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
       </button>
     </div>`;
   }
 
+  /** Header wiring: Start closes the focus (back to the SV grid), the
+   * scroll steps page the stack. Clicks must never reach the grid (no
+   * object opens underneath). */
+  private wireStackHeader(stack: HTMLElement, activeId: string): void {
+    const header = stack.querySelector(
+      '[data-focus-stack-header]'
+    ) as HTMLElement;
+    header.addEventListener('click', ev => ev.stopPropagation());
+    header
+      .querySelector('[data-focus-stack-close]')
+      ?.addEventListener('click', () => this.close());
+    const gear = stack.querySelector(
+      '[data-focus-stack-settings]'
+    ) as HTMLElement | null;
+    if (gear) {
+      const def = FOCUS_DOMAINS.find(d => d.id === activeId)!;
+      gear.addEventListener('click', () => {
+        void this.toggleSettings(def, gear);
+      });
+      this.stackSettingsBtn = gear;
+      this.tooltipDisposers.push(
+        Tooltip.attach(gear, _('Settings'), { placement: 'bottom' })
+      );
+    }
+    const down = header.querySelector(
+      '[data-focus-stack-scroll-down]'
+    ) as HTMLElement | null;
+    down?.addEventListener('click', () =>
+      stack.scrollBy({ top: stack.clientHeight, behavior: 'smooth' })
+    );
+    const up = header.querySelector(
+      '[data-focus-stack-scroll-up]'
+    ) as HTMLElement | null;
+    up?.addEventListener('click', () =>
+      stack.scrollBy({ top: -stack.clientHeight, behavior: 'smooth' })
+    );
+    if (down) {
+      this.tooltipDisposers.push(
+        Tooltip.attach(down, _('Scroll down'), { placement: 'bottom' })
+      );
+    }
+    if (up) {
+      this.tooltipDisposers.push(
+        Tooltip.attach(up, _('Scroll up'), { placement: 'bottom' })
+      );
+    }
+    stack.addEventListener('scroll', () => this.syncStackScrollButtons(), {
+      passive: true,
+    });
+  }
+
   /**
-   * Fill the two stacks with the non-active circles, in the order of the
-   * effective column layout (persisted FOCUS_UI_COLUMN_LAYOUT or the
-   * alternating default). The ACTIVE circle is skipped: it stays in the
-   * center column but KEEPS its slot in the layout, so it returns to its
-   * position when the focus ends.
+   * The active object's primary action (Write Note / Write Article) as
+   * the stack's first row — the object's own write action belongs to
+   * the object's panel. No def action (e.g. Messages) → no row.
    */
-  private distributeSideCircles(
-    left: HTMLElement,
-    right: HTMLElement,
-    activeId: string
+  private appendPrimaryAction(stack: HTMLElement, activeId: string): void {
+    const def = FOCUS_DOMAINS.find(d => d.id === activeId);
+    if (!def?.primaryAction) return;
+    const action = def.primaryAction;
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'btn-v2 btn-v2--outline';
+    row.setAttribute('data-focus-stack-write', '');
+    row.innerHTML = `<svg width="20" height="20" aria-hidden="true"><use href="#icon-plus"/></svg> <span>${action.label}</span>`;
+    row.addEventListener('click', ev => {
+      ev.stopPropagation();
+      action.run();
+    });
+    stack.appendChild(row);
+  }
+
+  /** Per-focus diode drivers: the trio rows carry their OWN diode
+   * instances (the circles' never move); these managers bind to the
+   * rows' diodes and die with the stacks on teardown. */
+  private focusBadgeManagers: Array<{ destroy(): void }> = [];
+  /** The SV panel's trio rows: permanent managers (not per-focus). */
+  private svBadgeManagers: Array<{ destroy(): void }> = [];
+
+  /**
+   * The always-on trio (notifications / DMs / bookmarks) as .btn-v2
+   * rows in the stack — REAL buttons, not restyled circles. Each row
+   * carries its OWN diode instance (atomic design: the diode exists
+   * context-independently — the circles' diodes never move), driven by
+   * a fresh manager bound at mount and destroyed at teardown. The
+   * active domain shows its content — no row for it; trio order fixed.
+   */
+  private mountTrioRows(
+    stack: HTMLElement,
+    activeId: string | null,
+    managers: Array<{ destroy(): void }>
   ): void {
-    const layout = this.effectiveLayout();
-    for (const [stack, ids] of [
-      [left, layout.left],
-      [right, layout.right],
-    ] as const) {
-      for (const id of ids) {
-        if (id === activeId) continue;
-        const circle = this.objects.get(id);
-        if (circle) stack.appendChild(circle);
+    for (const id of TRIO_DOMAIN_IDS) {
+      if (activeId !== null && id === activeId) continue;
+      const def = FOCUS_DOMAINS.find(d => d.id === id);
+      if (!def) continue;
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'btn-v2';
+      row.setAttribute('data-focus-trio', id);
+      // The row's own diode rides inline behind the label; the
+      // bookmarks one carries the list-unread attr so its manager's
+      // scope query finds it.
+      const diodeAttrs =
+        id === 'bookmarks' ? ' data-list-unread="bookmarks"' : '';
+      row.innerHTML = `<svg width="20" height="20" aria-hidden="true">${def.icon ? `<use href="#${def.icon}"/>` : ''}</svg> <span>${def.label}</span> <span class="diode"${diodeAttrs}></span>`;
+      row.addEventListener('click', () => void this.onObjectClick(def));
+      stack.appendChild(row);
+      // Fresh driver for the row's diode — paints the current state
+      // immediately, dies with the stacks (no global-manager reuse).
+      const diode = row.querySelector('.diode') as HTMLElement;
+      if (id === 'notifications') {
+        managers.push(
+          new NotificationsBadgeManager(diode, {
+            high: 'diode--prio-high',
+            low: 'diode--prio-low',
+          })
+        );
+      } else if (id === 'messages') {
+        managers.push(new DMBadgeManager(diode, 'diode--spam'));
+      } else {
+        managers.push(new ListsCountManager(row));
       }
     }
   }
 
-  /** Move the circles back into the grid (stored order) and drop the stacks. */
-  private restoreSideCircles(): void {
+  /** Tear the focused layout down: diode spans + portaled controls back
+   * to their origins, widgets unmounted, stacks + panels removed. */
+  private teardownStacks(): void {
     if (!this.sideStacks) return;
-    // Append EVERY circle in the stored order — including the one that
-    // stayed in the grid as the focused column. appendChild moves it, so
-    // the original order is restored exactly; re-appending only the
-    // stacked circles would place them all AFTER the formerly active
-    // object and shuffle the grid.
-    for (const def of this.orderedDefs()) {
-      const circle = this.objects.get(def.id);
-      if (circle) this.grid.appendChild(circle);
-    }
-    for (const [, entry] of this.widgetHosts) {
-      entry.widget.setFocusHost(null);
-      entry.host.remove();
-    }
-    this.widgetHosts.clear();
-    // Back in the home grid the circles render round again — the compact
-    // preference re-applies to the stacks on the next focus.
-    for (const [, circle] of this.objects) {
-      circle.classList.remove('is-compact');
-    }
+    // The surface's dropdowns back into the timeline (restore contract).
+    this.unmountSurfaceDropdowns();
+    // The trio rows die with the stacks — their diode drivers with them.
+    for (const mgr of this.focusBadgeManagers) mgr.destroy();
+    this.focusBadgeManagers = [];
+    // Phone top-line guests (refresh, scroll-to-top) back to the surface.
+    this.unmountTopline();
+    // Widget hosts ride home with the settings content (restore below) —
+    // they are permanent SV-panel residents now, only re-created when a
+    // widget becomes available/unavailable.
+    this.stackDismiss?.();
+    this.stackDismiss = null;
+    this.stackAside = null;
+    this.sidebarOpen = false;
+    this.restoreSettingsContent();
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
+    this.stackSettingsBtn = null;
   }
 
   /**
@@ -2373,7 +2735,7 @@ export class FocusStage {
           height: `${animHeight(lastRect)}px`,
         },
       ];
-      if (el.classList.contains('focus-object--active')) {
+      if (el.classList.contains('focus-content--active')) {
         frames[0]!.borderRadius = '50%';
         frames[1]!.borderRadius = getComputedStyle(el).borderRadius;
       } else if (el.classList.contains('is-compact')) {

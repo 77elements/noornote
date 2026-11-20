@@ -21,52 +21,20 @@
  */
 
 import type { FocusDomainSurface } from './focusDomains';
-import type { BookmarkManager } from '../lists/bookmarks';
+import { createListTabSurface } from './focusListTabSurface';
 import { _ } from '../i18n';
 
-export const bookmarksSurface = async (): Promise<FocusDomainSurface> => {
-  const { isBookmarksEnabled } = await import('../addons/bookmarks/index');
-  const BookmarkManagerCtor = isBookmarksEnabled()
-    ? (await import('../lists/bookmarks')).BookmarkManager
-    : null;
-
-  let manager: BookmarkManager | null = null;
-  let content: HTMLElement | null = null;
-
-  return {
-    attach(slot) {
-      if (content) {
-        slot.appendChild(content);
-        return;
-      }
-      if (!BookmarkManagerCtor) {
-        content = document.createElement('div');
-        content.className = 'view-content view-content--lists';
-        content.innerHTML = `
-          <div class="bookmarks-empty-state">
-            <p>${_('Enable Bookmarks in Settings.')}</p>
-          </div>
-        `;
-        slot.appendChild(content);
-        return;
-      }
-      content = document.createElement('div');
-      content.className = 'tab-content tab-content--active';
-      content.dataset.tabContent = 'list-bookmarks';
-      slot.appendChild(content);
-      manager = new BookmarkManagerCtor(slot);
-      void manager.renderListTab(content);
+export const bookmarksSurface = (): Promise<FocusDomainSurface> =>
+  createListTabSurface({
+    tabId: 'list-bookmarks',
+    loadManager: async () => {
+      const { isBookmarksEnabled } = await import('../addons/bookmarks/index');
+      return isBookmarksEnabled()
+        ? (await import('../lists/bookmarks')).BookmarkManager
+        : null;
     },
-    detach() {
-      // Content stays cached — the manager instance is preserved.
-      content?.remove();
+    emptyState: {
+      className: 'view-content view-content--lists',
+      innerHTML: `<div class="bookmarks-empty-state"><p>${_('Enable Bookmarks in Settings.')}</p></div>`,
     },
-    view: {
-      destroy(): void {
-        manager?.destroy();
-        manager = null;
-        content = null;
-      },
-    },
-  };
-};
+  });

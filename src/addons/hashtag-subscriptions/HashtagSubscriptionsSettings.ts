@@ -58,15 +58,9 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
         });
         if (checked) {
           await this.loadService();
-          ToastService.show(
-            _('%s enabled', _('Hashtag Subscriptions')),
-            'success'
-          );
+          ToastService.show(_('%s enabled', _('Hashtag Alerts')), 'success');
         } else {
-          ToastService.show(
-            _('%s disabled', _('Hashtag Subscriptions')),
-            'success'
-          );
+          ToastService.show(_('%s disabled', _('Hashtag Alerts')), 'success');
         }
         if (contentZone) this.renderContent(contentZone, checked);
       },
@@ -74,7 +68,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">${_('Enable Hashtag Subscriptions')}</span>
+        <span class="setting__label">${_('Enable Hashtag Alerts')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
         <p class="setting__desc">${_('Subscribe to any hashtag or word and get notified when someone posts a note containing it.')}</p>
       </div>

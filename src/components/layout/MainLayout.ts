@@ -58,10 +58,11 @@ import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
 import {
-  applyFocusUi,
   isFocusUiActive,
   isFocusDomainHidden,
   isFocusUiEnabled,
+  applyFocusUi,
+  registerFocusUiLoginSync,
   registerFocusUiTypedTrigger,
 } from '../../helpers/focusUiSetting';
 import {
@@ -111,6 +112,23 @@ function listTitle(listType: ListType): string {
     tribes: _('Tribes'),
   }[listType];
   return _('List: %s', label);
+}
+
+/**
+ * Global back bar markup — built at call time so the label resolves with
+ * the active locale. Used by the layout template AND when the bar returns
+ * after the login route (which removes it from the DOM entirely).
+ */
+function backBarHtml(): string {
+  return `
+      <div class="nn-back-bar" data-back-bar>
+        <div class="l-row--right">
+          <button class="btn btn--passive btn--mini" type="button" data-back-bar-button>
+            ${_('← Back')}
+          </button>
+        </div>
+      </div>
+    `;
 }
 
 export class MainLayout {
@@ -308,6 +326,10 @@ export class MainLayout {
     // Secret typed switch (`focusui`) — the user-only path into v2 while
     // the public UI-settings switch stays hidden (v2 embargo).
     registerFocusUiTypedTrigger();
+    // Re-apply the interface mode after each login: the boot call above
+    // runs in the logged-out context (flag OFF) — only the login event
+    // re-reads the account's own preference.
+    registerFocusUiLoginSync();
 
     // Lazy-load list managers (they pull in heavy deps)
     void this.loadListManagers();
@@ -515,10 +537,10 @@ export class MainLayout {
     // Initialize ViewTabManager
     this.viewTabManager = ViewTabManager.getInstance();
 
-    // Apply scrollable class to sidebar tabs + let the mouse wheel cycle the active tab
+    // Wheel-to-cycle for the sidebar view tabs (the Tabs component owns
+    // the overflow behavior — no scrollable class anymore)
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
-      sidebarTabs.classList.add('tabs--scrollable');
       this.sidebarTabsWheelCleanup = this.setupTabWheelSwitch(
         sidebarTabs as HTMLElement
       );
@@ -614,11 +636,7 @@ export class MainLayout {
     // content active; restore the default so returning to right-pane isn't blank.
     this.activateSccDefault(getSccDefaultTab());
 
-    // Remove scrollable class + detach the wheel handler
-    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
-    if (sidebarTabs) {
-      sidebarTabs.classList.remove('tabs--scrollable');
-    }
+    // Detach the wheel handler
     this.sidebarTabsWheelCleanup?.();
     this.sidebarTabsWheelCleanup = null;
 
@@ -639,11 +657,7 @@ export class MainLayout {
     this.viewTabEventSubscriptions.forEach(subId => this.eventBus.off(subId));
     this.viewTabEventSubscriptions = [];
 
-    // Remove scrollable class + detach the wheel handler
-    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
-    if (sidebarTabs) {
-      sidebarTabs.classList.remove('tabs--scrollable');
-    }
+    // Detach the wheel handler
     this.sidebarTabsWheelCleanup?.();
     this.sidebarTabsWheelCleanup = null;
   }
@@ -1087,11 +1101,42 @@ export class MainLayout {
   }
 
   private updateBackBar(): void {
-    const bar = this.element.querySelector('[data-back-bar]');
+    // Login + welcome routes: no back navigation exists there — the bar
+    // leaves the DOM entirely (not just hidden), even when the user
+    // enabled it in v1.
+    if (
+      document.body.classList.contains('login-view') ||
+      document.body.classList.contains('welcome-view')
+    ) {
+      this.element.querySelector('[data-back-bar]')?.remove();
+      return;
+    }
+
+    // Any other route: ensure the bar exists (it may have been removed on
+    // /login) — grid-area: primary keeps its placement in the layout.
+    let bar = this.element.querySelector('[data-back-bar]');
+    if (!bar) {
+      bar = this.recreateBackBar();
+    }
     bar?.classList.toggle(
       'nn-back-bar--visible',
       isBackBarEnabled() && Router.getInstance().canGoBack()
     );
+  }
+
+  /** Re-insert the back bar after the pcc and wire its button. */
+  private recreateBackBar(): HTMLElement {
+    const template = document.createElement('template');
+    template.innerHTML = backBarHtml().trim();
+    const bar = template.content.firstElementChild as HTMLElement;
+    const primary = this.element.querySelector('.primary-content');
+    primary?.after(bar);
+    bar
+      .querySelector('[data-back-bar-button]')
+      ?.addEventListener('click', () => {
+        NavigationDispatcher.goBack();
+      });
+    return bar;
   }
 
   /**
@@ -2277,14 +2322,9 @@ export class MainLayout {
       </main>
 
       <!-- Global Back bar: grid item sharing the primary area, overlays the pcc.
-           Visibility driven by Router.canGoBack() via router:history-changed. -->
-      <div class="nn-back-bar" data-back-bar>
-        <div class="l-row--right">
-          <button class="btn btn--passive btn--mini" type="button" data-back-bar-button>
-            ${_('← Back')}
-          </button>
-        </div>
-      </div>
+           Visibility driven by Router.canGoBack() via router:history-changed.
+           On the login route it leaves the DOM entirely (see updateBackBar). -->
+      ${backBarHtml()}
 
       <aside class="secondary-content" aria-label="${_('Details')}">
         <div class="user-login-bar">

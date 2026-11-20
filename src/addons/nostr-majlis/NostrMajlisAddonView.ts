@@ -199,7 +199,7 @@ export class NostrMajlisAddonView extends View {
             <p class="setting__desc">${_('Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.')}</p>
           </div>
         </section>
-        <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
+        <div class="tabs" data-el="majlis-tabs" hidden>
           <button class="tab tab--active" data-tab="salah">${_('Salah')}</button>
           <button class="tab" data-tab="holidays">${_('Holidays')}</button>
           <button class="tab" data-tab="dhikr">${_('Community Dhikr')}</button>

@@ -1,7 +1,7 @@
 /**
  * Focus object sets (v2) — named bundles of visible objects.
  *
- * The top-bar dropdown lists these; picking one applies it in ONE step:
+ * The settings-sidebar dropdown lists these; picking one applies it in ONE step:
  * every registry id not listed `visible` is hidden (the same machinery
  * as the per-object hide button — one save → one event → addon shutdown
  * diff + grid update + ED-b chips rebuild). The catalog is code-defined

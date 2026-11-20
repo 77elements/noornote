@@ -59,6 +59,7 @@ window.addEventListener('unhandledrejection', event => {
 });
 
 import { App } from './App';
+import { Tabs } from './components/ui/Tabs';
 import { initI18n } from './i18n';
 import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';
@@ -158,6 +159,10 @@ async function init(): Promise<void> {
 
     // Initialize i18n (language setting + catalog preloading) before any UI
     await initI18n();
+
+    // Tabs component: collapse overflowing tab rows into a dropdown
+    // (global watcher — one install covers v1, v2 and every addon).
+    Tabs.install();
 
     // Initialize the main application
     const app = new App();

@@ -56,9 +56,18 @@
 
 // Base note card (used in all views)
 .note-card {
-  margin: 0;
-  padding: $gap;
+  // Phone: cards sit flush under each other (no card gap — the flat,
+  // edge-to-edge feed look); tablet+ separates them.
+  margin: 0 0 2rem;
+  // Phone: no own padding — the card spans the content column edge to
+  // edge (the surrounding column carries the 1rem inset).
+  padding: 0;
   border-radius: $radius-xl;
+
+  @include tablet-big {
+    margin: 0;
+    padding: $gap;
+  }
 
   // Smooth scrolling optimizations (containment for better rendering performance)
   contain: layout style;

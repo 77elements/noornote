@@ -94,15 +94,19 @@ export interface DevLoadExpectations {
 export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
   requiresFocusUi: true,
 
-  // 22 = main.ts ×2, AddonLoader.runInit ×7, NostrTransport.doConnect ×1,
+  // 22 = main.ts ×2, AddonLoader.runInit ×7, NostrTransport (prune) ×1,
   // PostLoginService.handleLogin ×3, BookmarkReadStateService ×1 (diode:
-  // cross-device read markers), 8 anonymous module-layer timers (DM ×2,
-  // Notifications ×1, Reactions ×2, Feed ×1, DiagLogger ×2). The 7th
-  // addon job (2026-11-19): the reference account enabled more user
-  // addons since calibration (calendar / marketplace / follow-packs
-  // family) — addon background intervals scale with the user's addon
-  // toggles, every running job has an always-on reason.
-  maxIntervals: 22,
+  // cross-device read markers), 8 NDK per-connection monitors + 8 anonymous
+  // module-layer timers (DM ×2, Notifications ×1, Reactions ×2, Feed ×1,
+  // DiagLogger ×2). The 7th addon job (2026-11-19): the reference account
+  // enabled more user addons since calibration (calendar / marketplace /
+  // follow-packs family) — addon background intervals scale with the
+  // user's addon toggles, every running job has an always-on reason.
+  // +3 (2026-11-19): the group-chats always-on poller starts ~25–30 s
+  // AFTER login (delayed by design) — GroupChatsService.tick ×1 +
+  // GroupChatsGroupClient fetch loops ×2 — and were below the original
+  // ~18 s calibration window.
+  maxIntervals: 25,
   knownIntervalOrigins: [
     {
       pattern: 'main.ts',
@@ -133,6 +137,18 @@ export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
       reason: 'Bookmark diode — cross-device unread read markers (NIP-78)',
       max: 1,
     },
+    {
+      // File-based pattern: origins are file:line since the monitor
+      // attribution fix — function names never appear in them.
+      pattern: 'GroupChatsService',
+      reason: 'Group-chats addon poller (always-on while user-enabled)',
+      max: 1,
+    },
+    {
+      pattern: 'GroupChatsGroupClient',
+      reason: 'Per-group client fetch loops (always-on while user-enabled)',
+      max: 2,
+    },
   ],
   transientIntervalOrigins: [
     {
@@ -158,11 +174,6 @@ export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
     {
       pattern: 'focusStage',
       reason: 'v2 shell timers for mounted surfaces',
-      max: 3,
-    },
-    {
-      pattern: 'GroupChatsService.tick',
-      reason: 'Group-chats addon poller (always-on while user-enabled)',
       max: 3,
     },
     {
@@ -211,11 +222,15 @@ export const DEV_LOAD_EXPECTATIONS: DevLoadExpectations = {
       pattern: 'ArticleNotificationService',
       reason: 'v1 article notifications — stopped under v2',
     },
-    {
-      pattern: 'loadListManagers',
-      reason:
-        'v1 sidebar list managers — stopped under v2 (MainLayout teardown)',
-    },
+    // NOTE: there is deliberately NO forbidden pattern for loadListManagers:
+    // the v1 sidebar managers themselves create no intervals, and the ONLY
+    // interval reachable through that chain is the BookmarkReadStateService
+    // diode (started at login, whitelisted above, deliberately NOT stopped
+    // by teardownClassicListManagers — see MainLayout). A pattern on the
+    // chain's function name could only ever fire via raw stack-frame
+    // attribution (dev quirk) and flagged exactly that whitelisted diode.
+    // Any real future leak in that chain surfaces as an unaccounted origin
+    // in the interval-budget check instead.
     {
       pattern: 'profileBlinking',
       reason:
@@ -263,8 +278,17 @@ function violationsForIntervals(
   e: DevLoadExpectations
 ): string[] {
   const out: string[] = [];
+  // Known (whitelisted) origins win over forbidden patterns: origin
+  // attribution can layer caller context into one string (dev stack quirks),
+  // and an explicitly justified diode timer must never be flagged by a
+  // forbidden pattern matching that layered context.
+  const knownPatterns = e.knownIntervalOrigins.map(k => k.pattern);
+  const isKnown = (origin: string): boolean =>
+    knownPatterns.some(p => origin.includes(p));
   for (const f of e.forbiddenIntervalOrigins) {
-    const hits = snapshot.intervals.filter(i => i.origin.includes(f.pattern));
+    const hits = snapshot.intervals.filter(
+      i => i.origin.includes(f.pattern) && !isKnown(i.origin)
+    );
     if (hits.length > 0) {
       out.push(
         `forbidden interval "${f.pattern}" running under v2 (${hits.length}×): ${f.reason}`
@@ -429,10 +453,14 @@ export function resolveExpectationsForHiddenState(
     if (onDemand || widgetGated) continue;
     hiddenAlwaysOn += 1;
     if (addonId === 'group-chats') {
-      const tick = e.transientIntervalOrigins.find(
-        t => t.pattern === 'GroupChatsService.tick'
+      const tick = e.knownIntervalOrigins.find(
+        k => k.pattern === 'GroupChatsService'
       );
       if (tick) tick.max = 0;
+      const client = e.knownIntervalOrigins.find(
+        k => k.pattern === 'GroupChatsGroupClient'
+      );
+      if (client) client.max = 0;
     }
   }
   // The boot budget derives from the LIVE registry (registered − on-demand

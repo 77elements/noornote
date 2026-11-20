@@ -27,7 +27,7 @@ export class FocusLogPanel {
     el.innerHTML = `
       <div class="focus-log-panel">
         <div class="focus-log-panel__head">
-          <h3 class="focus-log-panel__heading">${_('System Logs')}</h3>
+          <h4 class="focus-log-panel__heading">${_('System Logs')}</h4>
           <button type="button" class="focus-log-panel__export" data-log-export aria-label="${_('Export DiagLogs')}">${_('Export DiagLogs')}</button>
         </div>
         <div class="focus-log-panel__list" data-log-list></div>

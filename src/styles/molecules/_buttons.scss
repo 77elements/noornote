@@ -251,6 +251,62 @@
 }
 
 // ========================================
+// v2 Button (icon + label)
+// ========================================
+// v2-only — NEVER in v1 (the name is the contract). The quiet
+// icon+label button: no chrome, muted color, brightens on hover. Pure
+// appearance — layout stays the consumer's business.
+.btn-v2 {
+  display: inline-block;
+  color: var(--color-5);
+
+  &:hover {
+    color: var(--color-4);
+  }
+
+  // Author display beats the UA's [hidden] — re-assert the trap.
+  &[hidden] {
+    display: none;
+  }
+}
+
+// Outlined variant: the primary actions on a surface (panel header
+// Start, Write Note). Ring + text in the clickable color on the solid
+// surface background — inline level (button default), so the width
+// follows the label.
+.btn-v2--outline {
+  padding: 6px 10px;
+  border: 2px solid var(--color-4);
+  border-radius: $radius-xl;
+  background-color: var(--color-1);
+  color: var(--color-4);
+
+  &:hover {
+    color: var(--color-5);
+  }
+}
+
+// Shared: smooth hover. Icon and label as inline-blocks on one text
+// line — 20px line-height everywhere (the row's diode atom is 20px; one
+// uniform line keeps icon, label and diode on the same line box).
+.btn-v2,
+.btn-v2--outline {
+  transition: $transition-colors;
+
+  svg {
+    display: inline-block;
+    vertical-align: bottom;
+    line-height: 20px;
+  }
+
+  span {
+    display: inline-block;
+    vertical-align: bottom;
+    line-height: 20px;
+  }
+}
+
+// ========================================
 // Show More/Less Link
 // ========================================
 

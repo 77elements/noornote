@@ -282,15 +282,3 @@
     box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
   }
 }
-
-@keyframes badge-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--color-6) 80%, transparent);
-  }
-}

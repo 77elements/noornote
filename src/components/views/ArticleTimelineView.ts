@@ -9,7 +9,6 @@
 import { View } from './View';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
-import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 import { _ } from '../../i18n';
 
@@ -34,17 +33,12 @@ export class ArticleTimelineView extends View {
    * Render the view
    */
   private render(): void {
-    // Shared focus-view-header row: h1 left, Write Article button right.
-    // The button routes through the focus nav seam (v2 composer); classic
-    // v1 hides it (the +New Post dropup owns article composition there).
+    // Shared heading: the bare h1. Write Article lives ONCE — the side
+    // stack's primary action row (v2) / the +New Post dropup (v1).
     this.container.appendChild(
       createFocusViewHeader({
         title: _('Articles'),
-        titleClass: 'article-timeline-view__title',
-        actionLabel: _('Write Article'),
-        onAction: () => {
-          delegateToFocusUi('write-article');
-        },
+        object: 'articles',
       })
     );
     this.container.insertAdjacentHTML(

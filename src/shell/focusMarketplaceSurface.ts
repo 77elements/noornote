@@ -14,7 +14,6 @@
 import type { FocusDomainSurface } from './focusDomains';
 import { FocusListDetailSurface } from './focusListDetailSurface';
 import { createFocusViewHeader } from '../helpers/focusViewHeader';
-import { delegateToFocusUi } from '../helpers/focusUiNavigation';
 import { _ } from '../i18n';
 
 export const marketplaceSurface = async (): Promise<FocusDomainSurface> => {
@@ -31,15 +30,12 @@ export const marketplaceSurface = async (): Promise<FocusDomainSurface> => {
       );
       const view = new MarketplaceView();
 
-      // Header: h1 + Post button (same DOM as the timeline's title row;
-      // the button routes through the focus nav seam like Write Note).
+      // Header: the bare h1 (Post Listing lives in the stack's primary
+      // action row).
       view.getElement().prepend(
         createFocusViewHeader({
           title: _('Marketplace'),
-          actionLabel: _('Post Listing'),
-          onAction: () => {
-            delegateToFocusUi('write-listing');
-          },
+          object: 'marketplace',
         })
       );
 

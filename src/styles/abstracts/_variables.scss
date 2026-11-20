@@ -156,7 +156,7 @@ $gap: 1rem; // 16px - base spacing unit
 
 // Focus views (v2): bottom clearance on the scrolled FV column — every
 // object's content must clear the closed ED-b tab (bottom drawer).
-$fv-padding-bottom: calc($gap * 5);
+$fv-padding-bottom: calc($gap * 2);
 
 // ========================================
 // Border Radius

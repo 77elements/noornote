@@ -343,7 +343,7 @@ export class AnalyticsAddonView extends View {
           </div>
         </section>`
         }
-        <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
+        <div class="tabs" data-el="analytics-tabs" hidden>
           <button class="tab tab--active" data-tab="overview">${_('Overview')}</button>
           <button class="tab" data-tab="top-posts">${_('Top Posts')}</button>
           <button class="tab" data-tab="diagrams">${_('Diagrams')}</button>

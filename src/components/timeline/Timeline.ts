@@ -118,6 +118,11 @@ export class Timeline extends View {
   private readonly config: TimelineConfig;
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: NnDropdown | null = null;
+  // Phone placement of the Latest filter (see placeViewDropdown): the
+  // matchMedia pair + header observer are torn down in destroy().
+  private viewDropdownPlacementMq: MediaQueryList | null = null;
+  private viewDropdownHeaderMo: MutationObserver | null = null;
+  private viewDropdownAttachRetries = 0;
   private lookForNotesLink: HTMLElement | null = null;
   private lookForNotesLinkTimeout: number | null = null;
 
@@ -475,7 +480,73 @@ export class Timeline extends View {
     if (viewSelector) {
       viewSelector.appendChild(this.viewDropdown.getElement());
     }
+
+    // Phone placement: below tablet-big the Latest filter rides in the
+    // tabs row (right next to the tabs dropdown); everywhere else it stays
+    // in the header selector. Placement (incl. the header observer) is
+    // self-anchoring in placeViewDropdown — the Timeline is constructed
+    // detached and only becomes placeable once TimelineView appends it.
+    this.viewDropdownPlacementMq = window.matchMedia('(max-width: 767.98px)');
+    this.viewDropdownPlacementMq.addEventListener(
+      'change',
+      this.placeViewDropdown
+    );
+    this.placeViewDropdown();
   }
+
+  /**
+   * Place the Latest filter dropdown: in the tabs row on phones (directly
+   * right of the tabs dropdown), in the header selector everywhere else.
+   * Idempotent — called on init, breakpoint flips and tab-row rebuilds
+   * (refreshTabRow removes the whole header; a parked dropdown dies with
+   * it, the observer re-places it into the fresh row).
+   */
+  private placeViewDropdown = (): void => {
+    const dropdownEl = this.viewDropdown?.getElement();
+    if (!dropdownEl || !this.viewDropdownPlacementMq) return;
+    // v2 Focus UI: the dropdown rides the side stack's dropdown row —
+    // this placement machinery must not yank it back into the surface.
+    if (dropdownEl.closest('[data-focus-stack]')) return;
+    // The Timeline is constructed detached (TimelineView appends it right
+    // after) — wait for the attach, then anchor the header observer.
+    const viewRoot = this.element.closest('.view-content--timeline');
+    if (!viewRoot) {
+      if (this.viewDropdownAttachRetries < 60) {
+        this.viewDropdownAttachRetries++;
+        requestAnimationFrame(this.placeViewDropdown);
+      }
+      return;
+    }
+    this.viewDropdownAttachRetries = 0;
+    if (!this.viewDropdownHeaderMo) {
+      this.viewDropdownHeaderMo = new MutationObserver(() => {
+        if (this.viewDropdownPlacementMq?.matches) this.placeViewDropdown();
+      });
+      this.viewDropdownHeaderMo.observe(viewRoot, {
+        childList: true,
+        subtree: true,
+      });
+    }
+    if (this.viewDropdownPlacementMq.matches) {
+      const tabsRow = viewRoot.querySelector('.tabs');
+      if (!tabsRow) return; // header not built (yet) — observer re-runs this
+      const tabsDropdown = tabsRow.querySelector(':scope > .tabs__dropdown');
+      if (tabsDropdown) {
+        if (tabsDropdown.nextElementSibling === dropdownEl) return;
+        tabsDropdown.after(dropdownEl);
+      } else {
+        if (dropdownEl.parentElement === tabsRow) return;
+        tabsRow.appendChild(dropdownEl);
+      }
+    } else {
+      const viewSelector = this.element.querySelector(
+        '.timeline-view-selector'
+      );
+      if (viewSelector && dropdownEl.parentElement !== viewSelector) {
+        viewSelector.appendChild(dropdownEl);
+      }
+    }
+  };
 
   /**
    * Setup infinite scroll component
@@ -1017,6 +1088,15 @@ export class Timeline extends View {
         this.nsfwPreferenceHandler
       );
     }
+    if (this.viewDropdownPlacementMq) {
+      this.viewDropdownPlacementMq.removeEventListener(
+        'change',
+        this.placeViewDropdown
+      );
+      this.viewDropdownPlacementMq = null;
+    }
+    this.viewDropdownHeaderMo?.disconnect();
+    this.viewDropdownHeaderMo = null;
     this.clearLookForNotesTimeout();
     this.marketplaceInjector?.destroy();
     this.marketplaceInjector = null;

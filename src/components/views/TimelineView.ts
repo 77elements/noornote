@@ -24,9 +24,9 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import {
   isBookmarksUiActive,
+  isFocusUiActive,
   isTribesUiActive,
 } from '../../helpers/focusUiSetting';
-import { delegateToFocusUi } from '../../helpers/focusUiNavigation';
 import { createFocusViewHeader } from '../../helpers/focusViewHeader';
 
 type TabType = 'timeline' | 'last-notes' | 'tribe';
@@ -171,20 +171,12 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
-    // Page heading ("Social Media"): visible in v2 as the domain heading,
-    // screen-reader-only in v1 — the hiding is scoped per interface in
-    // SCSS (see .timeline-view__title in _timeline-view.scss), not via
-    // the .visually-hidden class (that would hide it in v2 as well).
-    // Shared focus-view-header row: h1 left, action button right. The
-    // Write Note button routes through the focus nav seam; classic v1
-    // hides it (the +New Post dropup owns note composition there).
+    // Shared heading: the bare h1, hooked via .fv.fv--social-media.
+    // Write Note lives ONCE — the side stack's primary action row (v2) /
+    // the +New Post dropup (v1).
     const titleRow = createFocusViewHeader({
       title: _('Social Media'),
-      titleClass: 'timeline-view__title',
-      actionLabel: _('Write Note'),
-      onAction: () => {
-        delegateToFocusUi('new-note');
-      },
+      object: 'social-media',
     });
 
     this.container.appendChild(titleRow);
@@ -219,8 +211,7 @@ export class TimelineView extends View {
 
   /**
    * Build the tab-row header: the scrollable tabs plus the "Edit tribes"
-   * link (the link morphs to the Tribes object in the Focus UI via the
-   * navigation seam; the classic UI keeps the list tab).
+   * link (classic UI only — it opens the tribes list tab).
    */
   private buildHeader(): HTMLElement {
     const header = document.createElement('div');
@@ -232,7 +223,7 @@ export class TimelineView extends View {
 
     // Tabs wrapper for horizontal scroll
     const tabsWrapper = document.createElement('div');
-    tabsWrapper.className = 'tabs tabs--scrollable';
+    tabsWrapper.className = 'tabs';
 
     // Create all tabs
     this.tabs.forEach(tab => {
@@ -243,22 +234,30 @@ export class TimelineView extends View {
 
     tabsContainer.appendChild(tabsWrapper);
 
-    // Edit link — only meaningful when the Tribes addon is on (and, in
-    // the Focus UI, the Tribes object not hidden).
-    if (isTribesUiActive()) {
+    // Edit link — only meaningful when the Tribes addon is on. Classic
+    // UI only: under the Focus UI the Tribes object is one grid circle
+    // away, the link is redundant there.
+    if (isTribesUiActive() && !isFocusUiActive()) {
       const editLink = document.createElement('button');
       editLink.className =
         'timeline-view__edit-link btn btn--mini btn--passive';
       editLink.textContent = _('Edit tribes');
-      editLink.addEventListener('click', () => {
-        // Focus UI: the Tribes object owns the 'tribes' view type — the
-        // stage switches to it (same as clicking the circle). Classic:
-        // the list tab as before.
-        if (!delegateToFocusUi('tribes')) {
-          this.eventBus.emit('list:open', { listType: 'tribes' });
-        }
-      });
+      const openTribes = (): void => {
+        this.eventBus.emit('list:open', { listType: 'tribes' });
+      };
+      editLink.addEventListener('click', openTribes);
       tabsContainer.appendChild(editLink);
+
+      // Phone: the button is hidden (the Latest filter takes its spot) and
+      // its action rides as the LAST option of the tabs dropdown — a
+      // dropdown-only .tab, the Tabs component lists it after the real
+      // tabs. Present at every breakpoint (hidden in expanded rows), so
+      // the option survives tab-row rebuilds no matter when they run.
+      const editTab = document.createElement('button');
+      editTab.className = 'tab tab--dropdown-only';
+      editTab.textContent = _('Edit tribes');
+      editTab.addEventListener('click', openTribes);
+      tabsWrapper.appendChild(editTab);
     }
 
     header.appendChild(tabsContainer);

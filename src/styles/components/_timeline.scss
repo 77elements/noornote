@@ -24,11 +24,7 @@
     .platform--mobile body.pv & {
       top: 12px;
     }
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: calc($gap / 2);
     padding: calc($gap / 2) 0; // Mobile-first base
-    background: var(--color-1);
 
     .timeline-view-selector {
       // Dropdown takes full width of its grid cell
@@ -46,12 +42,25 @@
     }
 
     .timeline-controls {
-      // Refresh button styles moved to molecules/_buttons.scss
-      justify-self: end;
-      align-self: center;
+      // Phone: full-width row, content centered — the stuck-polling
+      // "Look for new notes" link (and its visibility twin, the refresh
+      // button) sit mid-header.
+      @include tablet-down {
+        display: flex;
+        justify-content: center;
+      }
+      // Tablet+: right-aligned cell of the two-column grid.
+      @include tablet-up {
+        justify-self: end;
+        align-self: center;
+      }
     }
 
     @include tablet-up {
+      // Two columns: selector left, controls right.
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: calc($gap / 2);
       padding: calc($gap * 0.75) 0;
     }
 
@@ -60,18 +69,17 @@
     }
   }
 
-  // "Look for new notes" link (shown when polling might be stuck)
+  // "Look for new notes" link (shown when polling might be stuck) —
+  // carries the header background now (the header itself is transparent),
+  // right-aligned in the controls cell. No hover effect: the accent tint
+  // read as translucency over the glass.
   .timeline-look-for-notes-link {
     color: var(--color-4);
     text-decoration: none;
     padding: calc($gap / 2) $gap;
     border-radius: $radius-xl;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: var(--bg-accent);
-      text-decoration: underline;
-    }
+    background: var(--color-1);
+    transition: none;
   }
 
   // Timeline item (legacy wrapper from TimelineUI - deprecated)
