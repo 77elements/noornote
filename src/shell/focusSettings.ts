@@ -654,19 +654,19 @@ export class GlobalSettingsPanel implements FocusSettingsView {
     // mount into (SettingsSection.getContentContainer queries
     // #<sectionId>-content within its parent).
     el.innerHTML = `
-      <section class="relays">
+      <section class="relays" data-global-section="relays">
         <h2 class="focus-settings__section-title">${_('Relays')}</h2>
         <div id="relay-settings-content" class="settings-sub-page__content"></div>
       </section>
-      <section class="media">
+      <section class="media" data-global-section="media">
         <h2 class="focus-settings__section-title">${_('Media')}</h2>
         <div id="media-content" class="settings-sub-page__content"></div>
       </section>
-      <section class="zaps">
+      <section class="zaps" data-global-section="zaps">
         <h2 class="focus-settings__section-title">${_('Zaps')}</h2>
         <div id="zaps-content" class="settings-sub-page__content"></div>
       </section>
-      <section class="cache">
+      <section class="cache" data-global-section="cache">
         <h2 class="focus-settings__section-title">${_('Cache')}</h2>
         <div id="cache-settings-content" class="settings-sub-page__content"></div>
       </section>`;
@@ -691,10 +691,10 @@ export class GlobalSettingsPanel implements FocusSettingsView {
         string,
       ]
     > = [
-      [relays.RelaySettingsSection, '.relays'],
-      [media.MediaServerSection, '.media'],
-      [zaps.NWCSettingsSection, '.zaps'],
-      [cache.CacheSettingsSection, '.cache'],
+      [relays.RelaySettingsSection, '[data-global-section="relays"]'],
+      [media.MediaServerSection, '[data-global-section="media"]'],
+      [zaps.NWCSettingsSection, '[data-global-section="zaps"]'],
+      [cache.CacheSettingsSection, '[data-global-section="cache"]'],
     ];
     for (const [Ctor, selector] of defs) {
       const wrap = host.querySelector(selector) as HTMLElement | null;

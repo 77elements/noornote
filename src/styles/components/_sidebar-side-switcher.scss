@@ -1,17 +1,14 @@
 /**
  * Sidebar Side Switcher — label + Left/Right dropdown (focus UI v2,
  * section.ui-settings). Same pattern as the font-size switcher: the
- * label names the control, the dropdown shows the value.
+ * label names the control, the dropdown shows the value. Inline flow
+ * (no flex): the label is an inline span, the dropdown inline-block.
  */
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 
 .sidebar-side-switcher {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 4);
-
   &__label {
     @extend %small;
     color: var(--color-3);

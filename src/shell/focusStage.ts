@@ -24,6 +24,7 @@
 import { _ } from '../i18n';
 import { Tooltip } from '../components/ui/Tooltip';
 import { GlobalSettingsPanel } from './focusSettings';
+import { diagLog } from '../services/DiagnosticLogger';
 import { PlatformService } from '../services/PlatformService';
 import { Router } from '../services/Router';
 import { NavigationDispatcher } from '../services/NavigationDispatcher';
@@ -822,6 +823,7 @@ export class FocusStage {
       return;
     }
     this.unmountTabPanels();
+    diagLog('system', 'focus_global_settings_open', { via: 'sv-gear' });
     const host = document.createElement('div');
     host.className = 'focus-settings';
     this.settingsHost = host;
@@ -2360,12 +2362,12 @@ export class FocusStage {
         <span class="focus-meta__version">v${__APP_VERSION__}</span>
       </div>
       <div class="focus-meta__row">
-        <a href="/about" class="focus-meta__about">${_('About')}</a>
+        <a href="/about" class="focus-meta__about" data-meta-about>${_('About')}</a>
       </div>`;
     meta
       .querySelector('[data-meta-download]')
       ?.addEventListener('click', () => void this.openDownloadPage());
-    meta.querySelector('.focus-meta__about')?.addEventListener('click', e => {
+    meta.querySelector('[data-meta-about]')?.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate('/about');
     });

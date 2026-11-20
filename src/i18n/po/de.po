@@ -12872,15 +12872,15 @@ msgstr "Hashtag-Alarme"
 
 #: src/shell/focusStage.ts:2137
 msgid "Left"
-msgstr ""
+msgstr "Links"
 
 #: src/shell/focusStage.ts:2136
 msgid "Right"
-msgstr ""
+msgstr "Rechts"
 
 #: src/shell/focusStage.ts:2158
 msgid "Sidebar side"
-msgstr ""
+msgstr "Position der Seitenleiste"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
