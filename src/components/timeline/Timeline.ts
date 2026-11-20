@@ -504,6 +504,9 @@ export class Timeline extends View {
   private placeViewDropdown = (): void => {
     const dropdownEl = this.viewDropdown?.getElement();
     if (!dropdownEl || !this.viewDropdownPlacementMq) return;
+    // v2 Focus UI: the dropdown rides the side stack's dropdown row —
+    // this placement machinery must not yank it back into the surface.
+    if (dropdownEl.closest('[data-focus-stack]')) return;
     // The Timeline is constructed detached (TimelineView appends it right
     // after) — wait for the attach, then anchor the header observer.
     const viewRoot = this.element.closest('.view-content--timeline');

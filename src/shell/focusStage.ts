@@ -221,6 +221,16 @@ export class FocusStage {
     parent: HTMLElement;
     next: Element | null;
   }> = [];
+  /** The object-specific dropdown row: the surface's tab selector (the
+   * collapsed .tabs row carries it) + the Latest filter — portaled under
+   * the write action; the surfaces keep owning their machinery. */
+  private dropdownRow: HTMLElement | null = null;
+  private dropdownGuests: Array<{
+    el: HTMLElement;
+    parent: HTMLElement;
+    next: Element | null;
+  }> = [];
+  private dropdownMo: MutationObserver | null = null;
   /** Right settings sidebar (absorbed the top bar + the ED-t drawer). */
   private settingsSidebar: HTMLElement | null = null;
   private settingsOpen = false;
@@ -1493,32 +1503,24 @@ export class FocusStage {
    * Mount the activated widgets into the side stack, at the default
    * spot (below the object's primary action row).
    */
-  private placeWidgets(stack: HTMLElement): void {
+  private placeWidgets(section: HTMLElement): void {
     for (const id of WIDGET_IDS) {
       const widget = this.widgetFor(id);
       if (!widget || this.widgetHosts.has(id)) continue;
       const host = this.createWidgetHost(id);
-      this.insertAfterWriteRow(stack, host);
+      section.appendChild(host);
       this.widgetHosts.set(id, { widget, host });
       widget.setFocusHost(host);
     }
-  }
-
-  /** Insert a host directly below the primary action row (or below the
-   * header when the object has no write action). */
-  private insertAfterWriteRow(stack: HTMLElement, host: HTMLElement): void {
-    const write = stack.querySelector('[data-focus-stack-write]');
-    const ref = write?.nextElementSibling ?? null;
-    if (ref) stack.insertBefore(host, ref);
-    else stack.appendChild(host);
   }
 
   /** Re-insert the mounted hosts at their default spot. */
   private reapplyWidgets(): void {
     if (!this.sideStacks) return;
     const stack = this.sideStacks[1];
+    const section = this.stackSection(stack, 'widgets');
     for (const [, entry] of this.widgetHosts) {
-      this.insertAfterWriteRow(stack, entry.host);
+      section.appendChild(entry.host);
     }
     // Mount widgets that became available in the meantime (widgetFor
     // fires ensureLoaded on the first miss; its guard skips ids that
@@ -1560,12 +1562,25 @@ export class FocusStage {
    * actually deviates from the registry default — hidden while identical
    * (the button would be a no-op there).
    */
+  /** Find a settings control across the loose pieces (a piece can be
+   * the control itself). */
+  private settingsPiece(selector: string): HTMLElement | null {
+    for (const piece of this.settingsPieces) {
+      if (piece.matches(selector)) return piece;
+      const found = piece.querySelector(selector);
+      if (found) return found as HTMLElement;
+    }
+    return null;
+  }
+
   private syncResetOrderVisibility(): void {
-    const btn = this.settingsContent?.querySelector(
-      '[data-settings-reset-order]'
-    ) as HTMLElement | null;
+    const btn = this.settingsPiece('[data-settings-reset-order]');
     if (!btn) return;
+    // SV-only link: the circle order is grid state — hidden while an
+    // object is focused (the FV panel carries no restore-order link),
+    // the function stays available in the SV's settings slide-in.
     btn.hidden =
+      this.activeId !== null ||
       this.order.join(',') === FOCUS_DOMAINS.map(d => d.id).join(',');
   }
 
@@ -1609,16 +1624,44 @@ export class FocusStage {
    * the grid carries the matching .is-stack-right column template);
    * phone mounts it into the slide-in nav sidebar instead of the grid.
    */
+  /** The stack's fundamental sections, in fixed order. */
+  private mountStackSections(stack: HTMLElement): void {
+    for (const name of [
+      'object-specific',
+      'widgets',
+      'notifiers',
+      'ui-settings',
+      'inspectors',
+    ]) {
+      const section = document.createElement('section');
+      section.className = name;
+      section.dataset.stackSection = name;
+      stack.appendChild(section);
+    }
+  }
+
+  /** A fundamental section of the stack by name. */
+  private stackSection(stack: HTMLElement, name: string): HTMLElement {
+    return stack.querySelector(`[data-stack-section="${name}"]`) as HTMLElement;
+  }
+
   private reparentSingleStack(activeId: string, mode: FocusStageMode): void {
     const stack = document.createElement('div');
     stack.className = 'focus-side-stack';
     stack.dataset.focusStack = '';
-    stack.innerHTML = this.stackHeaderHtml(activeId);
+    // The stack's fundamental sections, in fixed order — free flow:
+    // empty ones collapse into their neighbors' margins (no gaps).
+    this.mountStackSections(stack);
+    const objectSection = this.stackSection(stack, 'object-specific');
+    // The header (Start + gear/scroll) is the object-specific section's
+    // first row — above the write action.
+    objectSection.innerHTML = this.stackHeaderHtml(activeId);
     this.wireStackHeader(stack, activeId);
-    this.appendPrimaryAction(stack, activeId);
-    this.mountTrioRows(stack, activeId);
+    this.appendPrimaryAction(objectSection, activeId);
+    this.mountSurfaceDropdowns(objectSection, activeId);
+    this.placeWidgets(this.stackSection(stack, 'widgets'));
+    this.mountTrioRows(this.stackSection(stack, 'notifiers'), activeId);
     this.rideSettingsIntoStack(stack);
-    this.placeWidgets(stack);
     const active = this.objects.get(activeId) as HTMLElement;
     if (mode === 'phone') {
       this.mountNavSidebar().appendChild(stack);
@@ -1793,22 +1836,37 @@ export class FocusStage {
    * stack (the user's one system panel); on close it moves back into
    * the settings slide-in that hosts it on the start view.
    */
-  private settingsContent: HTMLElement | null = null;
+  /** The persistent settings pieces (no wrapper element): restore-order
+   * link + Workspace slot — plain document flow, permanent residents of
+   * the slide-in panel (SV-only controls; re-creating per panel build
+   * would orphan the Workspace dropdown injection). */
+  private settingsPieces: HTMLElement[] = [];
+  /** The guests riding the stack's two settings sections between the
+   * slide-in panel (start view) and their sections (focused). Two
+   * lifecycles: the stage's own inspector button (boot, permanent) and
+   * the shell's elements — replaced wholesale via mountSettingsGuests
+   * (the shell mounts on login, clears on logout; no isConnected
+   * pruning: at shell-boot time the shell root is not in the document
+   * yet, so isConnected lies). */
+  private loadmonBtn: HTMLElement | null = null;
+  /** The inspectors row (l-row--split): the shell's v1 switch left, the
+   * loadmon button right — one traveling element between the slide-in
+   * panel and the stack's inspectors section. */
+  private inspectorsRow: HTMLElement | null = null;
+  private shellUiGuests: HTMLElement[] = [];
 
-  private buildSettingsContent(): HTMLElement {
-    const content = document.createElement('div');
-    content.className = 'focus-settings-content';
+  private buildSettingsPieces(): HTMLElement[] {
     // Label + element, plain document flow — no section headings: the
     // controls carry their own labels (switch), placeholders (dropdown)
     // or tooltips (icon actions).
-    content.innerHTML = `
-      <div data-settings-v1-slot></div>
-      <button type="button" class="btn-v2" data-settings-reset-order>${_('Restore default order')}</button>
-      <div data-settings-sets-slot></div>
-      <div data-settings-switchbar-slot></div>
-      <button type="button" class="btn-icon" data-settings-loadmon aria-label="${_('Load Resource Monitor')}">
-        <svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>
-      </button>`;
+    const resetOrderBtn = document.createElement('button');
+    resetOrderBtn.type = 'button';
+    resetOrderBtn.className = 'btn-v2';
+    resetOrderBtn.dataset.settingsResetOrder = '';
+    resetOrderBtn.textContent = _('Restore default order');
+
+    const setsSlot = document.createElement('div');
+    setsSlot.dataset.settingsSetsSlot = '';
 
     // Object-set selector: named bundles of visible objects, applied in
     // one step (everything not in the set is hidden — the same save →
@@ -1830,30 +1888,12 @@ export class FocusStage {
         applyObjectSet(value);
       },
     });
-    (
-      content.querySelector('[data-settings-sets-slot]') as HTMLElement
-    ).appendChild(this.setDropdown.getElement());
-
-    const loadmonBtn = content.querySelector(
-      '[data-settings-loadmon]'
-    ) as HTMLElement;
-    loadmonBtn.addEventListener('click', () => {
-      // Same boot-path discipline as the typed trigger: dynamic import.
-      void import('./loadHud').then(m => m.openLoadHud());
-    });
-    this.tooltipDisposers.push(
-      Tooltip.attach(loadmonBtn, _('Load Resource Monitor'), {
-        placement: 'bottom',
-      })
-    );
+    setsSlot.appendChild(this.setDropdown.getElement());
 
     // "Restore default order": drop the persisted circle order — the next
     // loadOrder() falls back to the registry order — and mirror it into
     // the grid (no-op while an object is active or morphing, same guard
     // as swapOrder).
-    const resetOrderBtn = content.querySelector(
-      '[data-settings-reset-order]'
-    ) as HTMLElement;
     resetOrderBtn.addEventListener('click', () => {
       PerAccountLocalStorage.getInstance().remove(StorageKeys.FOCUS_UI_ORDER);
       this.order = this.loadOrder();
@@ -1862,7 +1902,56 @@ export class FocusStage {
       this.syncResetOrderVisibility();
     });
 
-    return content;
+    return [resetOrderBtn, setsSlot];
+  }
+
+  /** The shell hands over its mounted elements (the switchers, the v1
+   * switch) — REPLACE per section: the shell owns their lifecycle. They
+   * are placed into the section's current home — the section while
+   * focused, the slide-in panel otherwise. */
+  mountSettingsGuests(
+    section: 'ui-settings' | 'inspectors',
+    els: HTMLElement[]
+  ): void {
+    if (section === 'ui-settings') {
+      this.shellUiGuests = els;
+      const home = this.sideStacks
+        ? this.stackSection(this.sideStacks[1], 'ui-settings')
+        : (this.settingsSidebar?.querySelector(
+            '[data-settings-panel]'
+          ) as HTMLElement | null);
+      if (home) for (const el of els) home.appendChild(el);
+    } else {
+      // The inspectors row travels as one element — its left side takes
+      // the shell's guests (v1 switch).
+      const left = this.inspectorsRow?.firstElementChild as HTMLElement;
+      for (const el of els) left.appendChild(el);
+    }
+  }
+
+  /** The inspector: tooling that watches the app itself — the loadmon
+   * button rides the stack's inspectors section (a guest, like the
+   * shell's v1 switch beside it). */
+  private buildLoadmonButton(): HTMLElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-icon';
+    btn.dataset.settingsLoadmon = '';
+    btn.setAttribute('aria-label', _('Load Resource Monitor'));
+    btn.innerHTML =
+      '<svg width="18" height="18" aria-hidden="true"><use href="#icon-trending-up"/></svg>';
+
+    // Same boot-path discipline as the typed trigger: dynamic import.
+    btn.addEventListener('click', () => {
+      void import('./loadHud').then(m => m.openLoadHud());
+    });
+    this.tooltipDisposers.push(
+      Tooltip.attach(btn, _('Load Resource Monitor'), {
+        placement: 'bottom',
+      })
+    );
+
+    return btn;
   }
 
   /**
@@ -1882,10 +1971,20 @@ export class FocusStage {
         <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
       </button>`;
 
-    this.settingsContent = this.buildSettingsContent();
-    (root.querySelector('[data-settings-panel]') as HTMLElement).appendChild(
-      this.settingsContent
-    );
+    this.settingsPieces = this.buildSettingsPieces();
+    this.loadmonBtn = this.buildLoadmonButton();
+    // Split row per the layout contract: each side wrapped in its own
+    // <div> — the v1 switch (shell, left) fills the empty left side.
+    this.inspectorsRow = document.createElement('div');
+    this.inspectorsRow.className = 'l-row--split';
+    const inspectorLeft = document.createElement('div');
+    const inspectorRight = document.createElement('div');
+    inspectorRight.appendChild(this.loadmonBtn);
+    this.inspectorsRow.appendChild(inspectorLeft);
+    this.inspectorsRow.appendChild(inspectorRight);
+    const panel = root.querySelector('[data-settings-panel]') as HTMLElement;
+    for (const piece of this.settingsPieces) panel.appendChild(piece);
+    panel.appendChild(this.inspectorsRow);
 
     const handle = root.querySelector('[data-settings-handle]') as HTMLElement;
     handle.addEventListener('click', () => this.toggleSettingsSidebar());
@@ -1913,18 +2012,96 @@ export class FocusStage {
   }
 
   /** Move the settings content into the given stack (focus opened). */
+  /**
+   * The surface's two feed dropdowns ride the stack: the tab selector
+   * (the .tabs row itself — its collapsed state IS the dropdown, the
+   * Tabs component keeps managing it in place) and the Latest filter.
+   * Portaled with a restore contract; the row sits one line below the
+   * write action. The observer catches late surfaces (buildTabs is
+   * async) and rebuilds (tribe edits): a fresh .tabs replaces the
+   * portaled one (detaching the old one cleans up its Tabs wiring).
+   */
+  private mountSurfaceDropdowns(section: HTMLElement, activeId: string): void {
+    const host = this.objects.get(activeId);
+    if (!host) return;
+    const row = document.createElement('div');
+    row.setAttribute('data-focus-dropdown-row', '');
+    const write = section.querySelector('[data-focus-stack-write]');
+    if (write) write.insertAdjacentElement('afterend', row);
+    else section.appendChild(row);
+    this.dropdownRow = row;
+    this.syncSurfaceDropdowns(host);
+    this.dropdownMo = new MutationObserver(() =>
+      this.syncSurfaceDropdowns(host)
+    );
+    this.dropdownMo.observe(host, { childList: true, subtree: true });
+  }
+
+  private syncSurfaceDropdowns(host: HTMLElement): void {
+    const row = this.dropdownRow;
+    if (!row) return;
+    const tabs = host.querySelector('.tabs') as HTMLElement | null;
+    const latest = host.querySelector(
+      '.timeline-view-dropdown'
+    ) as HTMLElement | null;
+    // Order = split placement: Latest LEFT, tab selector RIGHT.
+    if (latest && latest.parentElement !== row) {
+      this.portalDropdownGuest(latest);
+    }
+    const portaledTabs = row.querySelector('.tabs');
+    if (tabs && tabs !== portaledTabs) {
+      portaledTabs?.remove();
+      this.portalDropdownGuest(tabs);
+    }
+    // Both ride the row → split (tab selector left, Latest right);
+    // Latest alone → right-aligned.
+    const wanted = row.children.length > 1 ? 'l-row--split' : 'l-row--right';
+    if (row.className !== wanted) row.className = wanted;
+  }
+
+  /** Move one dropdown into the row, remembering its original spot. */
+  private portalDropdownGuest(el: HTMLElement): void {
+    if (!this.dropdownRow || !el.parentElement) return;
+    this.dropdownGuests.push({
+      el,
+      parent: el.parentElement,
+      next: el.nextElementSibling,
+    });
+    this.dropdownRow.appendChild(el);
+  }
+
+  /** Dropdowns back to the surface, observer off, row gone. */
+  private unmountSurfaceDropdowns(): void {
+    this.dropdownMo?.disconnect();
+    this.dropdownMo = null;
+    for (const { el, parent, next } of this.dropdownGuests) {
+      parent.insertBefore(el, next);
+    }
+    this.dropdownGuests = [];
+    this.dropdownRow?.remove();
+    this.dropdownRow = null;
+  }
+
   private rideSettingsIntoStack(stack: HTMLElement): void {
-    if (!this.settingsContent || !this.settingsSidebar) return;
-    stack.appendChild(this.settingsContent);
+    if (!this.settingsSidebar) return;
+    const settingsSection = this.stackSection(stack, 'ui-settings');
+    for (const guest of this.shellUiGuests) {
+      settingsSection.appendChild(guest);
+    }
+    if (this.inspectorsRow) {
+      this.stackSection(stack, 'inspectors').appendChild(this.inspectorsRow);
+    }
     this.settingsSidebar.classList.add('is-dormant');
   }
 
-  /** Move the settings content back into the slide-in (focus closed). */
+  /** Move the riding elements back into the slide-in (focus closed). */
   private restoreSettingsContent(): void {
-    if (!this.settingsContent || !this.settingsSidebar) return;
-    (
-      this.settingsSidebar.querySelector('[data-settings-panel]') as HTMLElement
-    ).appendChild(this.settingsContent);
+    if (!this.settingsSidebar) return;
+    const panel = this.settingsSidebar.querySelector(
+      '[data-settings-panel]'
+    ) as HTMLElement;
+    if (this.inspectorsRow) panel.appendChild(this.inspectorsRow);
+    for (const guest of this.shellUiGuests) panel.appendChild(guest);
     this.settingsSidebar.classList.remove('is-dormant');
   }
 
@@ -2020,10 +2197,9 @@ export class FocusStage {
 
   /** The set dropdown is grid (SV) domain — hidden while a domain is focused. */
   private syncSettingsState(): void {
-    const slot = this.settingsContent?.querySelector(
-      '[data-settings-sets-slot]'
-    ) as HTMLElement | null;
+    const slot = this.settingsPiece('[data-settings-sets-slot]');
     if (slot) slot.hidden = this.activeId !== null;
+    this.syncResetOrderVisibility();
   }
 
   /**
@@ -2057,24 +2233,20 @@ export class FocusStage {
           <svg width="18" height="18" aria-hidden="true"><use href="#icon-settings"/></svg>
         </button>`
       : '';
-    // l-spread (molecules/_layouts.scss): left group (Start + gear),
-    // right group (scroll steps).
-    return `<div class="focus-side-stack__header l-spread" data-focus-stack-header>
-      <div>
-        <button type="button" class="btn-v2--outline" data-focus-stack-start>
-          <svg width="20" height="20" aria-hidden="true"><use href="#icon-home"/></svg>
-          <span>${_('Start')}</span>
-        </button>
-        ${gear}
-      </div>
-      <div>
-        <button type="button" class="focus-side-stack__scroll-down" data-focus-stack-scroll-down aria-label="${_('Scroll down')}">
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
-        </button>
-        <button type="button" class="focus-side-stack__scroll-up" data-focus-stack-scroll-up aria-label="${_('Scroll up')}" hidden>
-          <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-up"/></svg>
-        </button>
-      </div>
+    // l-row--right (molecules/_layouts.scss): the icon tools right-aligned
+    // — gear, scroll steps, and the X as the far-right close (Start's
+    // replacement: same effect, one less button).
+    return `<div class="l-row--right" data-focus-stack-header>
+      ${gear}
+      <button type="button" class="focus-side-stack__scroll-down" data-focus-stack-scroll-down aria-label="${_('Scroll down')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+      </button>
+      <button type="button" class="focus-side-stack__scroll-up" data-focus-stack-scroll-up aria-label="${_('Scroll up')}" hidden>
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-chevron-up"/></svg>
+      </button>
+      <button type="button" class="focus-side-stack__close" data-focus-stack-close aria-label="${_('Close')}">
+        <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
+      </button>
     </div>`;
   }
 
@@ -2087,7 +2259,7 @@ export class FocusStage {
     ) as HTMLElement;
     header.addEventListener('click', ev => ev.stopPropagation());
     header
-      .querySelector('[data-focus-stack-start]')
+      .querySelector('[data-focus-stack-close]')
       ?.addEventListener('click', () => this.close());
     const gear = stack.querySelector(
       '[data-focus-stack-settings]'
@@ -2190,6 +2362,8 @@ export class FocusStage {
    * to their origins, widgets unmounted, stacks + panels removed. */
   private teardownStacks(): void {
     if (!this.sideStacks) return;
+    // The surface's dropdowns back into the timeline (restore contract).
+    this.unmountSurfaceDropdowns();
     // The trio rows die with the stacks — their diode drivers with them.
     for (const mgr of this.focusBadgeManagers) mgr.destroy();
     this.focusBadgeManagers = [];

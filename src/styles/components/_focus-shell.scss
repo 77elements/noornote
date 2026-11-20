@@ -494,6 +494,7 @@ html.ui--focus {
 .focus-side-stack__scroll-down:hover,
 .focus-side-stack__scroll-up:hover,
 .focus-side-stack__settings:hover,
+.focus-side-stack__close:hover,
 .focus-object-compact__unhide:hover {
   color: var(--color-5);
 }
@@ -532,6 +533,37 @@ html.ui--focus {
   // Free document flow: rows stack naturally, one gap between neighbors.
   > * {
     margin-bottom: $gap;
+  }
+
+  // Same rhythm inside the fundamental sections: one gap between the
+  // children, the last child flush (the section's own margin-bottom
+  // carries the gap to the next section).
+  section > * {
+    margin-bottom: $gap;
+  }
+
+  section > *:last-child {
+    margin-bottom: 0;
+  }
+
+  // Notifiers + UI settings: rows right-aligned — inline-level children
+  // (btn-v2 trio rows, switcher dropdowns) follow the text alignment;
+  // each child resets its own inner text so labels stay start-aligned.
+  section.notifiers,
+  section.ui-settings {
+    text-align: end;
+
+    > * {
+      text-align: start;
+    }
+
+    // The font-size switcher is a block-level flex row (label + −/+),
+    // no inline-level box: text-align can't move it — shrink-wrap it
+    // and let the auto margin carry it to the end edge.
+    > .font-size-switcher {
+      width: fit-content;
+      margin-inline-start: auto;
+    }
   }
 
   .focus-stage__grid.is-focused & {
@@ -765,19 +797,10 @@ html.ui--focus {
 // navigation of its own) + the config accesses (gear → UI settings) and
 // the stack's scroll steps, pinned ABOVE the stack items — a sticky first
 // grid row, so it stays in place while the stack scrolls.
-.focus-side-stack__header {
-  position: sticky;
-  top: 0;
-  z-index: $z-back-bar;
-  // Transparent backdrop: the stack scrolls beneath the row — a soft
-  // fade keeps the items readable without a hard band edge.
-  background: linear-gradient(var(--color-1) 70%, transparent);
-  padding-bottom: 4px;
-}
-
 .focus-side-stack__scroll-down,
 .focus-side-stack__scroll-up,
-.focus-side-stack__settings {
+.focus-side-stack__settings,
+.focus-side-stack__close {
   display: inline-grid;
   place-items: center;
   width: 30px;
@@ -795,15 +818,6 @@ html.ui--focus {
 // clamps, like the wheel.
 .focus-side-stack__scroll-up[hidden] {
   display: none;
-}
-
-// The persistent settings content rides the stack while an object is
-// focused (moved back into the slide-in on close) — plain document
-// flow, one gap between the label+element rows.
-.focus-settings-content {
-  > * + * {
-    margin-top: $gap;
-  }
 }
 
 // FV side-stack widget slot (v2): wraps a widget's DOM — a plain item in
@@ -1051,23 +1065,13 @@ $focus-tab-overlap: 1px;
   }
 }
 
-// Switcher bar (settings content): theme / font-size / account switchers
-// — v1's .user-login-bar, renamed. Plain document flow: the three
-// dropdowns sit side by side and wrap naturally when the width runs out
-// (focusShell mounts them as direct children — no row wrapper).
-.switch-bar {
-  // Whitespace text nodes are absent between the mounted elements — the
-  // sibling margin carries the spacing.
-  > * + * {
-    margin-left: calc($gap * 0.6);
-  }
-
-  // The account-switcher label truncates at 120px (100px mobile) for
-  // the classic layouts — this shell loads later, so the override wins
-  // the cascade and long usernames claim the width they need.
-  .account-switcher .nn-dropdown__label {
-    max-width: none;
-  }
+// Switchers (settings content): theme / font-size / account — v1's
+// .user-login-bar, renamed, mounted straight into the slot (no wrapper).
+// The account-switcher label truncates at 120px (100px mobile) for the
+// classic layouts — this shell loads later, so the override wins the
+// cascade and long usernames claim the width they need.
+.account-switcher .nn-dropdown__label {
+  max-width: none;
 }
 
 // Object settings (ED-b content, mounted by focusStage): simple block

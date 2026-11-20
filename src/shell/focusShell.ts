@@ -230,15 +230,17 @@ class EdgeDrawer {
 }
 
 /**
- * Settings-sidebar content: the switcher bar (v1's .user-login-bar,
- * renamed) — theme / font-size / account switchers. Mounts as soon as a
- * session exists, follows account switches in
- * place, clears on logout (the classic login flow takes over).
+ * The three switchers (theme / font-size / account — v1's
+ * .user-login-bar, renamed). Mounts as soon as a session exists, follows
+ * account switches in place, clears on logout (the classic login flow
+ * takes over). Placement is the stage's business — the switchers ride
+ * between the slide-in panel and the focused stack's ui-settings section.
  */
-function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
+function mountSwitchBar(place: (els: HTMLElement[]) => void): {
+  destroy(): void;
+} {
   const bus = TypedEventBus.getInstance();
-  const bar = document.createElement('div');
-  bar.className = 'switch-bar';
+  let placed: HTMLElement[] = [];
 
   let themeSwitcher: ThemeSwitcher | null = null;
   let fontSizeSwitcher: FontSizeSwitcher | null = null;
@@ -263,18 +265,18 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
         Router.getInstance().navigate('/login');
       },
     });
-    // Three dropdowns as direct children: inline flow — they sit side
-    // by side and wrap naturally when the width runs out.
-    bar.replaceChildren(
+    // The three dropdowns sit side by side and wrap naturally when the
+    // width runs out.
+    placed = [
       themeSwitcher.getElement(),
       fontSizeSwitcher.getElement(),
-      accountSwitcher.getElement()
-    );
+      accountSwitcher.getElement(),
+    ];
+    place(placed);
   };
 
   const user = AuthService.getInstance().getCurrentUser();
   if (user) mount(user.npub, user.pubkey);
-  panel.appendChild(bar);
 
   const destroySwitchers = (): void => {
     themeSwitcher?.destroy();
@@ -292,17 +294,23 @@ function mountSwitchBar(panel: HTMLElement): { destroy(): void } {
       mount(data.npub, data.pubkey);
     }
   });
-  const logoutSub = bus.on('user:logout', () => {
+  const unplace = (): void => {
     destroySwitchers();
-    bar.replaceChildren();
+    for (const el of placed) el.remove();
+    placed = [];
+  };
+
+  const logoutSub = bus.on('user:logout', () => {
+    unplace();
+    place([]);
   });
 
   return {
     destroy(): void {
       bus.off(loginSub);
       bus.off(logoutSub);
-      destroySwitchers();
-      bar.remove();
+      unplace();
+      place([]);
     },
   };
 }
@@ -338,9 +346,12 @@ export function mountFocusShell(): void {
       ToastService.show(_('Classic interface active'), 'success');
     },
   });
-  const tempSwitchWrap = document.createElement('div');
-  tempSwitchWrap.innerHTML = switchBack.render();
-  switchBack.setupEventListeners(tempSwitchWrap);
+  // No wrapper: parse the render output, take the .switch-container root
+  // (setupEventListeners queries within — the switch element itself).
+  const switchBackParse = document.createElement('div');
+  switchBackParse.innerHTML = switchBack.render();
+  const switchBackEl = switchBackParse.firstElementChild as HTMLElement;
+  switchBack.setupEventListeners(switchBackEl);
 
   // The stage: the free central surface area under the ED overlays —
   // the FS grid of primary domain circles lands here.
@@ -402,12 +413,13 @@ export function mountFocusShell(): void {
   stage = new FocusStage(stageEl);
   stage.mount();
 
-  // Inject the v1 switch + the switcher bar (theme/font/account — was
-  // the ED-t panel content) into the settings sidebar slots the stage
-  // prepared.
-  stageEl.querySelector('[data-settings-v1-slot]')?.appendChild(tempSwitchWrap);
-  switchBar = mountSwitchBar(
-    stageEl.querySelector('[data-settings-switchbar-slot]') as HTMLElement
+  const stageInstance = stage;
+
+  // The switcher bar rides the ui-settings section, the v1 switch the
+  // inspectors section — both handed to the stage for placement/riding.
+  stageInstance.mountSettingsGuests('inspectors', [switchBackEl]);
+  switchBar = mountSwitchBar(els =>
+    stageInstance.mountSettingsGuests('ui-settings', els)
   );
 
   // Object settings drawer (ED-b, bottom) as overlay — heights live in

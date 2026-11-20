@@ -263,6 +263,11 @@
   &:hover {
     color: var(--color-4);
   }
+
+  // Author display beats the UA's [hidden] — re-assert the trap.
+  &[hidden] {
+    display: none;
+  }
 }
 
 // Outlined variant: the primary actions on a surface (panel header
